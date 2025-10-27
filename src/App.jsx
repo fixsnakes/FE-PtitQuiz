@@ -1,19 +1,41 @@
 import { Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider } from "./contexts/AuthProvider";
+import ProtectedRoute from "./components/ProtectedRoute";
+import DashboardLayout from "./layouts/DashboardLayout";
 import Login from "./pages/auth/Login";
 import SignUp from "./pages/auth/SignUp";
-import Navbar from "./components/Navbar";
+import ExamListPage from "./pages/workspace/exams/List";
+import CreateExamPage from "./pages/workspace/exams/CreateWithText";
 function App() {
   return (
-    <>
-        <Navbar />
-        <Routes>
-            <Route path="/auth/login" element={<Login />} />
-            <Route path="/auth/register" element={<SignUp />} />
-            <Route path="/" element={<Navigate to="/auth/login" replace />} />
-            <Route path="*" element={<h1 className="text-center mt-10 text-red-500">404 - Trang không tồn tại</h1>} />
-        </Routes>
+    <AuthProvider>
+      <Routes>
+        {/* Public routes */}
+        <Route path="/auth/login" element={<Login />} />
+        <Route path="/auth/register" element={<SignUp />} />
 
-    </>
+        {/* Protected routes */}
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute>
+              <DashboardLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route path="/workspace/exams/list" element={<ExamListPage />} />
+          <Route path="/workspace/exams/create-with-text" element={<CreateExamPage />} />
+        </Route>
+
+   
+
+        {/* 404 page */}
+        <Route
+          path="*"
+          element={<h1 className="text-center mt-10 text-red-500">404 - Not Found</h1>}
+        />
+      </Routes>
+    </AuthProvider>
   );
 }
 

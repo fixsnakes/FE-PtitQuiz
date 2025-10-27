@@ -1,0 +1,377 @@
+import React, { useState, useEffect } from 'react';
+import { 
+  FiChevronDown, 
+  FiInfo, 
+  FiCheckCircle, 
+  FiXCircle 
+} from 'react-icons/fi';
+
+const parseExamText = (text) => {
+  const lines = text.split('\n');
+  const parts = [];
+  const errors = [];
+  let currentPart = null;
+  let currentQuestion = null;
+
+  lines.forEach((line, index) => {
+    const trimmedLine = line.trim();
+
+    if (trimmedLine.startsWith("'")) {
+      // Bắt đầu một phần mới
+      if (currentQuestion) {
+        currentPart.questions.push(currentQuestion);
+      }
+      if (currentPart) {
+        parts.push(currentPart);
+      }
+      currentPart = {
+        title: trimmedLine.substring(1).trim() || `Phần ${parts.length + 1}`,
+        questions: [],
+      };
+      currentQuestion = null;
+    } else if (trimmedLine === '') {
+      // Dòng trống, phân tách câu hỏi
+      if (currentQuestion) {
+        currentPart.questions.push(currentQuestion);
+        currentQuestion = null;
+      }
+    } else if (trimmedLine.startsWith('[FILL]')) {
+      // Câu hỏi điền từ
+      if (!currentPart) {
+        errors.push({ line: index + 1, content: line, message: "Câu hỏi cần nằm trong một Phần (bắt đầu bằng ')._." });
+        return;
+      }
+      if (currentQuestion) {
+        currentPart.questions.push(currentQuestion);
+      }
+      
+      const questionText = trimmedLine.replace('[FILL]', '').trim();
+      const fillRegex = /\[(.*?)\]/g;
+      const answers = [];
+      let match;
+      
+      while ((match = fillRegex.exec(questionText)) !== null) {
+        answers.push(match[1].split('|').map(a => a.trim()));
+      }
+      
+      let blankIndex = 1;
+      const processedText = questionText.replace(fillRegex, () => `( ${blankIndex++} )`);
+
+      currentQuestion = {
+        type: 'FILL',
+        text: processedText.replace(/<br \/>/g, '\n'),
+        answers: answers,
+      };
+
+    } else if (trimmedLine.startsWith('*') || /^[A-Z]\./.test(trimmedLine)) {
+      // Đây là một đáp án
+      if (!currentQuestion) {
+        errors.push({ line: index + 1, content: line, message: "Đáp án không thuộc câu hỏi nào." });
+        return;
+      }
+      if (currentQuestion.type !== 'MCQ') {
+         errors.push({ line: index + 1, content: line, message: "Câu hỏi điền từ [FILL] không có đáp án A, B, C..." });
+         return;
+      }
+
+      const isCorrect = trimmedLine.startsWith('*');
+      const optionText = line.replace(/^\*?[A-Z]\.\s*/, '').replace(/<br \/>/g, '\n');
+      
+      currentQuestion.options.push({
+        text: optionText,
+        isCorrect: isCorrect,
+      });
+
+    } else if (trimmedLine.length > 0) {
+      // Đây là một câu hỏi trắc nghiệm mới
+      if (!currentPart) {
+        errors.push({ line: index + 1, content: line, message: "Câu hỏi cần nằm trong một Phần (bắt đầu bằng ')._." });
+        return;
+      }
+      if (currentQuestion) {
+        currentPart.questions.push(currentQuestion);
+      }
+      currentQuestion = {
+        type: 'MCQ',
+        text: line.replace(/<br \/>/g, '\n'),
+        options: [],
+      };
+    }
+  });
+
+  // Đẩy câu hỏi cuối cùng và phần cuối cùng vào
+  if (currentQuestion) {
+    currentPart.questions.push(currentQuestion);
+  }
+  if (currentPart) {
+    parts.push(currentPart);
+  }
+
+  return { parts, errors };
+};
+
+
+/**
+ * Component hiển thị hướng dẫn
+ */
+const ExamInstructions = () => (
+  <div className="bg-blue-50 border border-blue-200 p-4 rounded-lg text-sm text-gray-700 space-y-2">
+    <h4 className="font-semibold text-gray-800">Quy tắc soạn câu hỏi</h4>
+    <ul className="list-disc list-inside space-y-1">
+      <li>Để tạo phần thi mới, viết dấu nháy [ <strong className="text-blue-600">'</strong> ] ở đầu dòng (ví dụ: <code className="bg-gray-200 px-1 rounded">'Phần 1</code>)</li>
+      <li>Mỗi câu hỏi cách nhau 1 dòng trống.</li>
+      <li>Đáp án đúng có dấu [ <strong className="text-blue-600">*</strong> ] đằng trước (ví dụ: <code className="bg-gray-200 px-1 rounded">*B. Đáp án đúng</code>)</li>
+      <li>Xuống dòng trong câu hỏi/đáp án, dùng <code className="bg-gray-200 px-1 rounded">&lt;br /&gt;</code></li>
+    </ul>
+  </div>
+);
+
+
+/**
+ * Component hiển thị bản xem trước (cột phải)
+ */
+const ExamPreview = ({ parts, errors, hasContent }) => {
+  if (!hasContent) {
+    return (
+      <div className="flex items-center justify-center h-full text-gray-500">
+        Vui lòng soạn câu hỏi theo hướng dẫn!
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Hiển thị lỗi phân tích cú pháp */}
+      {errors.length > 0 && (
+        <div className="bg-red-50 border border-red-200 p-4 rounded-lg text-sm">
+          <h4 className="font-semibold text-red-700">Lỗi cú pháp</h4>
+          <ul className="list-disc list-inside mt-2">
+            {errors.map((err, i) => (
+              <li key={i} className="text-red-600">
+                <strong>Dòng {err.line}:</strong> {err.message} (Nội dung: <code className="bg-red-200 text-red-800 rounded px-1">{err.content}</code>)
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Hiển thị các phần đã phân tích */}
+      {parts.map((part, partIndex) => (
+        <div key={partIndex} className="bg-gray-50 p-3 rounded-md">
+          <div className="flex items-center mb-3">
+            <span className="bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-md">{part.title}</span>
+          </div>
+          
+          <div className="space-y-4">
+            {part.questions.map((q, qIndex) => (
+              <div key={qIndex} className="bg-white p-4 border rounded-lg shadow-sm">
+                <p className="font-semibold text-gray-800 whitespace-pre-wrap">
+                  Câu {qIndex + 1}: {q.text}
+                </p>
+                
+                {/* Hiển thị cho câu Trắc nghiệm */}
+                {q.type === 'MCQ' && (
+                  <div className="mt-3 space-y-2">
+                    {q.options.map((opt, optIndex) => (
+                      <div key={optIndex} className={`flex items-center p-2 rounded-md ${opt.isCorrect ? 'bg-green-50' : 'bg-red-50'}`}>
+                        {opt.isCorrect ? (
+                          <FiCheckCircle className="w-5 h-5 text-green-600 mr-2" />
+                        ) : (
+                          <FiXCircle className="w-5 h-5 text-red-600 mr-2" />
+                        )}
+                        <span className={`whitespace-pre-wrap ${opt.isCorrect ? 'font-semibold text-green-800' : 'text-red-800'}`}>
+                          {opt.text}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                
+                {/* Hiển thị cho câu Điền từ */}
+                {q.type === 'FILL' && (
+                  <div className="mt-3 space-y-2">
+                    <h5 className="text-sm font-semibold text-gray-600">Đáp án điền từ:</h5>
+                    {q.answers.map((ansGroup, ansIndex) => (
+                      <div key={ansIndex} className="flex items-start text-sm">
+                        <span className="font-bold text-blue-700 mr-2">({ansIndex + 1}):</span>
+                        <span className="text-gray-800 bg-gray-100 px-2 py-1 rounded-md">
+                          {ansGroup.join(' / ')}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+
+/**
+ * Component trang chính
+ */
+export default function CreateExamPage() {
+  const [title, setTitle] = useState('');
+  const [shareMode, setShareMode] = useState('private');
+  const [level, setLevel] = useState('');
+  const [rawText, setRawText] = useState('');
+  const [parsedExam, setParsedExam] = useState({ parts: [], errors: [] });
+  const [showInstructions, setShowInstructions] = useState(false);
+
+
+  useEffect(() => {
+    const result = parseExamText(rawText);
+    setParsedExam(result);
+  }, [rawText]);
+
+  // Hàm xử lý khi nhấn nút "Tạo đề"
+  const handleSubmit = () => {
+    if (parsedExam.errors.length > 0) {
+      alert("Vui lòng sửa các lỗi cú pháp trước khi tạo đề!");
+      return;
+    }
+    
+    // Gói dữ liệu thành JSON
+    const examData = {
+      title,
+      shareMode,
+      level,
+      content: parsedExam.parts, // Đây chính là JSON câu hỏi
+    };
+    
+    // Gửi dữ liệu này về backend
+    console.log("GỬI DỮ LIỆU JSON LÊN BACKEND:", JSON.stringify(examData, null, 2));
+    alert("Đã tạo đề thành công! (Kiểm tra dữ liệu JSON trong Console F12)");
+
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-100 p-4 md:p-8 mt-15">
+      {/* Header */}
+      <header className="flex items-center justify-between mb-3">
+        <h1 className="text-2xl font-bold text-gray-800">Tạo đề thi nhanh</h1>
+        <div className="flex space-x-3">
+          <button className="px-4 py-2 rounded-lg text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 text-sm font-medium">
+            Trở về
+          </button>
+          <button 
+            onClick={handleSubmit}
+            className="px-6 py-2 rounded-lg text-white bg-blue-600 hover:bg-blue-700 text-sm font-medium"
+          >
+            Tạo đề
+          </button>
+        </div>
+      </header>
+
+      {/* Main Content (2 cột) */}
+      <main className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        {/* CỘT TRÁI: Form nhập liệu */}
+        <div className="bg-white p-6 rounded-xl shadow-lg space-y-5">
+          {/* Tên đề thi */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Tên đề thi <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Nhập tên đề thi"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            {/* Hiển thị lỗi validation (ví dụ) */}
+            {title === '' && <p className="text-xs text-red-500 mt-1">Trường này là bắt buộc.</p>}
+          </div>
+
+          {/* Chế độ chia sẻ */}
+          <div className="relative">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Chế độ chia sẻ <span className="text-red-500">*</span>
+            </label>
+            <select
+              value={shareMode}
+              onChange={(e) => setShareMode(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="private">Riêng tư</option>
+              <option value="public">Công khai</option>
+              <option value="unlisted">Không công khai</option>
+            </select>
+            <FiChevronDown className="absolute right-3 top-9 w-5 h-5 text-gray-400 pointer-events-none" />
+            <p className="text-xs text-gray-500 mt-1">
+              {shareMode === 'private' && "Chỉ mình bạn và thành viên được chia sẻ có thể truy cập đề thi"}
+              {shareMode === 'public' && "Mọi người đều có thể tìm thấy và truy cập đề thi"}
+              {shareMode === 'unlisted' && "Chỉ những người có link mới truy cập được"}
+            </p>
+          </div>
+
+          {/* Trình độ */}
+          <div className="relative">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Trình độ <span className="text-red-500">*</span>
+            </label>
+            <select
+              value={level}
+              onChange={(e) => setLevel(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Chọn trình độ</option>
+              <option value="easy">Dễ</option>
+              <option value="medium">Trung bình</option>
+              <option value="hard">Khó</option>
+            </select>
+            <FiChevronDown className="absolute right-3 top-9 w-5 h-5 text-gray-400 pointer-events-none" />
+             {level === '' && <p className="text-xs text-red-500 mt-1">Trường này là bắt buộc.</p>}
+          </div>
+
+          {/* Hướng dẫn */}
+          <div>
+            <button
+              onClick={() => setShowInstructions(!showInstructions)}
+              className="flex items-center space-x-1 px-4 py-2 rounded-lg bg-pink-100 text-pink-700 text-sm font-medium hover:bg-pink-200"
+            >
+              <FiInfo className="w-4 h-4" />
+              <span>Xem hướng dẫn</span>
+            </button>
+            {showInstructions && (
+              <div className="mt-3">
+                <ExamInstructions />
+              </div>
+            )}
+          </div>
+
+          {/* Soạn câu hỏi */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Soạn câu hỏi
+            </label>
+            <textarea
+              value={rawText}
+              onChange={(e) => setRawText(e.target.value)}
+              placeholder="Vui lòng soạn câu hỏi theo đúng cấu trúc..."
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono text-sm"
+              rows={20}
+            />
+          </div>
+        </div>
+
+        {/* CỘT PHẢI: Xem trước */}
+        <div className="bg-white p-6 rounded-xl shadow-lg sticky top-8" style={{ alignSelf: 'start' }}>
+          <h2 className="text-xl font-bold text-gray-800 mb-4">Xem trước</h2>
+          <div className="max-h-[80vh] overflow-y-auto pr-2">
+            <ExamPreview 
+              parts={parsedExam.parts} 
+              errors={parsedExam.errors} 
+              hasContent={rawText.trim().length > 0} 
+            />
+          </div>
+        </div>
+      </main>
+    </div>
+  );
+}
