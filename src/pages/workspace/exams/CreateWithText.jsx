@@ -6,6 +6,8 @@ import {
   FiXCircle 
 } from 'react-icons/fi';
 
+
+import { Link } from 'react-router-dom';
 const parseExamText = (text) => {
   const lines = text.split('\n');
   const parts = [];
@@ -255,9 +257,9 @@ export default function CreateExamPage() {
       <header className="flex items-center justify-between mb-3">
         <h1 className="text-2xl font-bold text-gray-800">Tạo đề thi nhanh</h1>
         <div className="flex space-x-3">
-          <button className="px-4 py-2 rounded-lg text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 text-sm font-medium">
+          <Link to='/workspace/exams/list' className="px-4 py-2 rounded-lg text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 text-sm font-medium">
             Trở về
-          </button>
+          </Link>
           <button 
             onClick={handleSubmit}
             className="px-6 py-2 rounded-lg text-white bg-blue-600 hover:bg-blue-700 text-sm font-medium"

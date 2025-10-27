@@ -12,7 +12,8 @@ export default function Login() {
   //Đảm bảo useEffect không làm quá trình render bị gọi lại liên tục
   useEffect(() => {
     if (user) {
-      navigate("/abcd121212"); // Điều hướng nếu đã đăng nhập
+      if(user.role === "teacher")
+      navigate("/workspace/exams/list"); // Điều hướng nếu đã đăng nhập
     }
   }, [user, navigate]); // Chạy lại khi `user` thay đổi
 
@@ -26,7 +27,7 @@ export default function Login() {
 
     let userData = null;
 
-    if (email === "teacher@gmail.com" && password === "Lamthao1") {
+    if (email === "teacher@gmail.com" && password === "123456") {
       userData = { name: "Thầy Nam", role: "teacher" };
     } else if (email === "student@gmail.com" && password === "123456") {
       userData = { name: "Học sinh Hằng", role: "student" };
