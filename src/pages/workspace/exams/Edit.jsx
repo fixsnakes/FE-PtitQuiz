@@ -55,7 +55,6 @@ function EditExamPage() {
       explanation: 'Đạo hàm của x² là 2x, đạo hàm của 3x là 3, đạo hàm của hằng số là 0'
     }
   ]);
-
   // Load exam data when component mounts
   useEffect(() => {
     const loadExamData = () => {

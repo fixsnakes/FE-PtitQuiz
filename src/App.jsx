@@ -8,6 +8,7 @@ import ExamListPage from "./pages/workspace/exams/List";
 import CreateExamPage from "./pages/workspace/exams/CreateWithText";
 import NewExamPage from "./pages/workspace/exams/New";
 import EditExamPage from "./pages/workspace/exams/Edit";
+import ClassManagement from "./pages/workspace/class/ClassManagement";
 import QuizTakingPage from "./pages/quiz/exam/QuizTaking";
 function App() {
   return (
@@ -28,6 +29,7 @@ function App() {
         >
           <Route path="/workspace/exams/list" element={<ExamListPage />} />
           <Route path="/workspace/exams/create-with-text" element={<CreateExamPage />} />
+          <Route path="/workspace/class" element={<ClassManagement />} />
           
         </Route>
 
