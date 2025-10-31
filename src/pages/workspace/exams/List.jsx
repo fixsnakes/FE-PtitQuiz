@@ -160,12 +160,12 @@ const examData = [
 // -----------------------------------------------------------------
 // 3. COMPONENT EXAMCARD ĐÃ CẬP NHẬT
 // -----------------------------------------------------------------
-const ExamCard = ({ title, date, image, stats, isPublished }) => { // <-- Thêm prop 'isPublished'
+const ExamCard = ({ id,title, date, image, stats, isPublished }) => { // <-- Thêm prop 'isPublished'
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden transition-shadow duration-300 hover:shadow-lg hover:scale-105 hover:cursor-pointer">
 
 
-      <Link to={'/dashboard'}>
+      <Link to={`/quiz/${id}`}>
           <img src={image} alt={title} className="w-full h-40 object-cover" />
       </Link>
       
@@ -315,6 +315,7 @@ export default function ExamListPage() {
           {examsToDisplay.map((exam) => (
             <ExamCard
               key={exam.id}
+              id = {exam.id}
               title={exam.title}
               date={exam.date}
               image={exam.image}

@@ -7,6 +7,7 @@ import SignUp from "./pages/auth/SignUp";
 import ExamListPage from "./pages/workspace/exams/List";
 import CreateExamPage from "./pages/workspace/exams/CreateWithText";
 import QuizTakingPage from "./pages/quiz/exam/QuizTaking";
+import ExamDetailPage from "./pages/quiz/QuizDetail";
 function App() {
   return (
     <AuthProvider>
@@ -28,16 +29,20 @@ function App() {
           <Route path="/workspace/exams/create-with-text" element={<CreateExamPage />} />
           
         </Route>
+        
 
-        <Route path="/quizz/:id" element={<QuizTakingPage />} />
+        <Route path="/quiz/test/:id" element={<QuizTakingPage />} />
+        <Route path="/quiz/:id" element={<ExamDetailPage />} />
 
-   
+        
 
         {/* 404 page */}
         <Route
           path="*"
           element={<h1 className="text-center mt-10 text-red-500">404 - Not Found</h1>}
         />
+
+        <Route path="/" element={<Navigate to="/auth/login" replace />} />
       </Routes>
     </AuthProvider>
   );
