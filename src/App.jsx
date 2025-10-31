@@ -6,6 +6,7 @@ import Login from "./pages/auth/Login";
 import SignUp from "./pages/auth/SignUp";
 import ExamListPage from "./pages/workspace/exams/List";
 import CreateExamPage from "./pages/workspace/exams/CreateWithText";
+import NewExamPage from "./pages/workspace/exams/New";
 import QuizTakingPage from "./pages/quiz/exam/QuizTaking";
 function App() {
   return (
@@ -30,6 +31,16 @@ function App() {
         </Route>
 
         <Route path="/quizz/:id" element={<QuizTakingPage />} />
+        
+        {/* New Exam Creation Page - has its own layout */}
+        <Route 
+          path="/workspace/exams/new" 
+          element={
+            <ProtectedRoute>
+              <NewExamPage />
+            </ProtectedRoute>
+          } 
+        />
 
    
 

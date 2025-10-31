@@ -62,7 +62,7 @@ export default function CreateExamModal({ onClose }) {
             description="Tạo đề thi nhanh bằng cách soạn thảo văn bản"
           />
           <OptionCard 
-            to="/createdoc"
+            to="/workspace/exams/new"
             onClick={onClose}
             icon={FiEdit} // Icon cho Trình soạn thảo
             title="Trình soạn thảo"
