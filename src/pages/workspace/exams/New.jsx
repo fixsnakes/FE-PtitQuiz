@@ -75,40 +75,32 @@ function NewExamPage() {
     }));
   };
 
-  // Check if basic information is complete
+  // Check if basic information is complete - simplified for New page
   const isBasicInfoComplete = () => {
-    const requiredFields = ['title', 'subject'];
-    const basicComplete = requiredFields.every(field => formData[field]?.trim());
+    // Required fields for creating exam
+    if (!formData.title?.trim()) return false;
+    if (!formData.subject?.trim()) return false;
+    if (!formData.accessLevel?.trim()) return false;
     
     // If subject is selected, school is also required
-    const schoolComplete = !formData.subject || formData.school?.trim();
+    if (formData.subject && !formData.school?.trim()) return false;
     
-    return basicComplete && schoolComplete;
+    return true;
   };
 
   const handleTabClick = (tabId) => {
-    // Only allow switching to other tabs if basic info is complete
-    if (tabId !== 'basic' && !isBasicInfoComplete()) {
-      alert('Vui lòng hoàn thành thông tin cơ bản trước khi chuyển sang các phần khác');
+    // In New page, only basic tab is allowed
+    if (tabId !== 'basic') {
+      alert('Vui lòng tạo đề thi trước khi chuyển sang các phần khác. Các chức năng này sẽ có sẵn trong trang chỉnh sửa.');
       return;
     }
     setActiveTab(tabId);
   };
 
   const handleSave = () => {
-    // Validate required fields
-    if (!formData.title) {
-      alert('Vui lòng nhập tên đề thi');
-      return;
-    }
-    
-    if (!formData.subject) {
-      alert('Vui lòng chọn trình độ');
-      return;
-    }
-    
-    if (formData.subject && !formData.school) {
-      alert('Vui lòng chọn trường học');
+    // Use the same validation logic as tab unlock
+    if (!isBasicInfoComplete()) {
+      alert('Vui lòng hoàn thành tất cả thông tin cơ bản bắt buộc trước khi lưu');
       return;
     }
 
@@ -117,6 +109,14 @@ function NewExamPage() {
     
     // Simulate exam creation and get exam ID
     const examId = Date.now(); // In real app, this would come from API response
+    
+    // Save to localStorage so Edit page can load it
+    try {
+      localStorage.setItem(`exam_${examId}`, JSON.stringify(formData));
+      console.log('Saved exam data to localStorage with ID:', examId);
+    } catch (error) {
+      console.error('Error saving exam data:', error);
+    }
     
     alert('Đã tạo đề thi thành công!');
     
@@ -172,7 +172,8 @@ function NewExamPage() {
           <div className="px-6">
             <nav className="flex space-x-8">
               {tabs.map((tab) => {
-                const isDisabled = tab.id !== 'basic' && !isBasicInfoComplete();
+                // In New page, only basic tab is enabled
+                const isDisabled = tab.id !== 'basic';
                 return (
                   <button
                     key={tab.id}

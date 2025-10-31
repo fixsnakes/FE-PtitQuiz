@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { 
   FaGraduationCap,
@@ -30,18 +30,19 @@ function EditExamPage() {
   const navigate = useNavigate();
   const { id } = useParams(); // Get exam ID from URL
   const [activeTab, setActiveTab] = useState('basic');
+  const [isLoading, setIsLoading] = useState(true);
   const [examData, setExamData] = useState({
-    title: 'Bài kiểm tra Toán học',
-    subject: 'Đại học',
-    description: 'Bài kiểm tra toán học cơ bản cho sinh viên năm nhất',
+    title: '',
+    subject: '',
+    description: '',
     isPasswordProtected: false,
     accessLevel: 'private',
     emails: '',
-    school: 'ptit',
-    major: 'cntt',
-    subject_detail: 'toan',
-    skill: 'logic',
-    topic: 'basic'
+    school: '',
+    major: '',
+    subject_detail: '',
+    skill: '',
+    topic: ''
   });
 
   const [questions, setQuestions] = useState([
@@ -54,6 +55,43 @@ function EditExamPage() {
       explanation: 'Đạo hàm của x² là 2x, đạo hàm của 3x là 3, đạo hàm của hằng số là 0'
     }
   ]);
+
+  // Load exam data when component mounts
+  useEffect(() => {
+    const loadExamData = () => {
+      try {
+        setIsLoading(true);
+        // Try to load from localStorage first (for development)
+        const savedExam = localStorage.getItem(`exam_${id}`);
+        if (savedExam) {
+          const examInfo = JSON.parse(savedExam);
+          setExamData(examInfo);
+          console.log('Loaded exam data from localStorage:', examInfo);
+        } else {
+          // If no saved data, set some defaults
+          setExamData(prev => ({
+            ...prev,
+            title: `Đề thi #${id}`,
+            subject: 'Đại học',
+            school: 'ptit',
+            major: 'cntt',
+            subject_detail: 'toan',
+            skill: 'logic',
+            topic: 'basic'
+          }));
+          console.log('No saved data found, using defaults');
+        }
+      } catch (error) {
+        console.error('Error loading exam data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (id) {
+      loadExamData();
+    }
+  }, [id]);
 
   // Education levels options
   const educationLevels = [
@@ -91,8 +129,15 @@ function EditExamPage() {
   };
 
   const handleSave = () => {
-    console.log('Saving exam changes:', examData);
-    alert('Đã lưu thay đổi thành công!');
+    try {
+      // Save to localStorage (in real app, this would be API call)
+      localStorage.setItem(`exam_${id}`, JSON.stringify(examData));
+      console.log('Saving exam data:', examData);
+      alert('Đã lưu thay đổi thành công!');
+    } catch (error) {
+      console.error('Error saving exam data:', error);
+      alert('Có lỗi xảy ra khi lưu dữ liệu!');
+    }
   };
 
   const addQuestion = () => {
@@ -121,6 +166,17 @@ function EditExamPage() {
     <div className="flex min-h-screen bg-gray-50">
       {/* Navbar - Fixed at top */}
       <Navbar />
+      
+      {/* Loading State */}
+      {isLoading ? (
+        <div className="flex-1 flex items-center justify-center ml-72">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-gray-600">Đang tải thông tin đề thi...</p>
+          </div>
+        </div>
+      ) : (
+        <>
       
       {/* Sidebar */}
       <div className="w-72 min-h-screen bg-white shadow-md flex-col p-3 justify-center items-center border-r border-gray-100 fixed top-0 z-11 pt-20">
@@ -452,6 +508,8 @@ function EditExamPage() {
           )}
         </div>
       </div>
+      </>
+      )}
     </div>
   );
 }
