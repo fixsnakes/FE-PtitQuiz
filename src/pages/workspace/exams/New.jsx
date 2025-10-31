@@ -115,11 +115,13 @@ function NewExamPage() {
     // Save the exam configuration
     console.log('Saving exam configuration:', formData);
     
-    // TODO: Implement actual save logic (API call)
-    alert('Đã lưu cấu hình đề thi thành công!');
+    // Simulate exam creation and get exam ID
+    const examId = Date.now(); // In real app, this would come from API response
     
-    // Optional: Navigate back to exam list
-    // navigate('/workspace/exams/list');
+    alert('Đã tạo đề thi thành công!');
+    
+    // Navigate to edit page with the new exam ID
+    navigate(`/workspace/exams/edit/${examId}`);
   };
 
   return (

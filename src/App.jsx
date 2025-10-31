@@ -7,6 +7,7 @@ import SignUp from "./pages/auth/SignUp";
 import ExamListPage from "./pages/workspace/exams/List";
 import CreateExamPage from "./pages/workspace/exams/CreateWithText";
 import NewExamPage from "./pages/workspace/exams/New";
+import EditExamPage from "./pages/workspace/exams/Edit";
 import QuizTakingPage from "./pages/quiz/exam/QuizTaking";
 function App() {
   return (
@@ -38,6 +39,16 @@ function App() {
           element={
             <ProtectedRoute>
               <NewExamPage />
+            </ProtectedRoute>
+          } 
+        />
+
+        {/* Edit Exam Page - has its own layout */}
+        <Route 
+          path="/workspace/exams/edit/:id" 
+          element={
+            <ProtectedRoute>
+              <EditExamPage />
             </ProtectedRoute>
           } 
         />
