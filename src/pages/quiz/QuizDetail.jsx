@@ -31,7 +31,7 @@ const MOCK_EXAM_DETAILS = {
         id: 'r1',
         author: "Tung Lam",
         role: "Thành viên",
-        avatar: "https://cdn-icons-png.flaticon.com/512/201/201818.png", // Placeholder
+        avatar: "https://avatar.iran.liara.run/public/28", // Placeholder
         rating: 5,
         date: "22:51 - 10/10/2025",
         comment: "10 điểm không có nhưng"
@@ -122,16 +122,13 @@ export default function ExamDetailPage() {
   const handleStartQuiz = () => {
     // Bạn có thể dùng 'id' của exam để điều hướng đến trang làm bài
     // Ví dụ: trang làm bài của chúng ta từ câu trước
-    navigate(`/quiz/test/acbdfda`); // Giả sử đây là route làm bài
+    navigate(`/quiz/test/${id}`); // Giả sử đây là route làm bài
   };
   
   // Xử lý gửi đánh giá
   const handleSubmitReview = () => {
-    if (myRating === 0) {
-      alert("Vui lòng chọn số sao để đánh giá.");
-      return;
-    }
-    console.log("ĐÁNH GIÁ ĐÃ GỬI:", { rating: myRating, comment: myReviewText });
+  
+    console.log("ĐÁNH GIÁ ĐÃ GỬI:", { comment: myReviewText });
     alert("Cảm ơn bạn đã đánh giá!");
     // Reset form
     setMyRating(0);
@@ -168,7 +165,7 @@ export default function ExamDetailPage() {
                 <h1 className="text-2xl font-bold text-gray-800">{exam.title}</h1>
                 
                 <div className="flex items-center space-x-2">
-                    <div className="w-8 h-8 bg-gray-200 rounded-full"></div> {/* Placeholder avatar tác giả */}
+                    <img src={'https://avatar.iran.liara.run/public/28'} className='w-8 h-8 rounded-full' alt="" />
                     <span className="font-semibold text-gray-700">{exam.author}</span>
                 </div>
                 
@@ -185,9 +182,7 @@ export default function ExamDetailPage() {
 
                 {/* Đánh giá */}
                 <div className="flex items-center space-x-2">
-                    <StaticStarRating rating={exam.rating} />
-                    <span className="font-bold text-gray-700">{exam.rating.toFixed(1)}</span>
-                    <span className="text-sm text-gray-500">({exam.reviewCount} đánh giá)</span>
+                    <span className="text-sm text-gray-500">({exam.reviewCount} bình luận)</span>
                 </div>
                 
                 {/* Actions: Like/Bookmark */}
@@ -255,7 +250,7 @@ export default function ExamDetailPage() {
                     : 'text-gray-500 hover:text-gray-700'
                 }`}
                 >
-                Đánh giá
+                Bình Luận
                 </button>
                 <button
                 onClick={() => setActiveTab('ket-qua')}
@@ -278,10 +273,7 @@ export default function ExamDetailPage() {
                 <div className="space-y-8">
                     {/* 1. Form viết đánh giá */}
                     <div className="border border-gray-200 rounded-lg p-5">
-                    <h3 className="text-lg font-semibold text-gray-800 mb-3">Đánh giá đề thi</h3>
-                    <div className="mb-4">
-                        <InteractiveStarRating rating={myRating} setRating={setMyRating} />
-                    </div>
+               
                     <textarea
                         value={myReviewText}
                         onChange={(e) => setMyReviewText(e.target.value)}
@@ -294,28 +286,15 @@ export default function ExamDetailPage() {
                         onClick={handleSubmitReview}
                         className="px-6 py-2 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700"
                         >
-                        Đánh giá
+                        Bình Luận
                         </button>
                     </div>
                     </div>
 
                     {/* 2. Tóm tắt đánh giá */}
                     <div className="border border-gray-200 rounded-lg p-5">
-                    <div className="flex flex-col md:flex-row justify-between md:items-center gap-4 mb-4">
-                        <div>
-                        <h3 className="text-xl font-bold text-gray-800">{exam.rating.toFixed(1)} trên 5</h3>
-                        <StaticStarRating rating={exam.rating} />
-                        </div>
-                        {/* Filter buttons */}
-                        <div className="flex flex-wrap gap-2">
-                        <button className="px-4 py-1.5 text-sm bg-blue-100 text-blue-700 rounded-full font-medium">Tất cả</button>
-                        <button className="px-4 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-full font-medium hover:bg-gray-200">5 sao (0)</button>
-                        <button className="px-4 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-full font-medium hover:bg-gray-200">4 sao (0)</button>
-                        <button className="px-4 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-full font-medium hover:bg-gray-200">3 sao (0)</button>
-                        <button className="px-4 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-full font-medium hover:bg-gray-200">2 sao (0)</button>
-                        <button className="px-4 py-1.5 text-sm bg-gray-100 text-gray-700 rounded-full font-medium hover:bg-gray-200">1 sao (0)</button>
-                        </div>
-                    </div>
+                       
+                   
 
                     {/* 3. Danh sách review */}
                     <div className="space-y-5 divide-y divide-gray-100">
@@ -328,7 +307,7 @@ export default function ExamDetailPage() {
                                 <span className="font-semibold text-gray-800">{review.author}</span>
                                 <span className="text-sm text-gray-500 ml-2">({review.role})</span>
                                 </div>
-                                <StaticStarRating rating={review.rating} size="w-4 h-4" />
+                               
                             </div>
                             <p className="text-sm text-gray-500 mb-2">{review.date}</p>
                             <p className="text-gray-700">{review.comment}</p>

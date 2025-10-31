@@ -10,7 +10,7 @@ import {
 // Thêm type: 'PASSAGE' để chứa đoạn văn
 // -----------------------------------------------------------------
 const MOCK_EXAM_DATABASE = {
-  "acbdfda": {
+  "1": {
     title: "acbdfđá",
     duration: 1747, // 29:07 (tính bằng giây)
     questions: [ // <-- THAY ĐỔI: Không còn 'parts'
