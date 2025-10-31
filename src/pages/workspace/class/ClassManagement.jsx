@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useAuth } from '../../../contexts/AuthProvider';
 import { 
   FaPlus,
   FaEdit,
@@ -22,6 +23,7 @@ import {
 } from 'react-icons/pi';
 
 function ClassManagement() {
+  const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -31,53 +33,54 @@ function ClassManagement() {
   const [newClass, setNewClass] = useState({
     name: '',
     subject: '',
-    grade: '',
     description: '',
     room: '',
     section: ''
   });
+
+  // Function to get teacher name
+  const getTeacherName = () => {
+    return user?.name || user?.username || 'Giáo viên hiện tại';
+  };
   
   // Mock data for classes
   const [classes, setClasses] = useState([
     {
       id: 1,
-      name: 'Lớp Toán 12A1',
-      subject: 'Toán học',
-      grade: '12',
+      name: 'KTTK02',
+      subject: 'Thiết kế kiến trúc',
       studentCount: 35,
-      teacherName: 'Nguyễn Văn A',
+      teacherName: getTeacherName(),
       status: 'active',
       createdDate: '2024-09-01',
       classCode: 'TOAN12A1',
-      description: 'Lớp học Toán nâng cao cho học sinh lớp 12',
+      description: 'Lớp học Thiết kế kiến trúc',
       room: 'Phòng 301',
       section: 'A1'
     },
     {
       id: 2,
-      name: 'Lớp Văn 11B2',
-      subject: 'Ngữ văn',
-      grade: '11',
+      name: 'C++05',
+      subject: 'Lập trình C++',
       studentCount: 32,
-      teacherName: 'Trần Thị B',
+      teacherName: getTeacherName(),
       status: 'active',
       createdDate: '2024-09-05',
-      classCode: 'VAN11B2',
-      description: 'Lớp học Ngữ văn cơ bản',
+      classCode: 'DFEGFVC',
+      description: 'Lớp học Lập trình C++',
       room: 'Phòng 205',
       section: 'B2'
     },
     {
       id: 3,
-      name: 'Lớp Hóa 10C1',
-      subject: 'Hóa học',
-      grade: '10',
+      name: 'LTW 01',
+      subject: 'Lập trình web',
       studentCount: 28,
-      teacherName: 'Lê Văn C',
+      teacherName: getTeacherName(),
       status: 'inactive',
       createdDate: '2024-08-20',
-      classCode: 'HOA10C1',
-      description: 'Lớp học Hóa học cơ bản cho lớp 10',
+      classCode: 'DCHYHFSD',
+      description: 'Lớp học lập trình web cơ bản',
       room: 'Phòng Lab1',
       section: 'C1'
     }
@@ -112,7 +115,7 @@ function ClassManagement() {
       ...newClass,
       classCode,
       studentCount: 0,
-      teacherName: 'Giáo viên hiện tại', // This would come from auth context
+      teacherName: getTeacherName(),
       status: 'active',
       createdDate: new Date().toISOString().split('T')[0]
     };
@@ -123,7 +126,6 @@ function ClassManagement() {
     setNewClass({
       name: '',
       subject: '',
-      grade: '',
       description: '',
       room: '',
       section: ''
@@ -182,7 +184,7 @@ function ClassManagement() {
       <div className="p-6">
         <div className="flex flex-col sm:flex-row gap-4 mb-6">
           {/* Search */}
-          <div className="flex-1 relative">
+          <div className="relative flex-1">
             <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input
               type="text"
@@ -194,11 +196,11 @@ function ClassManagement() {
           </div>
 
           {/* Filter */}
-          <div className="relative">
+          <div className="relative min-w-[180px]">
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-8 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="appearance-none bg-white border border-gray-300 rounded-lg px-4 py-2 pr-8 w-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="all">Tất cả trạng thái</option>
               <option value="active">Hoạt động</option>
@@ -206,6 +208,15 @@ function ClassManagement() {
             </select>
             <BiChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none" />
           </div>
+
+          {/* Create Class Button */}
+          <button 
+            onClick={() => setShowCreateModal(true)}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center gap-2 whitespace-nowrap"
+          >
+            <FaPlus className="w-4 h-4" />
+            Tạo lớp mới
+          </button>
         </div>
 
         {/* Class Stats */}
@@ -274,7 +285,7 @@ function ClassManagement() {
                       <h3 className="text-lg font-semibold text-gray-800 mb-1">
                         {cls.name}
                       </h3>
-                      <p className="text-sm text-gray-600">{cls.subject} - Lớp {cls.grade}</p>
+                      <p className="text-sm text-gray-600">{cls.subject}</p>
                     </div>
                     
                     <div className="flex items-center gap-2">
@@ -402,41 +413,18 @@ function ClassManagement() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Khối
-                  </label>
-                  <select
-                    name="grade"
-                    value={newClass.grade}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    <option value="">Chọn khối</option>
-                    <option value="6">Lớp 6</option>
-                    <option value="7">Lớp 7</option>
-                    <option value="8">Lớp 8</option>
-                    <option value="9">Lớp 9</option>
-                    <option value="10">Lớp 10</option>
-                    <option value="11">Lớp 11</option>
-                    <option value="12">Lớp 12</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Phòng học
-                  </label>
-                  <input
-                    type="text"
-                    name="room"
-                    value={newClass.room}
-                    onChange={handleInputChange}
-                    placeholder="Ví dụ: Phòng 201"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Phòng học
+                </label>
+                <input
+                  type="text"
+                  name="room"
+                  value={newClass.room}
+                  onChange={handleInputChange}
+                  placeholder="Ví dụ: Phòng 201"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
               </div>
 
               <div>
