@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   FiSearch, FiFilter, FiClock, FiUser, 
   FiShare2, FiSettings, FiHelpCircle, FiEdit, 
@@ -8,8 +9,8 @@ import { BsQuestionCircleFill } from 'react-icons/bs';
 
 import { BsTrophyFill } from 'react-icons/bs';
 
-// Dữ liệu giả lập cho các thẻ đề thi
-const examData = [
+// Dữ liệu giả lập ban đầu cho các thẻ đề thi
+const initialExamData = [
   {
     id: 1,
     title: 'Triết học',
@@ -38,7 +39,19 @@ const examData = [
 /**
  * Component Card cho từng đề thi
  */
-const ExamCard = ({ title, date, image, stats }) => {
+const ExamCard = ({ id, title, date, image, stats, isCreated = false }) => {
+  const navigate = useNavigate();
+
+  const handleEdit = () => {
+    if (isCreated) {
+      // Navigate to edit page for user-created exams
+      navigate(`/workspace/exams/edit/${id}`);
+    } else {
+      // For mock exams, show alert or navigate to create new
+      alert('Đây là đề thi mẫu. Bạn có thể tạo đề thi mới từ menu.');
+    }
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden transition-shadow duration-300 hover:shadow-lg">
       {/* Hình ảnh */}
@@ -79,7 +92,11 @@ const ExamCard = ({ title, date, image, stats }) => {
         <FiShare2 className="cursor-pointer hover:text-blue-600" title="Chia sẻ" />
           <FiBarChart2 className="text-blue-500 cursor-pointer hover:text-blue-600" title="Thống kê" />
           <FiTrash2 className="text-red-500 cursor-pointer hover:text-red-600" title="Xóa" />
-          <FiEdit className="text-green-500 cursor-pointer hover:text-green-600" title="Chỉnh sứa" />
+          <FiEdit 
+            className="text-green-500 cursor-pointer hover:text-green-600" 
+            title="Chỉnh sửa"
+            onClick={handleEdit}
+          />
         </div>
         
         {/* Các nút bấm chính */}
@@ -102,6 +119,63 @@ const ExamCard = ({ title, date, image, stats }) => {
  * Component trang chính chứa danh sách đề thi
  */
 export default function ExamListPage() {
+  const [examData, setExamData] = useState(initialExamData);
+
+  // Load exams from localStorage when component mounts
+  useEffect(() => {
+    const loadExamsFromStorage = () => {
+      const createdExams = [];
+      
+      // Iterate through localStorage to find exam data
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('exam_')) {
+          try {
+            const examData = JSON.parse(localStorage.getItem(key));
+            const examId = key.replace('exam_', '');
+            
+            // Create exam object for display
+            const exam = {
+              id: parseInt(examId),
+              title: examData.title || 'Đề thi không có tên',
+              date: new Date().toLocaleDateString('vi-VN'),
+              image: 'https://img.freepik.com/free-vector/hand-drawn-flat-design-stack-books_23-2149342941.jpg?w=826&t=st=1729880894~exp=1729881494~hmac=62d64917452174c139c898c692021665e317d6c66922b0704d2011703e39b9b0',
+              stats: {
+                questions: 0, // Will be updated when questions are added
+                students: 0,
+                awards: 0,
+              },
+              subject: examData.subject,
+              description: examData.description,
+              isCreated: true // Flag to identify user-created exams
+            };
+            
+            createdExams.push(exam);
+          } catch (error) {
+            console.error('Error loading exam from localStorage:', error);
+          }
+        }
+      }
+      
+      // Combine initial mock data with created exams
+      setExamData([...createdExams, ...initialExamData]);
+    };
+
+    loadExamsFromStorage();
+
+    // Listen for window focus to refresh the list (when user comes back from creating exam)
+    const handleWindowFocus = () => {
+      loadExamsFromStorage();
+    };
+
+    window.addEventListener('focus', handleWindowFocus);
+
+    // Cleanup event listener
+    return () => {
+      window.removeEventListener('focus', handleWindowFocus);
+    };
+  }, []);
+
   return (
     // Nền xám cho cả trang
     <div className="min-h-screen w-full bg-gray-100 p-10 md:p-8 mt-20">
@@ -118,7 +192,7 @@ export default function ExamListPage() {
           {/* Phần bên trái */}
           <div className="flex items-center space-x-2">
             <span className="flex items-center justify-center w-6 h-6 bg-gray-200 text-gray-700 text-sm font-bold rounded-full">
-              2
+              {examData.length}
             </span>
             <span className="text-lg font-semibold text-gray-700">Đề thi</span>
           </div>
@@ -149,10 +223,12 @@ export default function ExamListPage() {
           {examData.map((exam) => (
             <ExamCard
               key={exam.id}
+              id={exam.id}
               title={exam.title}
               date={exam.date}
               image={exam.image}
               stats={exam.stats}
+              isCreated={exam.isCreated}
             />
           ))}
         </div>

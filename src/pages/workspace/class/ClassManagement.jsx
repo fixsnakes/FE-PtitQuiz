@@ -11,7 +11,6 @@ import {
 } from 'react-icons/fa';
 import { 
   FiSearch,
-  FiFilter,
   FiMoreVertical,
   FiX
 } from 'react-icons/fi';
@@ -29,7 +28,7 @@ function ClassManagement() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [copiedClassId, setCopiedClassId] = useState(null);
   
-  // Form state for creating new class
+  // State form để tạo lớp học mới
   const [newClass, setNewClass] = useState({
     name: '',
     subject: '',
@@ -38,12 +37,12 @@ function ClassManagement() {
     section: ''
   });
 
-  // Function to get teacher name
+  // Hàm lấy tên giáo viên
   const getTeacherName = () => {
     return user?.name || user?.username || 'Giáo viên hiện tại';
   };
   
-  // Mock data for classes
+  // Dữ liệu mẫu cho các lớp học
   const [classes, setClasses] = useState([
     {
       id: 1,
@@ -53,7 +52,7 @@ function ClassManagement() {
       teacherName: getTeacherName(),
       status: 'active',
       createdDate: '2024-09-01',
-      classCode: 'TOAN12A1',
+      classCode: 'COCAILON',
       description: 'Lớp học Thiết kế kiến trúc',
       room: 'Phòng 301',
       section: 'A1'
@@ -86,7 +85,7 @@ function ClassManagement() {
     }
   ]);
 
-  // Generate a random 6-character class code
+  // Tạo mã lớp ngẫu nhiên 6 ký tự
   const generateClassCode = () => {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     let result = '';
@@ -96,7 +95,7 @@ function ClassManagement() {
     return result;
   };
 
-  // Handle form input changes
+  // Xử lý thay đổi input form
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setNewClass(prev => ({
@@ -105,7 +104,7 @@ function ClassManagement() {
     }));
   };
 
-  // Handle form submission
+  // Xử lý submit form tạo lớp học
   const handleCreateClass = (e) => {
     e.preventDefault();
     
@@ -134,7 +133,7 @@ function ClassManagement() {
     setShowCreateModal(false);
   };
 
-  // Filter classes based on search term and status
+  // Lọc lớp học dựa trên từ khóa tìm kiếm và trạng thái
   const filteredClasses = classes.filter(cls => {
     const matchesSearch = cls.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          cls.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -145,14 +144,14 @@ function ClassManagement() {
     return matchesSearch && matchesStatus;
   });
 
-  // Handle deleting a class
+  // Xử lý xóa lớp học
   const handleDeleteClass = (classId) => {
     if (window.confirm('Bạn có chắc chắn muốn xóa lớp học này?')) {
       setClasses(prev => prev.filter(cls => cls.id !== classId));
     }
   };
 
-  // Copy join URL to clipboard
+  // Sao chép URL tham gia vào clipboard
   const copyJoinUrl = (classCode) => {
     const joinUrl = `${window.location.origin}/join/${classCode}`;
     navigator.clipboard.writeText(joinUrl).then(() => {
@@ -163,7 +162,7 @@ function ClassManagement() {
 
   return (
     <div className="flex-1">
-      {/* Page Header */}
+      {/* Header trang */}
       <div className="bg-white shadow-sm border-b px-6 py-4">
         <div className="flex justify-between items-center">
           <div>
@@ -180,10 +179,10 @@ function ClassManagement() {
         </div>
       </div>
 
-      {/* Filters and Search */}
+      {/* Bộ lọc và Tìm kiếm */}
       <div className="p-6">
         <div className="flex flex-col sm:flex-row gap-4 mb-6">
-          {/* Search */}
+          {/* Tìm kiếm */}
           <div className="relative flex-1">
             <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
             <input
@@ -195,7 +194,7 @@ function ClassManagement() {
             />
           </div>
 
-          {/* Filter */}
+          {/* Bộ lọc */}
           <div className="relative min-w-[180px]">
             <select
               value={filterStatus}
@@ -209,7 +208,7 @@ function ClassManagement() {
             <BiChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5 pointer-events-none" />
           </div>
 
-          {/* Create Class Button */}
+          {/* Nút tạo lớp học */}
           <button 
             onClick={() => setShowCreateModal(true)}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center gap-2 whitespace-nowrap"
@@ -219,7 +218,7 @@ function ClassManagement() {
           </button>
         </div>
 
-        {/* Class Stats */}
+        {/* Thống kê lớp học */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <div className="bg-blue-50 p-4 rounded-lg">
             <div className="flex items-center">
@@ -274,7 +273,7 @@ function ClassManagement() {
           </div>
         </div>
 
-        {/* Classes Grid */}
+        {/* Lưới lớp học */}
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredClasses.map((cls) => (
@@ -368,7 +367,7 @@ function ClassManagement() {
         </div>
       </div>
 
-      {/* Create Class Modal */}
+      {/* Modal tạo lớp học */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">

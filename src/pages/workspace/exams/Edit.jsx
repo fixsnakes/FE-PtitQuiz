@@ -8,10 +8,7 @@ import {
 import { 
   FiUpload, 
   FiImage, 
-  FiInfo, 
-  FiUsers, 
-  FiMail,
-  FiEdit3,
+  FiInfo,
   FiSave
 } from 'react-icons/fi';
 import { 
@@ -28,9 +25,11 @@ import Navbar from '../../../components/Navbar';
 
 function EditExamPage() {
   const navigate = useNavigate();
-  const { id } = useParams(); // Get exam ID from URL
+  const { id } = useParams(); // Lấy ID đề thi từ URL
   const [activeTab, setActiveTab] = useState('basic');
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Dữ liệu đề thi
   const [examData, setExamData] = useState({
     title: '',
     subject: '',
@@ -45,6 +44,7 @@ function EditExamPage() {
     topic: ''
   });
 
+  // Danh sách câu hỏi mẫu
   const [questions, setQuestions] = useState([
     {
       id: 1,
@@ -55,19 +55,20 @@ function EditExamPage() {
       explanation: 'Đạo hàm của x² là 2x, đạo hàm của 3x là 3, đạo hàm của hằng số là 0'
     }
   ]);
-  // Load exam data when component mounts
+
+  // Tải dữ liệu đề thi khi component mount
   useEffect(() => {
     const loadExamData = () => {
       try {
         setIsLoading(true);
-        // Try to load from localStorage first (for development)
+        // Thử tải từ localStorage trước (cho development)
         const savedExam = localStorage.getItem(`exam_${id}`);
         if (savedExam) {
           const examInfo = JSON.parse(savedExam);
           setExamData(examInfo);
-          console.log('Loaded exam data from localStorage:', examInfo);
+          console.log('Đã tải dữ liệu đề thi từ localStorage:', examInfo);
         } else {
-          // If no saved data, set some defaults
+          // Nếu không có dữ liệu đã lưu, set giá trị mặc định
           setExamData(prev => ({
             ...prev,
             title: `Đề thi #${id}`,
@@ -78,10 +79,10 @@ function EditExamPage() {
             skill: 'logic',
             topic: 'basic'
           }));
-          console.log('No saved data found, using defaults');
+          console.log('Không tìm thấy dữ liệu đã lưu, sử dụng giá trị mặc định');
         }
       } catch (error) {
-        console.error('Error loading exam data:', error);
+        console.error('Lỗi khi tải dữ liệu đề thi:', error);
       } finally {
         setIsLoading(false);
       }
@@ -92,7 +93,7 @@ function EditExamPage() {
     }
   }, [id]);
 
-  // Education levels options
+  // Danh sách các trình độ học vấn
   const educationLevels = [
     'Đại học',
     'Cao học', 
@@ -104,7 +105,30 @@ function EditExamPage() {
     'Doanh nghiệp'
   ];
 
-  // Tabs configuration - All enabled in edit mode
+  // Component SelectField để render select với icon
+  const SelectField = ({ name, value, onChange, options, placeholder, required = false, errorMessage }) => (
+    <div>
+      <div className="relative">
+        <select
+          name={name}
+          value={value}
+          onChange={onChange}
+          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none"
+        >
+          <option value="">{placeholder}</option>
+          {options.map((option) => (
+            <option key={option.value} value={option.value}>{option.label}</option>
+          ))}
+        </select>
+        <BiChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+      </div>
+      {required && !value && (
+        <p className="text-red-500 text-sm mt-1">{errorMessage || 'Trường này là bắt buộc.'}</p>
+      )}
+    </div>
+  );
+
+  // Cấu hình tabs - Tất cả được bật trong chế độ chỉnh sửa
   const tabs = [
     { id: 'basic', label: 'Thông tin cơ bản' },
     { id: 'questions', label: 'Soạn câu hỏi' },
@@ -113,12 +137,14 @@ function EditExamPage() {
     { id: 'stats', label: 'Thống kê' }
   ];
 
+  // Menu sidebar
   const sidebarMenu = [
     { path: '/workspace/exams/list', label: 'Quản lý đề thi', icon: BiTask, active: false },
     { path: '/workspace/class', label: 'Quản Lý Lớp', icon: PiStudentBold, active: false },
     { path: '/settings', label: 'Cài đặt', icon: CiSettings, active: false }
   ];
 
+  // Xử lý thay đổi input
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
     setExamData(prev => ({
@@ -127,18 +153,20 @@ function EditExamPage() {
     }));
   };
 
+  // Xử lý lưu đề thi
   const handleSave = () => {
     try {
-      // Save to localStorage (in real app, this would be API call)
+      // Lưu vào localStorage (trong ứng dụng thực sẽ là API call)
       localStorage.setItem(`exam_${id}`, JSON.stringify(examData));
-      console.log('Saving exam data:', examData);
+      console.log('Đang lưu dữ liệu đề thi:', examData);
       alert('Đã lưu thay đổi thành công!');
     } catch (error) {
-      console.error('Error saving exam data:', error);
+      console.error('Lỗi khi lưu dữ liệu đề thi:', error);
       alert('Có lỗi xảy ra khi lưu dữ liệu!');
     }
   };
 
+  // Thêm câu hỏi mới
   const addQuestion = () => {
     const newQuestion = {
       id: questions.length + 1,
@@ -151,22 +179,24 @@ function EditExamPage() {
     setQuestions([...questions, newQuestion]);
   };
 
+  // Cập nhật câu hỏi
   const updateQuestion = (index, field, value) => {
     const updatedQuestions = [...questions];
     updatedQuestions[index] = { ...updatedQuestions[index], [field]: value };
     setQuestions(updatedQuestions);
   };
 
+  // Xóa câu hỏi
   const deleteQuestion = (index) => {
     setQuestions(questions.filter((_, i) => i !== index));
   };
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      {/* Navbar - Fixed at top */}
+      {/* Navbar - Cố định ở trên cùng */}
       <Navbar />
       
-      {/* Loading State */}
+      {/* Trạng thái loading */}
       {isLoading ? (
         <div className="flex-1 flex items-center justify-center ml-72">
           <div className="text-center">
@@ -202,9 +232,9 @@ function EditExamPage() {
         </nav>
       </div>
 
-      {/* Main Content */}
+      {/* Nội dung chính */}
       <div className="flex-1 ml-72 pt-20">
-        {/* Page Title */}
+        {/* Tiêu đề trang */}
         <div className="bg-white shadow-sm border-b px-6 py-4 flex justify-between items-center">
           <h1 className="text-2xl font-bold text-gray-800">Chỉnh sửa đề thi</h1>
           <div className="flex gap-3">
@@ -224,7 +254,7 @@ function EditExamPage() {
           </div>
         </div>
 
-        {/* Tab Navigation */}
+        {/* Navigation tabs */}
         <div className="bg-white border-b">
           <div className="px-6">
             <nav className="flex space-x-8">
@@ -245,13 +275,13 @@ function EditExamPage() {
           </div>
         </div>
 
-        {/* Content Area */}
+        {/* Khu vực nội dung */}
         <div className="p-6">
-          {/* Basic Information Tab */}
+          {/* Tab thông tin cơ bản */}
           {activeTab === 'basic' && (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               
-              {/* Left Column - Image Upload */}
+              {/* Cột trái - Upload ảnh */}
               <div className="lg:col-span-1">
                 <div className="bg-white rounded-lg shadow-sm border p-6">
                   <h3 className="text-lg font-semibold text-gray-800 mb-4">Ảnh đề thi</h3>
@@ -267,7 +297,7 @@ function EditExamPage() {
                     </button>
                   </div>
 
-                  {/* Sample Images */}
+                  {/* Ảnh mẫu */}
                   <div className="mt-6">
                     <p className="text-sm text-gray-600 mb-3">Chọn ảnh có sẵn:</p>
                     <div className="grid grid-cols-4 gap-2">
@@ -281,13 +311,13 @@ function EditExamPage() {
                 </div>
               </div>
 
-              {/* Middle Column - Basic Info */}
+              {/* Cột giữa - Thông tin cơ bản */}
               <div className="lg:col-span-1">
                 <div className="bg-white rounded-lg shadow-sm border p-6">
                   <h3 className="text-lg font-semibold text-gray-800 mb-4">Thông tin cơ bản</h3>
                   
                   <div className="space-y-4">
-                    {/* Title */}
+                    {/* Tên đề thi */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Tên đề thi <span className="text-red-500">*</span>
@@ -302,28 +332,113 @@ function EditExamPage() {
                       />
                     </div>
 
-                    {/* Subject */}
+                    {/* Trình độ */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Trình độ <span className="text-red-500">*</span>
                       </label>
-                      <div className="relative">
-                        <select
-                          name="subject"
-                          value={examData.subject}
-                          onChange={handleInputChange}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none"
-                        >
-                          <option value="">Chọn trình độ</option>
-                          {educationLevels.map((level) => (
-                            <option key={level} value={level}>{level}</option>
-                          ))}
-                        </select>
-                        <BiChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                      </div>
+                      <SelectField
+                        name="subject"
+                        value={examData.subject}
+                        onChange={handleInputChange}
+                        options={educationLevels.map(level => ({ value: level, label: level }))}
+                        placeholder="Chọn trình độ"
+                        required
+                      />
                     </div>
 
-                    {/* Description */}
+                    {/* Các trường bổ sung khi đã chọn trình độ */}
+                    {examData.subject && (
+                      <>
+                        {/* Trường học */}
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Trường học <span className="text-red-500">*</span>
+                          </label>
+                          <SelectField
+                            name="school"
+                            value={examData.school}
+                            onChange={handleInputChange}
+                            options={[
+                              { value: 'ptit', label: 'Học viện Công nghệ Bưu chính Viễn thông' },
+                              { value: 'hust', label: 'Đại học Bách khoa Hà Nội' },
+                              { value: 'other', label: 'Khác' }
+                            ]}
+                            placeholder="Chọn trường học"
+                            required
+                          />
+                        </div>
+
+                        {/* Chuyên ngành */}
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Chuyên ngành</label>
+                          <SelectField
+                            name="major"
+                            value={examData.major}
+                            onChange={handleInputChange}
+                            options={[
+                              { value: 'cntt', label: 'Công nghệ thông tin' },
+                              { value: 'dtvt', label: 'Điện tử viễn thông' },
+                              { value: 'other', label: 'Khác' }
+                            ]}
+                            placeholder="Chọn chuyên ngành"
+                          />
+                        </div>
+
+                        {/* Môn học */}
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Môn học</label>
+                          <SelectField
+                            name="subject_detail"
+                            value={examData.subject_detail}
+                            onChange={handleInputChange}
+                            options={[
+                              { value: 'toan', label: 'Toán học' },
+                              { value: 'ly', label: 'Vật lý' },
+                              { value: 'hoa', label: 'Hóa học' },
+                              { value: 'other', label: 'Khác' }
+                            ]}
+                            placeholder="Chọn môn học"
+                          />
+                        </div>
+
+                        {/* Kỹ năng */}
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Kỹ năng</label>
+                          <SelectField
+                            name="skill"
+                            value={examData.skill}
+                            onChange={handleInputChange}
+                            options={[
+                              { value: 'logic', label: 'Tư duy logic' },
+                              { value: 'memory', label: 'Ghi nhớ' },
+                              { value: 'analysis', label: 'Phân tích' },
+                              { value: 'other', label: 'Khác' }
+                            ]}
+                            placeholder="Chọn kỹ năng"
+                          />
+                        </div>
+
+                        {/* Chủ đề */}
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Chủ đề</label>
+                          <SelectField
+                            name="topic"
+                            value={examData.topic}
+                            onChange={handleInputChange}
+                            options={[
+                              { value: 'basic', label: 'Cơ bản' },
+                              { value: 'advanced', label: 'Nâng cao' },
+                              { value: 'practice', label: 'Thực hành' },
+                              { value: 'other', label: 'Khác' }
+                            ]}
+                            placeholder="Chọn chủ đề"
+                          />
+                        </div>
+                      </>
+                    )}
+
+                    {/* Mô tả */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Mô tả
@@ -341,13 +456,13 @@ function EditExamPage() {
                 </div>
               </div>
 
-              {/* Right Column - Access Settings */}
+              {/* Cột phải - Cài đặt truy cập */}
               <div className="lg:col-span-1">
                 <div className="bg-white rounded-lg shadow-sm border p-6">
                   <h3 className="text-lg font-semibold text-gray-800 mb-4">Cấu hình truy cập</h3>
                   
                   <div className="space-y-6">
-                    {/* Access Level Info */}
+                    {/* Thông tin cấp độ truy cập */}
                     <div className="bg-blue-50 p-4 rounded-lg">
                       <div className="flex items-start gap-3">
                         <FiInfo className="text-blue-600 mt-0.5 flex-shrink-0" />
@@ -357,7 +472,7 @@ function EditExamPage() {
                       </div>
                     </div>
 
-                    {/* Privacy Settings */}
+                    {/* Cài đặt riêng tư */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-3">
                         Phạm vi chia sẻ <span className="text-red-500">*</span>
@@ -382,7 +497,7 @@ function EditExamPage() {
                       </div>
                     </div>
 
-                    {/* Password Protection */}
+                    {/* Bảo vệ bằng mật khẩu */}
                     <div>
                       <label className="flex items-center gap-3 cursor-pointer">
                         <input
@@ -401,7 +516,7 @@ function EditExamPage() {
             </div>
           )}
 
-          {/* Questions Tab */}
+          {/* Tab câu hỏi */}
           {activeTab === 'questions' && (
             <div className="space-y-6">
               <div className="flex justify-between items-center">
@@ -428,7 +543,7 @@ function EditExamPage() {
                   </div>
 
                   <div className="space-y-4">
-                    {/* Question Text */}
+                    {/* Nội dung câu hỏi */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Nội dung câu hỏi
@@ -442,7 +557,7 @@ function EditExamPage() {
                       />
                     </div>
 
-                    {/* Options */}
+                    {/* Các lựa chọn */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Các lựa chọn
@@ -473,7 +588,7 @@ function EditExamPage() {
                       </div>
                     </div>
 
-                    {/* Explanation */}
+                    {/* Giải thích đáp án */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
                         Giải thích đáp án
@@ -492,7 +607,7 @@ function EditExamPage() {
             </div>
           )}
 
-          {/* Other tabs placeholder */}
+          {/* Các tab khác placeholder */}
           {!['basic', 'questions'].includes(activeTab) && (
             <div className="bg-white rounded-lg shadow-sm border p-6">
               <div className="text-center py-12">
