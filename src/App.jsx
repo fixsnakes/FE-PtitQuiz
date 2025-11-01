@@ -31,7 +31,7 @@ function App() {
           <Route path="/workspace/exams/list" element={<ExamListPage />} />
           <Route path="/workspace/exams/create-with-text" element={<CreateExamPage />} />
           <Route path="/workspace/class" element={<ClassManagement />} />
-          
+          <Route path="/workspace/exams/new" element={<NewExamPage />} />
         </Route>
         
 

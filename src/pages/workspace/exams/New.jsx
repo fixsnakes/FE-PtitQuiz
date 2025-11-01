@@ -46,11 +46,7 @@ function NewExamPage() {
   ];
 
   // Menu sidebar
-  const sidebarMenu = [
-    { path: '/workspace/exams/list', label: 'Quản lý đề thi', icon: BiTask },
-    { path: '/workspace/class', label: 'Quản lý lớp', icon: PiStudentBold },
-    { path: '/settings', label: 'Cài đặt', icon: CiSettings }
-  ];
+ 
 
   // Xử lý thay đổi input
   const handleInputChange = (e) => {
@@ -137,35 +133,12 @@ function NewExamPage() {
 
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <Navbar />
+     
       
-      {/* Sidebar */}
-      <div className="w-72 min-h-screen bg-white shadow-md flex flex-col justify-start items-center border-r border-gray-100 fixed top-0 z-0 pt-20 p-3">
-        {/* Logo */}
-        <div className="flex justify-center items-center gap-2 mb-20 mt-1">
-          <FaGraduationCap className="text-blue-600 text-5xl" />
-          <Link to="/" className="text-2xl font-bold bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">
-            PTIT Quiz
-          </Link>
-        </div>
-
-        {/* Navigation */}
-        <nav className="space-y-2">
-          {sidebarMenu.map((item) => (
-            <Link
-              key={item.path}
-              to={item.path}
-              className="flex items-center gap-2 px-4 py-2 text-gray-700 rounded-lg font-semibold text-lg hover:bg-gray-100"
-            >
-              <item.icon className="w-5 h-5" />
-              <span>{item.label}</span>
-            </Link>
-          ))}
-        </nav>
-      </div>
+   
 
       {/* Nội dung chính */}
-      <div className="flex-1 ml-72 pt-20 relative z-10">
+      <div className="flex-1 pt-20 relative z-10">
         {/* Tiêu đề trang */}
         <div className="bg-white shadow-sm border-b px-6 py-4 flex justify-between items-center">
           <h1 className="text-2xl font-bold text-gray-800">Tạo đề thi mới</h1>

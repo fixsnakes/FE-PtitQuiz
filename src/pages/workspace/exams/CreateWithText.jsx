@@ -259,7 +259,7 @@ const ClassMultiSelect = ({ options, selectedValues, onChange }) => {
         multiple
         value={selectedValues}
         onChange={handleSelectChange}
-        className="w-full rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 px-3 py-2 bg-white text-sm min-h-[3rem]"
+        className="w-full rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 px-3 py-2 bg-white text-sm min-h-12"
         size={Math.min(8, Math.max(3, options.length))}
       >
         {options.map((cls) => (
