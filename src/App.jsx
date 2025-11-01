@@ -10,6 +10,7 @@ import NewExamPage from "./pages/workspace/exams/New";
 import EditExamPage from "./pages/workspace/exams/Edit";
 import ClassManagement from "./pages/workspace/class/ClassManagement";
 import QuizTakingPage from "./pages/quiz/exam/QuizTaking";
+import ExamDetailPage from "./pages/quiz/QuizDetail";
 function App() {
   return (
     <AuthProvider>
@@ -32,36 +33,20 @@ function App() {
           <Route path="/workspace/class" element={<ClassManagement />} />
           
         </Route>
-
-        <Route path="/quizz/:id" element={<QuizTakingPage />} />
         
-        {/* New Exam Creation Page - has its own layout */}
-        <Route 
-          path="/workspace/exams/new" 
-          element={
-            <ProtectedRoute>
-              <NewExamPage />
-            </ProtectedRoute>
-          } 
-        />
 
-        {/* Edit Exam Page - has its own layout */}
-        <Route 
-          path="/workspace/exams/edit/:id" 
-          element={
-            <ProtectedRoute>
-              <EditExamPage />
-            </ProtectedRoute>
-          } 
-        />
+        <Route path="/quiz/test/:id" element={<QuizTakingPage />} />
+        <Route path="/quiz/:id" element={<ExamDetailPage />} />
 
-   
+        
 
         {/* 404 page */}
         <Route
           path="*"
           element={<h1 className="text-center mt-10 text-red-500">404 - Not Found</h1>}
         />
+
+        <Route path="/" element={<Navigate to="/auth/login" replace />} />
       </Routes>
     </AuthProvider>
   );

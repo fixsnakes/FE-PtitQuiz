@@ -25,6 +25,7 @@ export default function Navbar() {
     <> {/* <-- 3. BỌC MỌI THỨ TRONG React.Fragment (<>) */}
       <nav className="flex items-center justify-end p-5 bg-white shadow-2xs fixed top-0 left-0 right-0 z-10"> {/* Thêm z-40 để modal (z-50) đè lên */}
         
+
         {/* ... Code "Bạn chưa đăng nhập" ... */}
         {!isLoggedIn && (
           <div className="flex items-center gap-4">
@@ -47,13 +48,29 @@ export default function Navbar() {
               <FaBug />
               Báo lỗi
             </button>
-            <button
-              onClick={openModal} // <-- 4. THÊM SỰ KIỆN onClick
-              className="flex items-center gap-2 px-4 py-2 rounded-lg bg-linear-to-r from-blue-500 to-purple-500 text-white text-sm font-medium hover:opacity-90 transition-transform hover:scale-105"
-            >
-              <FaPlus />
-              Tạo đề thi
-            </button>
+
+            {user.role === 'teacher' ? (
+
+              <button
+                onClick={openModal} // <-- 4. THÊM SỰ KIỆN onClick
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-linear-to-r from-blue-500 to-purple-500 text-white text-sm font-medium hover:opacity-90 transition-transform hover:scale-105"
+              >
+                <FaPlus />
+                Tạo đề thi
+              </button>
+
+            ) : (
+                <button
+                onClick={openModal} // <-- 4. THÊM SỰ KIỆN onClick
+                className="flex items-center gap-2 px-4 py-2 rounded-lg bg-linear-to-r from-blue-500 to-purple-500 text-white text-sm font-medium hover:opacity-90 transition-transform hover:scale-105"
+              >
+                <FaPlus />
+                Trở về trang chủ
+              </button>
+            )
+            
+            }
+           
             <div className="w-9 h-9 rounded-full overflow-hidden border border-gray-300 cursor-pointer hover:scale-105 transition-transform">
               <img
                 src="https://cdn-icons-png.flaticon.com/512/201/201818.png"
