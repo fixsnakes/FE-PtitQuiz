@@ -6,6 +6,9 @@ import Login from "./pages/auth/Login";
 import SignUp from "./pages/auth/SignUp";
 import ExamListPage from "./pages/workspace/exams/List";
 import CreateExamPage from "./pages/workspace/exams/CreateWithText";
+import NewExamPage from "./pages/workspace/exams/New";
+import EditExamPage from "./pages/workspace/exams/Edit";
+import ClassManagement from "./pages/workspace/class/ClassManagement";
 import QuizTakingPage from "./pages/quiz/exam/QuizTaking";
 import ExamDetailPage from "./pages/quiz/QuizDetail";
 function App() {
@@ -27,6 +30,7 @@ function App() {
         >
           <Route path="/workspace/exams/list" element={<ExamListPage />} />
           <Route path="/workspace/exams/create-with-text" element={<CreateExamPage />} />
+          <Route path="/workspace/class" element={<ClassManagement />} />
           
         </Route>
         
