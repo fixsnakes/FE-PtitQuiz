@@ -8,7 +8,7 @@ import ExamListPage from "./pages/workspace/exams/List";
 import CreateExamPage from "./pages/workspace/exams/CreateWithText";
 import NewExamPage from "./pages/workspace/exams/New";
 import EditExamPage from "./pages/workspace/exams/Edit";
-import ClassManagement from "./pages/workspace/class/ClassManagement";
+import ClassManagement from "./pages/workspace/classExam/ClassStudent";
 import QuizTakingPage from "./pages/quiz/exam/QuizTaking";
 import ExamDetailPage from "./pages/quiz/QuizDetail";
 function App() {

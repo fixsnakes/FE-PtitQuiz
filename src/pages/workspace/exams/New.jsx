@@ -135,7 +135,6 @@ function NewExamPage() {
     <div className="flex min-h-screen bg-gray-50">
      
       
-   
 
       {/* Nội dung chính */}
       <div className="flex-1 pt-20 relative z-10">
