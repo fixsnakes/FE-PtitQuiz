@@ -200,7 +200,7 @@ function EditExamPage() {
       ) : (
         <>
       {/* Nội dung chính */}
-      <div className="flex-1 ml-72 pt-20">
+      <div className="flex-1 pt-20">
         {/* Tiêu đề trang */}
         <div className="bg-white shadow-sm border-b px-6 py-4 flex justify-between items-center">
           <h1 className="text-2xl font-bold text-gray-800">Chỉnh sửa đề thi</h1>
