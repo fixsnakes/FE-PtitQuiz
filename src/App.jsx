@@ -1,37 +1,47 @@
-import { Routes, Route, Navigate } from "react-router-dom";
-import DashboardLayout from "./layouts/DashboardLayout";
+import { Routes, Route } from "react-router-dom";
 import Login from "./pages/auth/Login";
 import SignUp from "./pages/auth/SignUp";
+import TeacherDashboard from "./pages/dashboard/TeacherDashboard";
+import StudentDashboard from "./pages/dashboard/StudentDashboard";
+import ProtectedRoute from "./components/ProtectedRoute";
+import RoleRedirect from "./components/RoleRedirect";
+
 function App() {
   return (
-    <AuthProvider>
-      <Routes>
-        {/* Public routes */}
-        <Route path="/auth/login" element={<Login />} />
-        <Route path="/auth/register" element={<SignUp />} />
+    <Routes>
+      {/* Auth routes */}
+      <Route path="/auth/login" element={<Login />} />
+      <Route path="/auth/register" element={<SignUp />} />
 
-        {/* Protected routes */}
-        <Route
-          path="/"
-          element={
-            <ProtectedRoute>
-              <DashboardLayout />
-            </ProtectedRoute>
-          }
-        >
-      
-        </Route>
-        
-        
-        {/* 404 page */}
-        <Route
-          path="*"
-          element={<h1 className="text-center mt-10 text-red-500">404 - Not Found</h1>}
-        />
+      {/* Dashboard routes */}
+      <Route
+        path="/dashboard/teacher"
+        element={
+          <ProtectedRoute allowedRoles={["teacher"]}>
+            <TeacherDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dashboard/student"
+        element={
+          <ProtectedRoute allowedRoles={["student"]}>
+            <StudentDashboard />
+          </ProtectedRoute>
+        }
+      />
 
-        <Route path="/" element={<Navigate to="/auth/login" replace />} />
-      </Routes>
-    </AuthProvider>
+      {/* Root redirect based on role */}
+      <Route path="/" element={<RoleRedirect />} />
+
+      {/* 404 */}
+      <Route
+        path="*"
+        element={
+          <h1 className="mt-10 text-center text-red-500">404 - Not Found</h1>
+        }
+      />
+    </Routes>
   );
 }
 

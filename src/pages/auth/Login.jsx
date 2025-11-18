@@ -1,32 +1,58 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import left_image from "../../assets/undraw_true-friends_1h3v.png";
 import { FaGoogle } from "react-icons/fa";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "../../contexts/AuthProvider";
+import { signin } from "../../services/authService";
 
 export default function Login() {
-  const { user, login } = useAuth();
   const navigate = useNavigate();
-
-  //Đảm bảo useEffect không làm quá trình render bị gọi lại liên tục
-  useEffect(() => {
-    if (user) {
-      if(user.role === "teacher")
-      navigate("/workspace/exams/list"); // Điều hướng nếu đã đăng nhập
-    }
-  }, [user, navigate]); // Chạy lại khi `user` thay đổi
-
-  // state form
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState("");
 
-  const handleLogin = (e) => {
-    e.preventDefault();
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    setError("");
+    setSuccessMessage("");
 
+    if (!email || !password) {
+      setError("Vui lòng nhập đầy đủ email và mật khẩu.");
+      return;
+    }
 
-    login(userData); 
+    setLoading(true);
+    try {
+      const response = await signin({ email, password });
+      localStorage.setItem("accessToken", response.accessToken);
+      localStorage.setItem(
+        "currentUser",
+        JSON.stringify({
+          id: response.id,
+          fullName: response.fullName,
+          email: response.email,
+          role: response.role,
+        })
+      );
+      const targetPath =
+        response.role === "teacher"
+          ? "/dashboard/teacher"
+          : "/dashboard/student";
+
+      setSuccessMessage("Đăng nhập thành công.");
+      setTimeout(() => navigate(targetPath, { replace: true }), 500);
+    } catch (apiError) {
+      const message =
+        apiError.body?.message ||
+        apiError.message ||
+        "Đăng nhập thất bại. Vui lòng thử lại.";
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -44,7 +70,10 @@ export default function Login() {
           </h1>
 
           {/* Nút Google */}
-          <button className="flex items-center justify-center w-full px-4 py-3 font-semibold text-white bg-linear-to-r from-blue-500 to-purple-600 rounded-lg shadow-md hover:scale-105 transition-transform">
+          <button
+            type="button"
+            className="flex items-center justify-center w-full px-4 py-3 font-semibold text-white bg-linear-to-r from-blue-500 to-purple-600 rounded-lg shadow-md hover:scale-105 transition-transform"
+          >
             <FaGoogle className="w-6 h-6 mr-3" />
             <span>Đăng nhập bằng Google</span>
           </button>
@@ -59,7 +88,7 @@ export default function Login() {
           </div>
 
           {/* Form đăng nhập */}
-          <form onSubmit={handleLogin} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label
                 htmlFor="email"
@@ -119,11 +148,24 @@ export default function Login() {
               </a>
             </div>
 
+            {error && (
+              <p className="text-sm text-red-500" role="alert">
+                {error}
+              </p>
+            )}
+
+            {successMessage && (
+              <p className="text-sm text-green-600" role="status">
+                {successMessage}
+              </p>
+            )}
+
             <button
               type="submit"
-              className="w-full px-4 py-3 font-bold text-white bg-linear-to-r from-blue-400 to-purple-500 rounded-lg shadow-md hover:opacity-90 transition-transform transform hover:scale-105"
+              disabled={loading}
+              className="w-full px-4 py-3 font-bold text-white bg-linear-to-r from-blue-400 to-purple-500 rounded-lg shadow-md hover:opacity-90 transition-transform transform hover:scale-105 disabled:opacity-70 disabled:cursor-not-allowed"
             >
-              Đăng nhập
+              {loading ? "Đang xử lý..." : "Đăng nhập"}
             </button>
           </form>
         </div>
