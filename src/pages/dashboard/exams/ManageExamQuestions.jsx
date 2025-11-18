@@ -705,9 +705,18 @@ export default function ManageExamQuestions() {
               </p>
             )}
           </div>
-          <div className="rounded-2xl border border-indigo-100 bg-indigo-50 px-4 py-3 text-sm text-indigo-700">
-            Sử dụng các API trong tài liệu `exams.md` và `questions.md` để đồng
-            bộ với backend.
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={() => navigate(`/dashboard/teacher/exams/${examId}/questions`)}
+              className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
+            >
+              <FiArrowLeft />
+              Chọn phương thức khác
+            </button>
+            <div className="rounded-2xl border border-indigo-100 bg-indigo-50 px-4 py-3 text-sm text-indigo-700">
+              Trình soạn thảo - Tạo và chỉnh sửa câu hỏi thủ công
+            </div>
           </div>
         </header>
 

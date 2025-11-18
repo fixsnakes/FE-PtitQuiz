@@ -10,6 +10,8 @@ import CreateClass from "./pages/dashboard/classes/CreateClass";
 import ClassDetail from "./pages/dashboard/classes/ClassDetail";
 import ExamListPage from "./pages/dashboard/exams/ExamList";
 import CreateExamPage from "./pages/dashboard/exams/CreateExam";
+import QuestionMethodSelector from "./pages/dashboard/exams/QuestionMethodSelector";
+import AddQuestionsByText from "./pages/dashboard/exams/AddQuestionsByText";
 import ManageExamQuestions from "./pages/dashboard/exams/ManageExamQuestions";
 
 function App() {
@@ -86,6 +88,22 @@ function App() {
       />
       <Route
         path="/dashboard/teacher/exams/:examId/questions"
+        element={
+          <ProtectedRoute allowedRoles={["teacher"]}>
+            <QuestionMethodSelector />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dashboard/teacher/exams/:examId/questions/text"
+        element={
+          <ProtectedRoute allowedRoles={["teacher"]}>
+            <AddQuestionsByText />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dashboard/teacher/exams/:examId/questions/editor"
         element={
           <ProtectedRoute allowedRoles={["teacher"]}>
             <ManageExamQuestions />
