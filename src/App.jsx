@@ -1,10 +1,13 @@
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/auth/Login";
 import SignUp from "./pages/auth/SignUp";
 import TeacherDashboard from "./pages/dashboard/TeacherDashboard";
 import StudentDashboard from "./pages/dashboard/StudentDashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
 import RoleRedirect from "./components/RoleRedirect";
+import TeacherClasses from "./pages/dashboard/classes/TeacherClasses";
+import CreateClass from "./pages/dashboard/classes/CreateClass";
+import ClassDetail from "./pages/dashboard/classes/ClassDetail";
 
 function App() {
   return (
@@ -19,6 +22,46 @@ function App() {
         element={
           <ProtectedRoute allowedRoles={["teacher"]}>
             <TeacherDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dashboard/teacher/classes"
+        element={<Navigate to="/teacher/classes" replace />}
+      />
+      <Route
+        path="/teacher/classes"
+        element={
+          <ProtectedRoute allowedRoles={["teacher"]}>
+            <TeacherClasses />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dashboard/teacher/classes/create"
+        element={<Navigate to="/teacher/classes/create" replace />}
+      />
+      <Route
+        path="/teacher/classes/create"
+        element={
+          <ProtectedRoute allowedRoles={["teacher"]}>
+            <CreateClass />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dashboard/teacher/classes/:classId"
+        element={
+          <ProtectedRoute allowedRoles={["teacher"]}>
+            <ClassDetail />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/teacher/classes/:classId"
+        element={
+          <ProtectedRoute allowedRoles={["teacher"]}>
+            <ClassDetail />
           </ProtectedRoute>
         }
       />

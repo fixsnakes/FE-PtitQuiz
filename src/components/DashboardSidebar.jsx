@@ -6,7 +6,7 @@ const SIDEBAR_ITEMS = {
     { label: "Tổng quan", path: "/dashboard/teacher" },
     { label: "Kỳ thi", path: "/dashboard/teacher/exams" },
     { label: "Ngân hàng câu hỏi", path: "/dashboard/teacher/questions" },
-    { label: "Lớp học", path: "/dashboard/teacher/classes" },
+    { label: "Lớp học", path: "/teacher/classes" },
     { label: "Thông báo", path: "/dashboard/teacher/notifications" },
   ],
   student: [

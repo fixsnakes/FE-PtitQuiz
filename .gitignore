@@ -13,6 +13,7 @@ dist-ssr
 *.local
 .env
 apidesign
+design_fe.md
 
 # Editor directories and files
 .vscode/*

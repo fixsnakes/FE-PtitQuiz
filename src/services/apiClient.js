@@ -6,11 +6,21 @@ const defaultHeaders = {
   "Content-Type": "application/json",
 };
 
+function getAuthHeaders() {
+  try {
+    const token = localStorage.getItem("accessToken");
+    return token ? { Authorization: `Bearer ${token}` } : {};
+  } catch {
+    return {};
+  }
+}
+
 async function request(path, options = {}) {
   const url = `${API_BASE_URL}${path}`;
   const response = await fetch(url, {
     headers: {
       ...defaultHeaders,
+      ...getAuthHeaders(),
       ...options.headers,
     },
     ...options,
