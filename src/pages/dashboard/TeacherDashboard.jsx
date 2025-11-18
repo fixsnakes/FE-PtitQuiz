@@ -5,7 +5,7 @@ export default function TeacherDashboard() {
   return (
     <DashboardLayout role="teacher">
       <div className="space-y-6">
-        <section className="rounded-2xl border border-dashed border-indigo-200 bg-white p-6 shadow-sm">
+        {/* <section className="rounded-2xl border border-dashed border-indigo-200 bg-white p-6 shadow-sm">
           <h1 className="text-3xl font-bold text-slate-900">
             Chào mừng trở lại, cô/thầy!
           </h1>
@@ -14,7 +14,7 @@ export default function TeacherDashboard() {
             thi, câu hỏi và lớp học sẽ xuất hiện tại đây trong các phiên bản
             tiếp theo.
           </p>
-        </section>
+        </section> */}
 
         <section className="grid gap-4 md:grid-cols-3">
           <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -46,9 +46,7 @@ export default function TeacherDashboard() {
           <h2 className="text-xl font-semibold text-slate-900">
             Gợi ý thao tác nhanh
           </h2>
-          <p className="text-slate-600">
-            Những nút dưới đây chỉ mang tính mô tả để minh hoạ tính năng.
-          </p>
+         
           <div className="mt-4 flex flex-wrap gap-3">
             <button className="rounded-lg border border-indigo-200 px-4 py-2 text-indigo-600 transition hover:bg-indigo-50">
               + Tạo kỳ thi mới

@@ -21,7 +21,8 @@ import {
 const PAGE_SIZE = 10;
 
 function normalizeClassDetail(payload) {
-  const classInfo = payload?.class || payload?.classInfo || payload?.data || {};
+  const classInfo =
+    payload?.class || payload?.classInfo || payload?.data || payload || {};
   const students = Array.isArray(payload?.students)
     ? payload.students
     : Array.isArray(payload?.data?.students)
@@ -325,9 +326,7 @@ export default function ClassDetail() {
               <h1 className="mt-3 text-3xl font-bold text-slate-900">
                 {classInfo?.className || "Chi tiết lớp học"}
               </h1>
-              <p className="text-sm text-slate-500">
-                Theo dõi học sinh, bài đăng và đề thi của lớp.
-              </p>
+              
             </div>
 
             <div className="flex flex-wrap gap-3">

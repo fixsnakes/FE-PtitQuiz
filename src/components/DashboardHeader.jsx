@@ -1,4 +1,5 @@
 import React from "react";
+import { FiUser } from "react-icons/fi";
 
 export default function DashboardHeader({ role = "student", onLogout }) {
   return (
@@ -20,6 +21,12 @@ export default function DashboardHeader({ role = "student", onLogout }) {
         </button>
         <button className="rounded-full bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-500">
           + Tạo mới
+        </button>
+        <button
+          className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-slate-200 bg-white text-slate-600 shadow-sm hover:bg-slate-50"
+          aria-label="Hồ sơ cá nhân"
+        >
+          <FiUser className="text-lg" />
         </button>
         <button
           onClick={onLogout}
