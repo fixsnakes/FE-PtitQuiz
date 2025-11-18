@@ -213,6 +213,7 @@ export default function ManageExamQuestions() {
     createDefaultFormState("multiple_choice")
   );
   const [updating, setUpdating] = useState(false);
+  const [selectedQuestionId, setSelectedQuestionId] = useState(null);
 
   useEffect(() => {
     if (!examId) return;
@@ -253,7 +254,12 @@ export default function ManageExamQuestions() {
     setLoadingQuestions(true);
     try {
       const response = await listQuestions({ examId });
-      setQuestions(response.map(normalizeQuestion).filter(Boolean));
+      const normalized = response.map(normalizeQuestion).filter(Boolean);
+      setQuestions(normalized);
+      // Tự động chọn câu hỏi đầu tiên khi load xong
+      if (normalized.length > 0 && selectedQuestionId === null) {
+        setSelectedQuestionId(normalized[0].id);
+      }
     } catch (err) {
       setError(
         err?.body?.message ||
@@ -334,10 +340,22 @@ export default function ManageExamQuestions() {
         exam_id: examId,
         order: sortedQuestions.length + 1,
       });
-      await createQuestionApi(payload);
+      const response = await createQuestionApi(payload);
+      const newQuestionId =
+        response?.id ?? response?.question_id ?? response?.data?.id ?? null;
       setMessage("Đã thêm câu hỏi mới.");
       resetForm();
-      fetchQuestions();
+      await fetchQuestions();
+      // Tự động chọn câu hỏi mới sau khi tạo
+      if (newQuestionId) {
+        setTimeout(() => {
+          setSelectedQuestionId(newQuestionId);
+          const element = document.getElementById(`question-${newQuestionId}`);
+          if (element) {
+            element.scrollIntoView({ behavior: "smooth", block: "center" });
+          }
+        }, 200);
+      }
     } catch (err) {
       setError(err?.body?.message || err?.message || "Không thể tạo câu hỏi.");
     } finally {
@@ -347,6 +365,7 @@ export default function ManageExamQuestions() {
 
   const startEdit = (question) => {
     setEditingQuestionId(question.id);
+    setSelectedQuestionId(question.id);
     setEditForm({
       question_text: question.question_text,
       type: question.type,
@@ -364,6 +383,7 @@ export default function ManageExamQuestions() {
 
   const cancelEdit = () => {
     setEditingQuestionId(null);
+    setSelectedQuestionId(null);
     setEditForm(createDefaultFormState());
   };
 
@@ -375,8 +395,13 @@ export default function ManageExamQuestions() {
       const payload = buildPayloadFromForm(editForm);
       await updateQuestionApi(editingQuestionId, payload);
       setMessage("Đã cập nhật câu hỏi.");
+      const currentSelectedId = editingQuestionId;
       cancelEdit();
       fetchQuestions();
+      // Giữ lại selection sau khi update
+      setTimeout(() => {
+        setSelectedQuestionId(currentSelectedId);
+      }, 100);
     } catch (err) {
       setError(err?.body?.message || err?.message || "Không thể cập nhật.");
     } finally {
@@ -389,6 +414,9 @@ export default function ManageExamQuestions() {
     try {
       await deleteQuestionApi(questionId);
       setMessage("Đã xóa câu hỏi.");
+      if (selectedQuestionId === questionId) {
+        setSelectedQuestionId(null);
+      }
       fetchQuestions();
     } catch (err) {
       setError(err?.body?.message || err?.message || "Không thể xóa câu hỏi.");
@@ -403,18 +431,36 @@ export default function ManageExamQuestions() {
     const targetIndex = currentIndex + direction;
     if (targetIndex < 0 || targetIndex >= sortedQuestions.length) return;
 
+    // Giữ lại selection nếu câu hỏi đang được chọn
+    const wasSelected = selectedQuestionId === question.id;
+
+    // Tạo mảng mới với order đã cập nhật ngay lập tức
     const nextOrder = [...sortedQuestions];
     const [removed] = nextOrder.splice(currentIndex, 1);
     nextOrder.splice(targetIndex, 0, removed);
 
-    setQuestions(nextOrder);
+    // Cập nhật order cho từng câu hỏi ngay lập tức
+    const updatedQuestions = nextOrder.map((item, index) => ({
+      ...item,
+      order: index + 1,
+    }));
+
+    // Cập nhật state ngay lập tức để UI phản hồi ngay
+    setQuestions(updatedQuestions);
+    
+    // Giữ lại selection sau khi di chuyển
+    if (wasSelected) {
+      setSelectedQuestionId(question.id);
+    }
+    
     setReorderLoading(true);
+    
     try {
       await reorderQuestionsApi(
         examId,
-        nextOrder.map((item, index) => ({
+        updatedQuestions.map((item) => ({
           question_id: item.id,
-          order: index + 1,
+          order: item.order,
         }))
       );
       setMessage("Đã cập nhật thứ tự câu hỏi.");
@@ -422,6 +468,7 @@ export default function ManageExamQuestions() {
       setError(
         err?.body?.message || err?.message || "Không thể sắp xếp câu hỏi."
       );
+      // Nếu API thất bại, reload lại từ server
       fetchQuestions();
     } finally {
       setReorderLoading(false);
@@ -430,8 +477,18 @@ export default function ManageExamQuestions() {
 
   const renderQuestionCard = (question) => {
     const isEditing = editingQuestionId === question.id;
+    const isSelected = selectedQuestionId === question.id;
     return (
-      <div key={question.id} className="rounded-2xl border bg-white p-5 shadow-sm">
+      <div
+        id={`question-${question.id}`}
+        key={`${question.id}-${question.order}`}
+        className={`rounded-2xl border bg-white p-5 shadow-sm transition-all duration-300 ease-in-out ${
+          isSelected && !isEditing ? "ring-2 ring-indigo-300 border-indigo-400" : ""
+        }`}
+        style={{
+          transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+        }}
+      >
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">
@@ -449,18 +506,18 @@ export default function ManageExamQuestions() {
             <button
               type="button"
               onClick={() => handleMoveQuestion(question, -1)}
-              disabled={reorderLoading}
-              className="inline-flex items-center gap-1 rounded-full border border-slate-200 px-3 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50"
+              disabled={reorderLoading || sortedQuestions.findIndex((item) => item.id === question.id) === 0}
+              className="inline-flex items-center gap-1 rounded-full border border-slate-200 px-3 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
             >
-              <FiArrowUp /> Lên
+              {reorderLoading ? <FiLoader className="animate-spin" /> : <FiArrowUp />} Lên
             </button>
             <button
               type="button"
               onClick={() => handleMoveQuestion(question, 1)}
-              disabled={reorderLoading}
-              className="inline-flex items-center gap-1 rounded-full border border-slate-200 px-3 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50"
+              disabled={reorderLoading || sortedQuestions.findIndex((item) => item.id === question.id) === sortedQuestions.length - 1}
+              className="inline-flex items-center gap-1 rounded-full border border-slate-200 px-3 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
             >
-              <FiArrowDown /> Xuống
+              {reorderLoading ? <FiLoader className="animate-spin" /> : <FiArrowDown />} Xuống
             </button>
             <button
               type="button"
@@ -731,39 +788,86 @@ export default function ManageExamQuestions() {
           </div>
         )}
 
-        {renderForm()}
-
-        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">
-                Danh sách câu hỏi
-              </p>
-              <h2 className="mt-1 text-xl font-semibold text-slate-900">
-                {sortedQuestions.length} câu hỏi
-              </h2>
-            </div>
-            <div className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600">
-              <FiSave /> Thay đổi được lưu qua API
-            </div>
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          {/* Cột trái: Form tạo câu hỏi */}
+          <div className="space-y-6">
+            {renderForm()}
           </div>
 
-          {loadingQuestions ? (
-            <div className="flex items-center gap-2 py-10 text-slate-500">
-              <FiLoader className="animate-spin" />
-              Đang tải câu hỏi...
-            </div>
-          ) : sortedQuestions.length === 0 ? (
-            <div className="py-10 text-center text-slate-500">
-              Chưa có câu hỏi nào cho đề này. Hãy sử dụng biểu mẫu bên trên để
-              thêm câu hỏi đầu tiên.
-            </div>
-          ) : (
-            <div className="mt-6 space-y-4">
-              {sortedQuestions.map((question) => renderQuestionCard(question))}
-            </div>
-          )}
-        </section>
+          {/* Cột phải: Danh sách ô số và chi tiết câu hỏi */}
+          <div className="sticky top-6 space-y-6">
+            <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">
+                    Danh sách câu hỏi
+                  </p>
+                  <h2 className="mt-1 text-xl font-semibold text-slate-900">
+                    {sortedQuestions.length} câu hỏi
+                  </h2>
+                </div>
+              </div>
+
+              {loadingQuestions ? (
+                <div className="flex items-center gap-2 py-10 text-slate-500">
+                  <FiLoader className="animate-spin" />
+                  Đang tải câu hỏi...
+                </div>
+              ) : sortedQuestions.length === 0 ? (
+                <div className="py-10 text-center text-slate-500">
+                  Chưa có câu hỏi nào cho đề này. Hãy sử dụng biểu mẫu bên trái để
+                  thêm câu hỏi đầu tiên.
+                </div>
+              ) : (
+                <>
+                  <div className="mb-4">
+                    <h3 className="text-sm font-semibold text-slate-700 mb-3">Danh sách câu hỏi</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {sortedQuestions.map((question, index) => {
+                        const isSelected = selectedQuestionId === question.id;
+                        const isEditing = editingQuestionId === question.id;
+                        return (
+                          <button
+                            key={`${question.id}-${question.order}`}
+                            type="button"
+                            onClick={() => {
+                              setSelectedQuestionId(question.id);
+                            }}
+                            className={`w-10 h-10 rounded-lg font-semibold text-sm transition-all duration-300 ease-in-out transform ${
+                              isSelected || isEditing
+                                ? "bg-indigo-600 text-white ring-2 ring-indigo-300 scale-110"
+                                : "bg-white border-2 border-slate-300 text-slate-700 hover:border-indigo-400 hover:bg-indigo-50 hover:scale-105"
+                            }`}
+                            style={{
+                              transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                            }}
+                          >
+                            {index + 1}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Chỉ hiển thị câu hỏi được chọn */}
+                  {selectedQuestionId && sortedQuestions.find((q) => q.id === selectedQuestionId) && (
+                    <div className="mt-6">
+                      {renderQuestionCard(
+                        sortedQuestions.find((q) => q.id === selectedQuestionId)
+                      )}
+                    </div>
+                  )}
+
+                  {!selectedQuestionId && sortedQuestions.length > 0 && (
+                    <div className="text-center py-8 text-slate-500 text-sm">
+                      Chọn một câu hỏi để xem chi tiết
+                    </div>
+                  )}
+                </>
+              )}
+            </section>
+          </div>
+        </div>
       </div>
     </DashboardLayout>
   );
