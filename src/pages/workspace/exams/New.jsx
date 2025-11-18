@@ -62,8 +62,6 @@ function NewExamPage() {
     if (!formData.title?.trim()) return false;
     if (!formData.subject?.trim()) return false;
     if (!formData.accessLevel?.trim()) return false;
-    if (formData.subject && !formData.school?.trim()) return false;
-    
     return true;
   };
 
@@ -250,26 +248,7 @@ function NewExamPage() {
 
                     {/* Các trường bổ sung khi đã chọn trình độ */}
                     {formData.subject && (
-                      <>
-                        {/* Trường học */}
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            Trường học <span className="text-red-500">*</span>
-                          </label>
-                          <SelectField
-                            name="school"
-                            value={formData.school}
-                            onChange={handleInputChange}
-                            options={[
-                              { value: 'ptit', label: 'Học viện Công nghệ Bưu chính Viễn thông' },
-                              { value: 'hust', label: 'Đại học Bách khoa Hà Nội' },
-                              { value: 'other', label: 'Khác' }
-                            ]}
-                            placeholder="Chọn trường học"
-                            required
-                          />
-                        </div>
-
+                      <>                     
                         {/* Chuyên ngành */}
                         <div>
                           <label className="block text-sm font-medium text-gray-700 mb-2">Chuyên ngành</label>
