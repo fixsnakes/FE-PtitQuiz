@@ -12,16 +12,7 @@ export default function SignUp() {
 
       const {user,logout} = useAuth()
 
-      useEffect(() => {
-          if(user) navigate('/dashboard')
-      },[user,navigate])
-      
-      const HandleLogOut = () =>{
-          logout()
-          navigate('/auth/login')
-      }
-      
-
+ 
       return (
         <>
         <button onClick={HandleLogOut}>LogOut</button>

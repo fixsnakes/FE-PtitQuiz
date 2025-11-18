@@ -25,18 +25,8 @@ export default function Login() {
   const handleLogin = (e) => {
     e.preventDefault();
 
-    let userData = null;
 
-    if (email === "teacher@gmail.com" && password === "123456") {
-      userData = { name: "Thầy Nam", role: "teacher" };
-    } else if (email === "student@gmail.com" && password === "123456") {
-      userData = { name: "Học sinh Hằng", role: "student" };
-    } else {
-      alert("Sai tài khoản hoặc mật khẩu!");
-      return;
-    }
-
-    login(userData); // Gọi login từ context
+    login(userData); 
   };
 
   return (
