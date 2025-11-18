@@ -8,6 +8,9 @@ import RoleRedirect from "./components/RoleRedirect";
 import TeacherClasses from "./pages/dashboard/classes/TeacherClasses";
 import CreateClass from "./pages/dashboard/classes/CreateClass";
 import ClassDetail from "./pages/dashboard/classes/ClassDetail";
+import ExamListPage from "./pages/dashboard/exams/ExamList";
+import CreateExamPage from "./pages/dashboard/exams/CreateExam";
+import ManageExamQuestions from "./pages/dashboard/exams/ManageExamQuestions";
 
 function App() {
   return (
@@ -62,6 +65,30 @@ function App() {
         element={
           <ProtectedRoute allowedRoles={["teacher"]}>
             <ClassDetail />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dashboard/teacher/exams"
+        element={
+          <ProtectedRoute allowedRoles={["teacher"]}>
+            <ExamListPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dashboard/teacher/exams/create"
+        element={
+          <ProtectedRoute allowedRoles={["teacher"]}>
+            <CreateExamPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dashboard/teacher/exams/:examId/questions"
+        element={
+          <ProtectedRoute allowedRoles={["teacher"]}>
+            <ManageExamQuestions />
           </ProtectedRoute>
         }
       />
