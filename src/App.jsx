@@ -6,14 +6,14 @@ import RoleRedirect from "./components/RoleRedirect";
 import TeacherDashboard from "./pages/dashboard/teacher/TeacherDashboard";
 import StudentDashboard from "./pages/dashboard/student/StudentDashboard";
 import Profile from "./pages/dashboard/common/Profile";
-import TeacherClasses from "./pages/dashboard/classes/TeacherClasses";
-import CreateClass from "./pages/dashboard/classes/CreateClass";
-import ClassDetail from "./pages/dashboard/classes/ClassDetail";
-import ExamListPage from "./pages/dashboard/exams/ExamList";
-import CreateExamPage from "./pages/dashboard/exams/CreateExam";
-import QuestionMethodSelector from "./pages/dashboard/exams/QuestionMethodSelector";
-import AddQuestionsByText from "./pages/dashboard/exams/AddQuestionsByText";
-import ManageExamQuestions from "./pages/dashboard/exams/ManageExamQuestions";
+import TeacherClasses from "./pages/dashboard/teacher/classes/TeacherClasses";
+import CreateClass from "./pages/dashboard/teacher/classes/CreateClass";
+import ClassDetail from "./pages/dashboard/teacher/classes/ClassDetail";
+import ExamListPage from "./pages/dashboard/teacher/exams/ExamList";
+import CreateExamPage from "./pages/dashboard/teacher/exams/CreateExam";
+import QuestionMethodSelector from "./pages/dashboard/teacher/exams/QuestionMethodSelector";
+import AddQuestionsByText from "./pages/dashboard/teacher/exams/AddQuestionsByText";
+import ManageExamQuestions from "./pages/dashboard/teacher/exams/ManageExamQuestions";
 
 function App() {
   return (
