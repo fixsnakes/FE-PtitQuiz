@@ -10,8 +10,14 @@ import {
   FiHome, 
   FiHeart, 
   FiClock, 
-  FiBarChart2 
+  FiBarChart2,
+
 } from "react-icons/fi";
+
+import { SiGoogleclassroom  } from "react-icons/si";
+import { CiUser } from "react-icons/ci";
+import { MdPayment } from "react-icons/md";
+
 
 const SIDEBAR_ITEMS = {
   teacher: [
@@ -26,7 +32,10 @@ const SIDEBAR_ITEMS = {
     { label: "Bài thi yêu thích", path: "/dashboard/student/favorite", icon: FiHeart },
     { label: "Truy cập gần đây", path: "/dashboard/student/recent", icon: FiClock },
     { label: "Kết quả thi", path: "/dashboard/student/results", icon: FiBarChart2 },
-    { label: "Thông báo", path: "/dashboard/student/notifications", icon: FiBell },
+    { label: "Lớp của tôi", path: "/dashboard/student/classes",icon: SiGoogleclassroom},
+    //{ label: "Thông báo", path: "/dashboard/notifications",icon: FiBell},
+    { label: "Nạp tiền", path: "/dashboard/payment",icon: MdPayment},
+    { label: "Tài Khoản", path: "/dashboard/profile", icon: CiUser },
   ],
 };
 
@@ -42,7 +51,7 @@ export default function DashboardSidebar({ role = "student" }) {
             P
         </div>
         <div>
-            <h1 className="text-xl font-bold text-indigo-600 leading-none">PTIT Quiz</h1>
+            <h1 className="text-xl font-bold text-indigo-600 leading-none">PTIT QUIZ</h1>
             <p className="text-xs text-slate-500 mt-1">
             {role === "teacher" ? "Giáo viên" : "Học sinh"}
             </p>
