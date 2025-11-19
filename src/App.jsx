@@ -1,10 +1,11 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import Login from "./pages/auth/Login";
 import SignUp from "./pages/auth/SignUp";
-import TeacherDashboard from "./pages/dashboard/teacher/TeacherDashboard";
-import StudentDashboard from "./pages/dashboard/student/StudentDashboard";
 import ProtectedRoute from "./components/ProtectedRoute";
 import RoleRedirect from "./components/RoleRedirect";
+import TeacherDashboard from "./pages/dashboard/teacher/TeacherDashboard";
+import StudentDashboard from "./pages/dashboard/student/StudentDashboard";
+import Profile from "./pages/dashboard/common/Profile";
 import TeacherClasses from "./pages/dashboard/classes/TeacherClasses";
 import CreateClass from "./pages/dashboard/classes/CreateClass";
 import ClassDetail from "./pages/dashboard/classes/ClassDetail";
@@ -115,6 +116,14 @@ function App() {
         element={
           <ProtectedRoute allowedRoles={["student"]}>
             <StudentDashboard />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dashboard/profile"
+        element={
+          <ProtectedRoute allowedRoles={["teacher", "student"]}>
+            <Profile />
           </ProtectedRoute>
         }
       />

@@ -26,6 +26,7 @@ const SIDEBAR_ITEMS = {
     { label: "Ngân hàng câu hỏi", path: "/dashboard/teacher/questions", icon: FiDatabase },
     { label: "Lớp học", path: "/teacher/classes", icon: FiUsers },
     { label: "Thông báo", path: "/dashboard/teacher/notifications", icon: FiBell },
+    { label: "Tài Khoản", path: "/dashboard/profile", icon: CiUser },
   ],
   student: [
     { label: "Trang chủ", path: "/dashboard/student", icon: FiHome },
