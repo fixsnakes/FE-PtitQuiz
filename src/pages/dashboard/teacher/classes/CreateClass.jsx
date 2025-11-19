@@ -7,8 +7,8 @@ import {
   FiLoader,
   FiPlusCircle,
 } from "react-icons/fi";
-import DashboardLayout from "../../../layouts/DashboardLayout";
-import { createClass } from "../../../services/classService";
+import DashboardLayout from "../../../../layouts/DashboardLayout";
+import { createClass } from "../../../../services/classService";
 
 export default function CreateClass() {
   const navigate = useNavigate();

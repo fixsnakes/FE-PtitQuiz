@@ -8,9 +8,9 @@ import {
   FiUsers,
   FiClock,
 } from "react-icons/fi";
-import DashboardLayout from "../../../layouts/DashboardLayout";
-import { getTeacherClasses } from "../../../services/classService";
-import { listExams } from "../../../services/examService";
+import DashboardLayout from "../../../../layouts/DashboardLayout";
+import { getTeacherClasses } from "../../../../services/classService";
+import { listExams } from "../../../../services/examService";
 
 const STATUS_OPTIONS = [
   { value: "", label: "Tất cả" },

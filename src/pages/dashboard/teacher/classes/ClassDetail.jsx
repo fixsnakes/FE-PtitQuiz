@@ -11,12 +11,12 @@ import {
   FiUnlock,
   FiUsers,
 } from "react-icons/fi";
-import DashboardLayout from "../../../layouts/DashboardLayout";
+import DashboardLayout from "../../../../layouts/DashboardLayout";
 import {
   deleteClass,
   getClassStudents,
   updateStudentBanStatus,
-} from "../../../services/classService";
+} from "../../../../services/classService";
 
 const PAGE_SIZE = 10;
 
