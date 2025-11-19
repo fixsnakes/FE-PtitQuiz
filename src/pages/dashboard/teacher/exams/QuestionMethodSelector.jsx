@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { FiFileText, FiEdit, FiLoader, FiArrowLeft } from "react-icons/fi";
-import DashboardLayout from "../../../layouts/DashboardLayout";
-import { getExamDetail } from "../../../services/examService";
+import DashboardLayout from "../../../../layouts/DashboardLayout";
+import { getExamDetail } from "../../../../services/examService";
 
 function normalizeExam(raw) {
   if (!raw) return null;

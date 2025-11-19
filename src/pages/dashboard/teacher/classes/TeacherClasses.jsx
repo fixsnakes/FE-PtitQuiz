@@ -13,11 +13,11 @@ import {
   FiTrash2,
   FiUsers,
 } from "react-icons/fi";
-import DashboardLayout from "../../../layouts/DashboardLayout";
+import DashboardLayout from "../../../../layouts/DashboardLayout";
 import {
   deleteClass,
   getTeacherClasses,
-} from "../../../services/classService";
+} from "../../../../services/classService";
 
 const PAGE_SIZE = 6;
 const CARD_GRADIENTS = [

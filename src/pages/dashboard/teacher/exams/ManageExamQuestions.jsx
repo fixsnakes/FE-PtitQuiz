@@ -12,15 +12,15 @@ import {
   FiTrash2,
   FiEdit3,
 } from "react-icons/fi";
-import DashboardLayout from "../../../layouts/DashboardLayout";
-import { getExamDetail } from "../../../services/examService";
+import DashboardLayout from "../../../../layouts/DashboardLayout";
+import { getExamDetail } from "../../../../services/examService";
 import {
   listQuestions,
   createQuestion as createQuestionApi,
   updateQuestion as updateQuestionApi,
   deleteQuestion as deleteQuestionApi,
   reorderQuestions as reorderQuestionsApi,
-} from "../../../services/questionService";
+} from "../../../../services/questionService";
 
 const QUESTION_TYPES = [
   { value: "multiple_choice", label: "Trắc nghiệm" },

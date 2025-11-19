@@ -9,12 +9,12 @@ import {
   FiArrowLeft,
   FiSave,
 } from "react-icons/fi";
-import DashboardLayout from "../../../layouts/DashboardLayout";
-import { getExamDetail } from "../../../services/examService";
+import DashboardLayout from "../../../../layouts/DashboardLayout";
+import { getExamDetail } from "../../../../services/examService";
 import {
   createQuestion as createQuestionApi,
   listQuestions,
-} from "../../../services/questionService";
+} from "../../../../services/questionService";
 
 function parseExamText(text) {
   const lines = text.split("\n");

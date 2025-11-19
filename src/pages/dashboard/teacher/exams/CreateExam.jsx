@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FiCalendar, FiLoader } from "react-icons/fi";
-import DashboardLayout from "../../../layouts/DashboardLayout";
-import { getTeacherClasses } from "../../../services/classService";
-import { createExam } from "../../../services/examService";
+import DashboardLayout from "../../../../layouts/DashboardLayout";
+import { getTeacherClasses } from "../../../../services/classService";
+import { createExam } from "../../../../services/examService";
 
 const DEFAULT_CONFIG = {
   title: "",
