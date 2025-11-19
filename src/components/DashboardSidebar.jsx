@@ -1,5 +1,5 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom"; // 1. Import useLocation
 
 const SIDEBAR_ITEMS = {
   teacher: [
@@ -20,6 +20,7 @@ const SIDEBAR_ITEMS = {
 
 export default function DashboardSidebar({ role = "student" }) {
   const items = SIDEBAR_ITEMS[role] || SIDEBAR_ITEMS.student;
+  const location = useLocation(); // 2. Lấy thông tin location hiện tại
 
   return (
     <aside className="hidden w-64 flex-col border-r border-slate-200 bg-white p-6 md:flex">
@@ -31,15 +32,26 @@ export default function DashboardSidebar({ role = "student" }) {
       </div>
 
       <nav className="flex-1 space-y-2">
-        {items.map((item) => (
-          <Link
-            key={item.path}
-            to={item.path}
-            className="block rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-indigo-50 hover:text-indigo-600"
-          >
-            {item.label}
-          </Link>
-        ))}
+        {items.map((item) => {
+          // 3. Kiểm tra xem đường dẫn hiện tại có trùng với item này không
+          const isActive = location.pathname === item.path;
+
+          return (
+            <Link
+              key={item.path}
+              to={item.path}
+              className={`block rounded-lg px-3 py-2 text-sm font-medium transition 
+                ${
+                  isActive
+                    ? "bg-indigo-50 text-indigo-600" // Style khi đang chọn (Active)
+                    : "text-slate-600 hover:bg-indigo-50 hover:text-indigo-600" // Style mặc định
+                }
+              `}
+            >
+              {item.label}
+            </Link>
+          );
+        })}
       </nav>
 
       <div className="mt-8 rounded-xl border border-slate-200 p-4 text-sm text-slate-600">
@@ -51,4 +63,3 @@ export default function DashboardSidebar({ role = "student" }) {
     </aside>
   );
 }
-

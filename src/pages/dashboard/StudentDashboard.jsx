@@ -5,7 +5,7 @@ export default function StudentDashboard() {
   return (
     <DashboardLayout role="student">
       <div className="space-y-6">
-        <section className="rounded-2xl bg-gradient-to-r from-blue-500 to-purple-500 p-6 text-white shadow-lg">
+        <section className="rounded-2xl bg-linear-to-r from-blue-500 to-purple-500 p-6 text-white shadow-lg">
           <p className="text-sm uppercase tracking-widest text-white/80">
             Học sinh
           </p>
