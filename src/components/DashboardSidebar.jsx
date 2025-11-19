@@ -24,8 +24,9 @@ const SIDEBAR_ITEMS = {
     { label: "Tổng quan", path: "/dashboard/teacher", icon: FiGrid },
     { label: "Kỳ thi", path: "/dashboard/teacher/exams", icon: FiFileText },
     { label: "Ngân hàng câu hỏi", path: "/dashboard/teacher/questions", icon: FiDatabase },
-    { label: "Lớp học", path: "/teacher/classes", icon: FiUsers },
+    { label: "Lớp học", path: "/dashboard/teacher/classes", icon: FiUsers },
     { label: "Thông báo", path: "/dashboard/teacher/notifications", icon: FiBell },
+    { label: "Ví của tôi", path: "/dashboard/wallet",icon: MdPayment},
     { label: "Tài Khoản", path: "/dashboard/profile", icon: CiUser },
   ],
   student: [
@@ -33,9 +34,9 @@ const SIDEBAR_ITEMS = {
     { label: "Bài thi yêu thích", path: "/dashboard/student/favorite", icon: FiHeart },
     { label: "Truy cập gần đây", path: "/dashboard/student/recent", icon: FiClock },
     { label: "Kết quả thi", path: "/dashboard/student/results", icon: FiBarChart2 },
-    { label: "Lớp của tôi", path: "/dashboard/student/classes",icon: SiGoogleclassroom},
-    //{ label: "Thông báo", path: "/dashboard/notifications",icon: FiBell},
-    { label: "Nạp tiền", path: "/dashboard/payment",icon: MdPayment},
+    { label: "Lớp học", path: "/dashboard/student/classes", icon: FiUsers },
+    { label: "Thông báo", path: "/dashboard/notifications",icon: FiBell},
+    { label: "Ví của tôi", path: "/dashboard/payment",icon: MdPayment},
     { label: "Tài Khoản", path: "/dashboard/profile", icon: CiUser },
   ],
 };

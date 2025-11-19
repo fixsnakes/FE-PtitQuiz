@@ -21,43 +21,25 @@ import {
   FiMapPin 
 } from "react-icons/fi";
 
-// Dữ liệu giả lập lịch sử đăng nhập
-const LOGIN_HISTORY = [
-  {
-    id: 1,
-    device: "Windows 10 - Chrome",
-    ip: "14.162.12.23",
-    location: "Hanoi, Vietnam",
-    time: "15:30 19/11/2025",
-    status: "success", // success | failed
-  },
-  {
-    id: 2,
-    device: "iPhone 13 - Safari",
-    ip: "113.22.19.10",
-    location: "Hanoi, Vietnam",
-    time: "08:15 18/11/2025",
-    status: "success",
-  },
-  {
-    id: 3,
-    device: "Unknown Device",
-    ip: "42.115.33.12",
-    location: "Ho Chi Minh, Vietnam",
-    time: "22:45 15/11/2025",
-    status: "warning", // Cảnh báo đăng nhập lạ
-  },
-];
+import { getUserInformation } from "../../../services/userService";
+import formatDateTime from "../../../utils/format_time";
+import { data } from "react-router-dom";
+
+import formatCurrency from "../../../utils/format_currentcy";
+
 export default function Profile() {
-  // --- 1. STATE & LOGIC CŨ (GIỮ NGUYÊN) ---
   const [activeTab, setActiveTab] = useState("info");
   const [currentUser, setCurrentUser] = useState(null);
   
   const [profileForm, setProfileForm] = useState({
     fullName: "",
     email: "",
-    role: "", // Thêm field này cho khớp UI mới (tùy chọn)
+    role: "",
+    join: "",
+    balance: null,
   });
+
+  const [lastLogins,setlastLogins] = useState(null)
   
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: "",
@@ -68,31 +50,35 @@ export default function Profile() {
   const [profileFeedback, setProfileFeedback] = useState(null);
   const [passwordFeedback, setPasswordFeedback] = useState(null);
 
-  // State mới để xử lý ẩn/hiện mật khẩu (UI)
+
   const [showCurrentPass, setShowCurrentPass] = useState(false);
   const [showNewPass, setShowNewPass] = useState(false);
   const [showConfirmPass, setShowConfirmPass] = useState(false);
 
+
   useEffect(() => {
-    const rawUser = localStorage.getItem("currentUser");
-    if (!rawUser) {
-      return;
+    const fetchData = async () =>{
+        const data = await getUserInformation()
+
+        console.log(data)
+
+        setProfileForm({
+            fullName: data.fullName,
+            email: data.email,
+            role: data.role,
+            balance: data.balance,
+            join: data.created_at
+        })
+
+        setlastLogins(data.login_list)
+
+
     }
-    try {
-      const parsedUser = JSON.parse(rawUser);
-      setCurrentUser(parsedUser);
-      setProfileForm({
-        fullName: parsedUser.fullName || "",
-        email: parsedUser.email || "",
-        role: parsedUser.role || "", 
-   
-      });
-    } catch (error) {
-        console.error("Không thể đọc thông tin người dùng:", error);
-    }
+
+    fetchData()
   }, []);
 
-  const layoutRole = useMemo(() => currentUser?.role || "student", [currentUser]);
+  const layoutRole = useMemo(() => profileForm.role || "student", [profileForm]);
 
   const handleProfileChange = (field) => (event) => {
     const value = event.target.value;
@@ -184,7 +170,7 @@ export default function Profile() {
         
         {/* --- Header Information Card --- */}
         <div className="overflow-hidden rounded-2xl bg-white shadow-sm border border-slate-200">
-          <div className="relative bg-linear-to-r from-blue-500 to-purple-600 p-6 md:p-8">
+          <div className="relative bg-[#155DFC] p-6 md:p-8">
             <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
               <div className="flex items-center gap-4">
                 {/* Avatar */}
@@ -200,7 +186,7 @@ export default function Profile() {
                     </span>
                     <span className="hidden md:inline">|</span>
                     <span className="flex items-center gap-1">
-                      <FiCreditCard className="h-4 w-4" /> Số dư: 0 VND
+                      <FiCreditCard className="h-4 w-4" /> Số dư: {formatCurrency(profileForm.balance)} VND
                     </span>
                   </div>
                 </div>
@@ -210,7 +196,7 @@ export default function Profile() {
               <div className="flex flex-col items-start text-blue-100 md:items-end">
                 <span className="text-sm opacity-80">Tham gia</span>
                 <div className="flex items-center gap-2 font-medium text-white">
-                  <FiClock /> lúc 15:44 19 tháng 11, 2025
+                  <FiClock /> {formatDateTime(profileForm.join)}
                 </div>
               </div>
             </div>
@@ -447,28 +433,25 @@ export default function Profile() {
                   <th className="px-6 py-3 font-semibold">Địa chỉ IP</th>
                   <th className="px-6 py-3 font-semibold">Vị trí</th>
                   <th className="px-6 py-3 font-semibold">Thời gian</th>
-                  <th className="px-6 py-3 font-semibold">Trạng thái</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
-                {LOGIN_HISTORY.map((item) => (
+                {lastLogins && lastLogins.map((item) => (
                   <tr key={item.id} className="hover:bg-slate-50 transition-colors">
                     {/* Cột Thiết bị */}
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-500">
-                          {item.device.toLowerCase().includes("iphone") || item.device.toLowerCase().includes("android") ? (
-                            <FiSmartphone />
-                          ) : (
+                       
                             <FiMonitor />
-                          )}
+                        
                         </div>
                         <span className="font-medium text-slate-900">{item.device}</span>
                       </div>
                     </td>
 
                     {/* Cột IP */}
-                    <td className="px-6 py-4 font-mono text-xs">{item.ip}</td>
+                    <td className="px-6 py-4 font-mono text-xs">{item.ip_address}</td>
 
                     {/* Cột Vị trí */}
                     <td className="px-6 py-4">
@@ -479,20 +462,9 @@ export default function Profile() {
                     </td>
 
                     {/* Cột Thời gian */}
-                    <td className="px-6 py-4 whitespace-nowrap">{item.time}</td>
+                    <td className="px-6 py-4 whitespace-nowrap">{formatDateTime(item.login_time)}</td>
 
-                    {/* Cột Trạng thái */}
-                    <td className="px-6 py-4">
-                      {item.status === "success" ? (
-                        <span className="inline-flex items-center rounded-full bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">
-                          Thành công
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center rounded-full bg-orange-50 px-2 py-1 text-xs font-medium text-orange-700 ring-1 ring-inset ring-orange-600/20">
-                          Bất thường
-                        </span>
-                      )}
-                    </td>
+                   
                   </tr>
                 ))}
               </tbody>
