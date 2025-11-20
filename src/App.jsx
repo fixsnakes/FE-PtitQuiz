@@ -14,7 +14,7 @@ import CreateExamPage from "./pages/dashboard/teacher/exams/CreateExam";
 import QuestionMethodSelector from "./pages/dashboard/teacher/exams/QuestionMethodSelector";
 import AddQuestionsByText from "./pages/dashboard/teacher/exams/AddQuestionsByText";
 import ManageExamQuestions from "./pages/dashboard/teacher/exams/ManageExamQuestions";
-import { ToastContainer,toast } from "react-toastify";
+import StudentClasses from "./pages/dashboard/student/StudentClasses";
 import "react-toastify/dist/ReactToastify.css";
 function App() {
   return (
@@ -125,6 +125,15 @@ function App() {
         element={
           <ProtectedRoute allowedRoles={["teacher", "student"]}>
             <Profile />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/dashboard/student/classes"
+        element={
+          <ProtectedRoute allowedRoles={["student"]}>
+            <StudentClasses />
           </ProtectedRoute>
         }
       />
