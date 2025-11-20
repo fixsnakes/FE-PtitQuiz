@@ -12,7 +12,7 @@ import {
   FiClock,
 } from "react-icons/fi";
 
-
+import { toast } from "react-toastify";
 import { 
   // ... các icon cũ
   FiActivity, 
@@ -24,9 +24,9 @@ import {
 import { getUserInformation } from "../../../services/userService";
 import formatDateTime from "../../../utils/format_time";
 import { data } from "react-router-dom";
-
+import { UpdateProfile } from "../../../services/userService";
 import formatCurrency from "../../../utils/format_currentcy";
-
+import { ChangePassword } from "../../../services/userService";
 export default function Profile() {
   const [activeTab, setActiveTab] = useState("info");
   const [currentUser, setCurrentUser] = useState(null);
@@ -81,10 +81,10 @@ export default function Profile() {
   const layoutRole = useMemo(() => profileForm.role || "student", [profileForm]);
 
   const handleProfileChange = (field) => (event) => {
-    const value = event.target.value;
-    setProfileForm((prev) => ({ ...prev, [field]: value }));
-    setProfileFeedback(null);
-  };
+      const value = event.target.value;
+      setProfileForm((prev) => ({...prev, [field]: value}))
+      setProfileFeedback(null)
+  } 
 
   const handlePasswordChange = (field) => (event) => {
     const value = event.target.value;
@@ -92,7 +92,7 @@ export default function Profile() {
     setPasswordFeedback(null);
   };
 
-  const handleProfileSubmit = (event) => {
+  const handleProfileSubmit = async (event) => {
     event.preventDefault();
     const trimmedName = profileForm.fullName.trim();
     const trimmedEmail = profileForm.email.trim();
@@ -105,25 +105,31 @@ export default function Profile() {
       return;
     }
 
+
+    const response = await UpdateProfile(trimmedName,trimmedEmail)
+
+    if(!response.status){
+        toast.error("Lỗi khi cập nhạt profile")
+    }
+
+    toast.success("Cập nhật profile thành công")
+
+
+
+
     // Logic lưu cũ...
     const updatedUser = {
       ...currentUser,
       fullName: trimmedName,
       email: trimmedEmail,
-      // Lưu thêm các trường mới nếu muốn
-      phone: profileForm.phone,
-      bio: profileForm.bio,
+
     };
 
     localStorage.setItem("currentUser", JSON.stringify(updatedUser));
     setCurrentUser(updatedUser);
-    setProfileFeedback({
-      type: "success",
-      message: "Đã cập nhật thông tin cá nhân thành công.",
-    });
   };
 
-  const handlePasswordSubmit = (event) => {
+  const handlePasswordSubmit = async (event) => {
     event.preventDefault();
     const { currentPassword, newPassword, confirmPassword } = passwordForm;
 
@@ -151,15 +157,23 @@ export default function Profile() {
       return;
     }
 
-    setPasswordFeedback({
-      type: "success",
-      message: "Mật khẩu đã được cập nhật (Giả lập).",
-    });
+    const data = await ChangePassword(currentPassword,newPassword);
+
+    if(!data.status){
+        toast.error(data.message)
+        return
+    }
+
+    toast.success(data.message)
+
+ 
     setPasswordForm({
       currentPassword: "",
       newPassword: "",
       confirmPassword: "",
     });
+
+    return
   };
 
   // --- 2. GIAO DIỆN MỚI (DỰA TRÊN CODE BẠN VỪA TẠO) ---

@@ -14,7 +14,8 @@ import CreateExamPage from "./pages/dashboard/teacher/exams/CreateExam";
 import QuestionMethodSelector from "./pages/dashboard/teacher/exams/QuestionMethodSelector";
 import AddQuestionsByText from "./pages/dashboard/teacher/exams/AddQuestionsByText";
 import ManageExamQuestions from "./pages/dashboard/teacher/exams/ManageExamQuestions";
-
+import { ToastContainer,toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 function App() {
   return (
     <Routes>
@@ -138,6 +139,8 @@ function App() {
           <h1 className="mt-10 text-center text-red-500">404 - Not Found</h1>
         }
       />
+
+
     </Routes>
   );
 }
