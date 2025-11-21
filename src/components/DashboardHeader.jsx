@@ -3,7 +3,7 @@ import { FiUser } from "react-icons/fi";
 
 export default function DashboardHeader({ role = "student", onLogout }) {
   return (
-    <header className="flex items-center justify-between border-b border-slate-200 bg-white/80 px-6 py-4 backdrop-blur">
+    <header className="flex items-center justify-between border-b border-slate-200 bg-white/80 px-6 py-4 backdrop-blur ">
       <div>
         <p className="text-xs uppercase tracking-wide text-slate-500">
           PTIT Quiz Platform
