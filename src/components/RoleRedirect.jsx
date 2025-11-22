@@ -5,6 +5,7 @@ function getRedirectPath() {
   try {
     const stored = localStorage.getItem("currentUser");
     const user = stored ? JSON.parse(stored) : null;
+    if (user?.role === "admin") return "/dashboard/admin";
     if (user?.role === "teacher") return "/dashboard/teacher";
     if (user?.role === "student") return "/dashboard/student";
   } catch {

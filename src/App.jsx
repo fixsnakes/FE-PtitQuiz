@@ -15,6 +15,18 @@ import QuestionMethodSelector from "./pages/dashboard/teacher/exams/QuestionMeth
 import AddQuestionsByText from "./pages/dashboard/teacher/exams/AddQuestionsByText";
 import ManageExamQuestions from "./pages/dashboard/teacher/exams/ManageExamQuestions";
 import StudentClasses from "./pages/dashboard/student/StudentClasses";
+
+// Admin imports
+import AdminLayout from "./layouts/AdminLayout";
+import AdminDashboard from "./pages/dashboard/admin/AdminDashboard";
+import UserManagement from "./pages/dashboard/admin/UserManagement";
+import ExamManagement from "./pages/dashboard/admin/ExamManagement";
+import ClassManagement from "./pages/dashboard/admin/ClassManagement";
+import PurchaseManagement from "./pages/dashboard/admin/PurchaseManagement";
+import Reports from "./pages/dashboard/admin/Reports";
+import NotificationManagement from "./pages/dashboard/admin/NotificationManagement";
+import ContentModeration from "./pages/dashboard/admin/ContentModeration";
+
 import "react-toastify/dist/ReactToastify.css";
 function App() {
   return (
@@ -137,6 +149,25 @@ function App() {
           </ProtectedRoute>
         }
       />
+
+      {/* Admin routes */}
+      <Route
+        path="/dashboard/admin"
+        element={
+          <ProtectedRoute allowedRoles={["admin"]}>
+            <AdminLayout />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<AdminDashboard />} />
+        <Route path="users" element={<UserManagement />} />
+        <Route path="exams" element={<ExamManagement />} />
+        <Route path="classes" element={<ClassManagement />} />
+        <Route path="purchases" element={<PurchaseManagement />} />
+        <Route path="reports" element={<Reports />} />
+        <Route path="notifications" element={<NotificationManagement />} />
+        <Route path="moderation" element={<ContentModeration />} />
+      </Route>
 
       {/* Root redirect based on role */}
       <Route path="/" element={<RoleRedirect />} />

@@ -37,10 +37,14 @@ export default function Login() {
           role: response.role,
         })
       );
-      const targetPath =
-        response.role === "teacher"
-          ? "/dashboard/teacher"
-          : "/dashboard/student";
+      let targetPath;
+      if (response.role === "admin") {
+        targetPath = "/dashboard/admin";
+      } else if (response.role === "teacher") {
+        targetPath = "/dashboard/teacher";
+      } else {
+        targetPath = "/dashboard/student";
+      }
 
       setSuccessMessage("Đăng nhập thành công.");
       setTimeout(() => navigate(targetPath, { replace: true }), 500);
