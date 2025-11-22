@@ -45,6 +45,22 @@ export function getExamDetail(examId) {
   return apiClient.get(`/api/exams/${examId}`);
 }
 
+export function updateExam(examId, payload) {
+  if (!examId) {
+    throw new Error("examId là bắt buộc.");
+  }
+
+  return apiClient.put(`/api/exams/${examId}`, payload);
+}
+
+export function deleteExam(examId) {
+  if (!examId) {
+    throw new Error("examId là bắt buộc.");
+  }
+
+  return apiClient.delete(`/api/exams/${examId}`);
+}
+
 export async function createQuestion(payload) {
   if (!payload?.exam_id) {
     throw new Error("exam_id là bắt buộc khi tạo câu hỏi.");
@@ -90,6 +106,8 @@ export default {
   listExams,
   createExam,
   getExamDetail,
+  updateExam,
+  deleteExam,
   createQuestion,
   createExamWithQuestions,
 };

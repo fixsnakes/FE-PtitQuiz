@@ -4,7 +4,6 @@ import { Link, useLocation } from "react-router-dom";
 import { 
   FiGrid, 
   FiFileText, 
-  FiDatabase, 
   FiUsers, 
   FiBell, 
   FiHome, 
@@ -23,7 +22,6 @@ const SIDEBAR_ITEMS = {
   teacher: [
     { label: "Tổng quan", path: "/dashboard/teacher", icon: FiGrid },
     { label: "Kỳ thi", path: "/dashboard/teacher/exams", icon: FiFileText },
-    { label: "Ngân hàng câu hỏi", path: "/dashboard/teacher/questions", icon: FiDatabase },
     { label: "Lớp học", path: "/dashboard/teacher/classes", icon: FiUsers },
     { label: "Thông báo", path: "/dashboard/teacher/notifications", icon: FiBell },
     { label: "Ví của tôi", path: "/dashboard/wallet",icon: MdPayment},

@@ -27,11 +27,21 @@ const CARD_GRADIENTS = [
 ];
 
 function normalizeClasses(payload) {
-  const list = Array.isArray(payload)
-    ? payload
-    : Array.isArray(payload?.classes)
-    ? payload.classes
-    : [];
+  // Xử lý các format response khác nhau
+  let list = [];
+  
+  if (Array.isArray(payload)) {
+    list = payload;
+  } else if (Array.isArray(payload?.data)) {
+    // Format: { status: true, data: [...] }
+    list = payload.data;
+  } else if (Array.isArray(payload?.classes)) {
+    // Format: { classes: [...] }
+    list = payload.classes;
+  } else if (payload?.data && Array.isArray(payload.data)) {
+    // Fallback cho các format khác
+    list = payload.data;
+  }
 
   return list.map((item) => ({
     id: item.id ?? item.classId ?? item._id,

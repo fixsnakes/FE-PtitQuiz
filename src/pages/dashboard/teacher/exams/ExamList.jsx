@@ -8,9 +8,10 @@ import {
   FiUsers,
   FiClock,
 } from "react-icons/fi";
+import { toast } from "react-toastify";
 import DashboardLayout from "../../../../layouts/DashboardLayout";
 import { getTeacherClasses } from "../../../../services/classService";
-import { listExams } from "../../../../services/examService";
+import { listExams, deleteExam } from "../../../../services/examService";
 
 const STATUS_OPTIONS = [
   { value: "", label: "Tất cả" },
@@ -385,15 +386,27 @@ export default function ExamListPage() {
                         Chỉnh sửa
                       </Link>
                       <Link
-                        to={`/dashboard/teacher/exams/${exam.id}`}
+                        to={`/dashboard/teacher/exams/${exam.id}/results`}
                         className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-600"
                       >
-                        Xem chi tiết
+                        Xem kết quả
                       </Link>
                       <button
                         type="button"
                         className="inline-flex items-center gap-2 rounded-full border border-red-200 px-4 py-2 text-xs font-semibold text-red-600"
-                        onClick={() => alert("Chức năng xóa sẽ được bổ sung sau.")}
+                        onClick={async () => {
+                          if (!window.confirm(`Bạn chắc chắn muốn xóa đề thi "${exam.title}"?`)) {
+                            return;
+                          }
+                          try {
+                            const { deleteExam } = await import("../../../../services/examService");
+                            await deleteExam(exam.id);
+                            toast.success("Đã xóa đề thi thành công.");
+                            fetchExams(filters);
+                          } catch (err) {
+                            toast.error(err?.body?.message || err?.message || "Không thể xóa đề thi.");
+                          }
+                        }}
                       >
                         Xóa
                       </button>

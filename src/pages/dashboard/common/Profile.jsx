@@ -57,6 +57,19 @@ export default function Profile() {
 
 
   useEffect(() => {
+    // Lấy role từ localStorage trước để tránh flash sang student layout
+    try {
+      const storedUser = localStorage.getItem("currentUser");
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        if (user.role) {
+          setProfileForm((prev) => ({ ...prev, role: user.role }));
+        }
+      }
+    } catch (error) {
+      console.error("Error reading user from localStorage:", error);
+    }
+
     const fetchData = async () =>{
         const data = await getUserInformation()
 
@@ -78,7 +91,22 @@ export default function Profile() {
     fetchData()
   }, []);
 
-  const layoutRole = useMemo(() => profileForm.role || "student", [profileForm]);
+  const layoutRole = useMemo(() => {
+    // Ưu tiên lấy từ profileForm, nếu không có thì lấy từ localStorage, cuối cùng mới fallback
+    if (profileForm.role) return profileForm.role;
+    
+    try {
+      const storedUser = localStorage.getItem("currentUser");
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        if (user.role) return user.role;
+      }
+    } catch (error) {
+      console.error("Error reading user from localStorage:", error);
+    }
+    
+    return "student";
+  }, [profileForm.role]);
 
   const handleProfileChange = (field) => (event) => {
       const value = event.target.value;

@@ -10,13 +10,24 @@ import {
   FiTrash2,
   FiUnlock,
   FiUsers,
+  FiPlus,
+  FiEdit2,
+  FiMessageSquare,
 } from "react-icons/fi";
+import { toast } from "react-toastify";
 import DashboardLayout from "../../../../layouts/DashboardLayout";
 import {
   deleteClass,
   getClassStudents,
   updateStudentBanStatus,
 } from "../../../../services/classService";
+import {
+  createPost,
+  getClassPosts,
+  updatePost,
+  deletePost,
+} from "../../../../services/postService";
+import formatDateTime from "../../../../utils/format_time";
 
 const PAGE_SIZE = 10;
 
@@ -71,6 +82,11 @@ export default function ClassDetail() {
   const [processingStudentId, setProcessingStudentId] = useState(null);
   const [activeTab, setActiveTab] = useState("students");
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [posts, setPosts] = useState([]);
+  const [loadingPosts, setLoadingPosts] = useState(false);
+  const [showPostForm, setShowPostForm] = useState(false);
+  const [editingPost, setEditingPost] = useState(null);
+  const [postForm, setPostForm] = useState({ title: "", post: "" });
 
   const filteredStudents = useMemo(() => {
     const keyword = searchTerm.trim().toLowerCase();
@@ -116,6 +132,12 @@ export default function ClassDetail() {
   useEffect(() => {
     loadClassDetail();
   }, [classId, classCode]);
+
+  useEffect(() => {
+    if (activeTab === "posts" && classInfo?.id) {
+      loadPosts();
+    }
+  }, [activeTab, classInfo?.id]);
 
   const handleBanToggle = async (studentId, currentStatus) => {
     try {
@@ -297,6 +319,210 @@ export default function ClassDetail() {
     </div>
   );
 
+  const loadPosts = async () => {
+    if (!classInfo?.id) return;
+    setLoadingPosts(true);
+    try {
+      const response = await getClassPosts(classInfo.id);
+      const postsList = Array.isArray(response) ? response : [];
+      setPosts(postsList);
+    } catch (err) {
+      toast.error(err?.body?.message || err?.message || "Không thể tải bài đăng.");
+    } finally {
+      setLoadingPosts(false);
+    }
+  };
+
+  const handleCreatePost = async (e) => {
+    e.preventDefault();
+    if (!postForm.title.trim() || !postForm.post.trim()) {
+      toast.error("Vui lòng nhập đầy đủ tiêu đề và nội dung.");
+      return;
+    }
+
+    try {
+      await createPost({
+        classId: classInfo.id,
+        title: postForm.title,
+        post: postForm.post,
+      });
+      toast.success("Đã tạo bài đăng thành công.");
+      setPostForm({ title: "", post: "" });
+      setShowPostForm(false);
+      loadPosts();
+    } catch (err) {
+      toast.error(err?.body?.message || err?.message || "Không thể tạo bài đăng.");
+    }
+  };
+
+  const handleUpdatePost = async (e) => {
+    e.preventDefault();
+    if (!editingPost) return;
+    if (!postForm.title.trim() || !postForm.post.trim()) {
+      toast.error("Vui lòng nhập đầy đủ tiêu đề và nội dung.");
+      return;
+    }
+
+    try {
+      await updatePost(editingPost.id, {
+        title: postForm.title,
+        post: postForm.post,
+      });
+      toast.success("Đã cập nhật bài đăng thành công.");
+      setPostForm({ title: "", post: "" });
+      setEditingPost(null);
+      loadPosts();
+    } catch (err) {
+      toast.error(err?.body?.message || err?.message || "Không thể cập nhật bài đăng.");
+    }
+  };
+
+  const handleDeletePost = async (postId) => {
+    if (!window.confirm("Bạn chắc chắn muốn xóa bài đăng này?")) return;
+
+    try {
+      await deletePost(postId);
+      toast.success("Đã xóa bài đăng thành công.");
+      loadPosts();
+    } catch (err) {
+      toast.error(err?.body?.message || err?.message || "Không thể xóa bài đăng.");
+    }
+  };
+
+  const startEditPost = (post) => {
+    setEditingPost(post);
+    setPostForm({ title: post.title || "", post: post.text || post.post || "" });
+    setShowPostForm(true);
+  };
+
+  const cancelPostForm = () => {
+    setShowPostForm(false);
+    setEditingPost(null);
+    setPostForm({ title: "", post: "" });
+  };
+
+  const renderPostsTab = () => (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold text-slate-900">Bài đăng trong lớp</h3>
+        {!showPostForm && (
+          <button
+            type="button"
+            onClick={() => setShowPostForm(true)}
+            className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-500"
+          >
+            <FiPlus />
+            Tạo bài đăng mới
+          </button>
+        )}
+      </div>
+
+      {showPostForm && (
+        <div className="rounded-2xl border border-indigo-200 bg-indigo-50/60 p-6">
+          <h4 className="mb-4 text-lg font-semibold text-indigo-900">
+            {editingPost ? "Chỉnh sửa bài đăng" : "Tạo bài đăng mới"}
+          </h4>
+          <form onSubmit={editingPost ? handleUpdatePost : handleCreatePost} className="space-y-4">
+            <div>
+              <label className="text-sm font-medium text-slate-700">Tiêu đề</label>
+              <input
+                type="text"
+                value={postForm.title}
+                onChange={(e) => setPostForm({ ...postForm, title: e.target.value })}
+                placeholder="Nhập tiêu đề bài đăng"
+                className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
+                required
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-slate-700">Nội dung</label>
+              <textarea
+                value={postForm.post}
+                onChange={(e) => setPostForm({ ...postForm, post: e.target.value })}
+                placeholder="Nhập nội dung bài đăng"
+                rows={6}
+                className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
+                required
+              />
+            </div>
+            <div className="flex gap-3">
+              <button
+                type="submit"
+                className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-500"
+              >
+                {editingPost ? "Cập nhật" : "Đăng"}
+              </button>
+              <button
+                type="button"
+                onClick={cancelPostForm}
+                className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+              >
+                Hủy
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {loadingPosts ? (
+        <div className="flex items-center justify-center py-10 text-slate-500">
+          <FiLoader className="mr-2 animate-spin" />
+          Đang tải bài đăng...
+        </div>
+      ) : posts.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/60 p-10 text-center text-sm text-slate-500">
+          Chưa có bài đăng nào. Hãy tạo bài đăng đầu tiên.
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {posts.map((post) => (
+            <div
+              key={post.id}
+              className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3">
+                    <h4 className="text-lg font-semibold text-slate-900">{post.title}</h4>
+                    {post.author && (
+                      <span className="text-xs text-slate-500">
+                        bởi {post.author.fullName || post.author.fullname}
+                      </span>
+                    )}
+                  </div>
+                  <p className="mt-2 text-sm text-slate-600 whitespace-pre-wrap">
+                    {post.text || post.post}
+                  </p>
+                  <p className="mt-3 text-xs text-slate-400">
+                    {formatDateTime(post.created_at)}
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => startEditPost(post)}
+                    className="inline-flex items-center gap-1 rounded-lg border border-indigo-200 px-3 py-1 text-xs font-semibold text-indigo-600 hover:bg-indigo-50"
+                  >
+                    <FiEdit2 />
+                    Sửa
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDeletePost(post.id)}
+                    className="inline-flex items-center gap-1 rounded-lg border border-red-200 px-3 py-1 text-xs font-semibold text-red-600 hover:bg-red-50"
+                  >
+                    <FiTrash2 />
+                    Xóa
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
   const renderPlaceholderTab = (title) => (
     <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/60 p-10 text-center text-sm text-slate-500">
       Nội dung {title} sẽ được tích hợp sau khi hoàn thiện phần API tương ứng.
@@ -305,7 +531,7 @@ export default function ClassDetail() {
 
   const tabContent = {
     students: renderStudentsTab(),
-    posts: renderPlaceholderTab("bài đăng"),
+    posts: renderPostsTab(),
     exams: renderPlaceholderTab("đề thi"),
   };
 

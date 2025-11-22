@@ -14,6 +14,9 @@ import CreateExamPage from "./pages/dashboard/teacher/exams/CreateExam";
 import QuestionMethodSelector from "./pages/dashboard/teacher/exams/QuestionMethodSelector";
 import AddQuestionsByText from "./pages/dashboard/teacher/exams/AddQuestionsByText";
 import ManageExamQuestions from "./pages/dashboard/teacher/exams/ManageExamQuestions";
+import EditExamPage from "./pages/dashboard/teacher/exams/EditExam";
+import ExamResultsPage from "./pages/dashboard/teacher/exams/ExamResults";
+import NotificationsPage from "./pages/dashboard/teacher/Notifications";
 import StudentClasses from "./pages/dashboard/student/StudentClasses";
 
 // Admin imports
@@ -121,6 +124,30 @@ function App() {
         element={
           <ProtectedRoute allowedRoles={["teacher"]}>
             <ManageExamQuestions />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dashboard/teacher/exams/:examId/edit"
+        element={
+          <ProtectedRoute allowedRoles={["teacher"]}>
+            <EditExamPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dashboard/teacher/exams/:examId/results"
+        element={
+          <ProtectedRoute allowedRoles={["teacher"]}>
+            <ExamResultsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dashboard/teacher/notifications"
+        element={
+          <ProtectedRoute allowedRoles={["teacher"]}>
+            <NotificationsPage />
           </ProtectedRoute>
         }
       />
