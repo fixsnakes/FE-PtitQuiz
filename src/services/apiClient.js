@@ -9,7 +9,11 @@ const defaultHeaders = {
 function getAuthHeaders() {
   try {
     const token = localStorage.getItem("accessToken");
-    return token ? { Authorization: `Bearer ${token}` } : {};
+    if (!token) return {};
+    return {
+      Authorization: `Bearer ${token}`,
+      "x-access-token": token,
+    };
   } catch {
     return {};
   }

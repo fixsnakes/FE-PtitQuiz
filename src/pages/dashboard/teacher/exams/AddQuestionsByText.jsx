@@ -388,11 +388,14 @@ export default function AddQuestionsByText() {
     setSavingQuestionIndex(questionIndex);
 
     try {
+      // Tính số câu hỏi mới đã được lưu trong session này (không bao gồm existing)
+      const newlySavedCount = savedQuestions.size - existingQuestions.length;
+      
       await createQuestionApi({
         exam_id: examId,
         question_text: question.text.trim(),
         type: "multiple_choice",
-        order: existingCount + (savedQuestions.size - existingQuestions.length) + 1,
+        order: existingQuestions.length + newlySavedCount + 1,
         answers: question.options.map((option) => ({
           text: option.text.trim(),
           is_correct: option.isCorrect,
@@ -400,14 +403,15 @@ export default function AddQuestionsByText() {
       });
 
       setSavedQuestions((prev) => new Set([...prev, questionIndex]));
-      setExistingCount((prev) => prev + 1);
       
-      // Reload existing questions để cập nhật danh sách
+      // Reload existing questions để đồng bộ với database
       const questionsResponse = await listQuestions({ examId });
       const normalized = (questionsResponse ?? [])
         .map(normalizeExistingQuestion)
         .filter(Boolean);
       setExistingQuestions(normalized);
+      // Cập nhật existingCount để khớp với số lượng câu hỏi đã load
+      setExistingCount(normalized.length);
     } catch (error) {
       const message =
         error?.body?.message || error?.message || "Không thể lưu câu hỏi. Vui lòng thử lại.";
@@ -437,15 +441,21 @@ export default function AddQuestionsByText() {
 
     // Lưu từng câu hỏi
     let savedCount = 0;
+    // Tính số câu hỏi mới đã được lưu trong session này (không bao gồm existing)
+    const newlySavedCount = savedQuestions.size - existingQuestions.length;
+    
     for (const questionIndex of unsavedQuestions) {
       const question = allQuestions[questionIndex];
+      if (!question || question.isExisting) continue;
+      
       try {
         setSavingQuestionIndex(questionIndex);
+        // Order = số câu hỏi existing + số câu hỏi mới đã lưu + số câu hỏi đang lưu trong batch này
         await createQuestionApi({
           exam_id: examId,
           question_text: question.text.trim(),
           type: "multiple_choice",
-          order: existingCount + (savedQuestions.size - existingQuestions.length) + savedCount + 1,
+          order: existingQuestions.length + newlySavedCount + savedCount + 1,
           answers: question.options.map((option) => ({
             text: option.text.trim(),
             is_correct: option.isCorrect,
@@ -465,15 +475,16 @@ export default function AddQuestionsByText() {
     }
 
     if (savedCount > 0) {
-      setExistingCount((prev) => prev + savedCount);
       alert(`Đã lưu ${savedCount} câu hỏi thành công!`);
       
-      // Reload existing questions
+      // Reload existing questions để đồng bộ với database
       const questionsResponse = await listQuestions({ examId });
       const normalized = (questionsResponse ?? [])
         .map(normalizeExistingQuestion)
         .filter(Boolean);
       setExistingQuestions(normalized);
+      // Cập nhật existingCount để khớp với số lượng câu hỏi đã load
+      setExistingCount(normalized.length);
     }
   };
 

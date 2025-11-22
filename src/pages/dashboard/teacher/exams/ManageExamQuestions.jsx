@@ -774,6 +774,15 @@ export default function ManageExamQuestions() {
             <div className="rounded-2xl border border-indigo-100 bg-indigo-50 px-4 py-3 text-sm text-indigo-700">
               Trình soạn thảo - Tạo và chỉnh sửa câu hỏi thủ công
             </div>
+            <button
+              type="button"
+              onClick={() => navigate("/dashboard/teacher/exams")}
+              disabled={sortedQuestions.length === 0}
+              className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-6 py-3 text-sm font-semibold text-white shadow-md disabled:opacity-60 disabled:cursor-not-allowed hover:bg-emerald-700"
+            >
+              <FiSave />
+              Lưu đề thi ({sortedQuestions.length} câu hỏi)
+            </button>
           </div>
         </header>
 

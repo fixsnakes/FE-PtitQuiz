@@ -9,6 +9,7 @@ import {
   FiUser,
   FiCheckCircle,
   FiXCircle,
+  FiEye,
 } from "react-icons/fi";
 import { toast } from "react-toastify";
 import DashboardLayout from "../../../../layouts/DashboardLayout";
@@ -84,7 +85,11 @@ function ExamResultsPage() {
 
   const calculatePercentage = (score, totalScore) => {
     if (!totalScore || totalScore === 0) return 0;
-    return ((score / totalScore) * 100).toFixed(1);
+    // Đảm bảo cả score và totalScore đều là số
+    const numScore = typeof score === 'number' ? score : parseFloat(score) || 0;
+    const numTotalScore = typeof totalScore === 'number' ? totalScore : parseFloat(totalScore) || 0;
+    if (numTotalScore === 0) return 0;
+    return ((numScore / numTotalScore) * 100).toFixed(1);
   };
 
   if (loading) {
@@ -121,6 +126,16 @@ function ExamResultsPage() {
                 Tổng điểm: {exam.total_score} điểm
               </p>
             )}
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <button
+              type="button"
+              onClick={() => navigate(`/dashboard/teacher/exams/${examId}/monitoring`)}
+              className="inline-flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-xs font-semibold text-amber-700 transition hover:bg-amber-100"
+            >
+              <FiEye />
+              Giám sát gian lận
+            </button>
           </div>
         </header>
 
@@ -182,7 +197,12 @@ function ExamResultsPage() {
                         </td>
                         <td className="px-4 py-4 text-center">
                           <span className="font-bold text-lg text-slate-900">
-                            {result.total_score?.toFixed(1) || 0}
+                            {(() => {
+                              const score = typeof result.total_score === 'number' 
+                                ? result.total_score 
+                                : parseFloat(result.total_score) || 0;
+                              return score.toFixed(1);
+                            })()}
                           </span>
                           {exam?.total_score && (
                             <span className="text-xs text-slate-500">
