@@ -74,6 +74,20 @@ export function updateStudentBanStatus({ classId, studentId, isBanned }) {
   });
 }
 
+export function updateClass(classId, payload) {
+  if (!classId) {
+    throw new Error("classId là bắt buộc.");
+  }
+
+  if (!payload || !payload.className || payload.className.trim() === "") {
+    throw new Error("className là bắt buộc và không được để trống.");
+  }
+
+  return apiClient.put(`/api/classes/${classId}`, {
+    className: payload.className.trim(),
+  });
+}
+
 export function deleteClass(classId) {
   if (!classId) {
     throw new Error("classId là bắt buộc.");
@@ -88,6 +102,7 @@ export default {
   createClass,
   getClassStudents,
   updateStudentBanStatus,
+  updateClass,
   deleteClass,
 };
 

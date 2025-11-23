@@ -22,6 +22,7 @@ import {
   deleteClass,
   getClassStudents,
   updateStudentBanStatus,
+  updateClass,
 } from "../../../../services/classService";
 import {
   createPost,
@@ -101,6 +102,9 @@ export default function ClassDetail() {
   const [currentUserId, setCurrentUserId] = useState(null); // Current user ID from localStorage
   const [exams, setExams] = useState([]); // List of exams in the class
   const [loadingExams, setLoadingExams] = useState(false); // Loading state for exams
+  const [isEditingClassName, setIsEditingClassName] = useState(false); // Edit class name mode
+  const [classNameInput, setClassNameInput] = useState(""); // Input for class name
+  const [updatingClassName, setUpdatingClassName] = useState(false); // Loading state for update
 
   const filteredStudents = useMemo(() => {
     const keyword = searchTerm.trim().toLowerCase();
@@ -252,9 +256,58 @@ export default function ClassDetail() {
         apiError.body?.message ||
         apiError.message ||
         "Không thể xóa lớp. Vui lòng thử lại.";
-      alert(message);
+      toast.error(message);
     } finally {
       setDeleteLoading(false);
+    }
+  };
+
+  const handleStartEditClassName = () => {
+    if (!classInfo) return;
+    setClassNameInput(classInfo.className);
+    setIsEditingClassName(true);
+  };
+
+  const handleCancelEditClassName = () => {
+    setIsEditingClassName(false);
+    setClassNameInput("");
+  };
+
+  const handleUpdateClassName = async (e) => {
+    e.preventDefault();
+    if (!classInfo?.id) return;
+
+    const trimmedName = classNameInput.trim();
+    if (!trimmedName) {
+      toast.error("Tên lớp không được để trống.");
+      return;
+    }
+
+    if (trimmedName === classInfo.className) {
+      setIsEditingClassName(false);
+      return;
+    }
+
+    try {
+      setUpdatingClassName(true);
+      const response = await updateClass(classInfo.id, { className: trimmedName });
+      
+      // Update local state
+      setClassInfo((prev) => ({
+        ...prev,
+        className: trimmedName,
+      }));
+      
+      setIsEditingClassName(false);
+      toast.success("Đã cập nhật tên lớp thành công.");
+    } catch (apiError) {
+      const message =
+        apiError.body?.message ||
+        apiError.message ||
+        "Không thể cập nhật tên lớp. Vui lòng thử lại.";
+      toast.error(message);
+    } finally {
+      setUpdatingClassName(false);
     }
   };
 
@@ -874,9 +927,59 @@ export default function ClassDetail() {
                 <FiArrowLeft />
                 Quay lại
               </button>
-              <h1 className="mt-3 text-3xl font-bold text-slate-900">
-                {classInfo?.className || "Chi tiết lớp học"}
-              </h1>
+              {isEditingClassName ? (
+                <form onSubmit={handleUpdateClassName} className="mt-3 flex items-center gap-3">
+                  <input
+                    type="text"
+                    value={classNameInput}
+                    onChange={(e) => setClassNameInput(e.target.value)}
+                    disabled={updatingClassName}
+                    className="rounded-lg border border-indigo-300 px-4 py-2 text-2xl font-bold text-slate-900 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200 disabled:opacity-60"
+                    placeholder="Nhập tên lớp"
+                    required
+                    autoFocus
+                  />
+                  <button
+                    type="submit"
+                    disabled={updatingClassName}
+                    className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-500 disabled:opacity-60"
+                  >
+                    {updatingClassName ? (
+                      <>
+                        <FiLoader className="animate-spin" />
+                        Đang lưu...
+                      </>
+                    ) : (
+                      "Lưu"
+                    )}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleCancelEditClassName}
+                    disabled={updatingClassName}
+                    className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 disabled:opacity-60"
+                  >
+                    Hủy
+                  </button>
+                </form>
+              ) : (
+                <div className="mt-3 flex items-center gap-3">
+                  <h1 className="text-3xl font-bold text-slate-900">
+                    {classInfo?.className || "Chi tiết lớp học"}
+                  </h1>
+                  {userRole === "teacher" && classInfo && (
+                    <button
+                      type="button"
+                      onClick={handleStartEditClassName}
+                      className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+                      title="Chỉnh sửa tên lớp"
+                    >
+                      <FiEdit2 />
+                      Sửa tên
+                    </button>
+                  )}
+                </div>
+              )}
               
             </div>
 
