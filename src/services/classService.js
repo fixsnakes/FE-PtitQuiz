@@ -40,13 +40,36 @@ export function getClassStudents({ classId, classCode, page, search, pageSize } 
 }
 
 export function updateStudentBanStatus({ classId, studentId, isBanned }) {
-  if (!classId || !studentId || typeof isBanned !== "boolean") {
-    throw new Error("classId, studentId và isBanned là bắt buộc.");
+  // Validate classId
+  if (classId === undefined || classId === null || classId === "") {
+    throw new Error("classId là bắt buộc.");
+  }
+
+  // Validate studentId
+  if (studentId === undefined || studentId === null || studentId === "") {
+    throw new Error("studentId là bắt buộc.");
+  }
+
+  // Validate isBanned is boolean
+  if (typeof isBanned !== "boolean") {
+    throw new Error("isBanned phải là giá trị boolean (true/false).");
+  }
+
+  // Convert to number if they are strings
+  const classIdNum = typeof classId === 'string' ? parseInt(classId, 10) : classId;
+  const studentIdNum = typeof studentId === 'string' ? parseInt(studentId, 10) : studentId;
+
+  if (isNaN(classIdNum)) {
+    throw new Error("classId phải là số hợp lệ.");
+  }
+
+  if (isNaN(studentIdNum)) {
+    throw new Error("studentId phải là số hợp lệ.");
   }
 
   return apiClient.post("/api/classes/student/ban", {
-    class_id: classId,
-    student_id: studentId,
+    class_id: classIdNum,
+    student_id: studentIdNum,
     is_banned: isBanned,
   });
 }

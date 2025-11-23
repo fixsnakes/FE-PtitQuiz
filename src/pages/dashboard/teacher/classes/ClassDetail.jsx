@@ -171,26 +171,66 @@ export default function ClassDetail() {
   }, [activeTab, classInfo?.id]);
 
   const handleBanToggle = async (studentId, currentStatus) => {
+    const newStatus = !currentStatus;
+    const action = newStatus ? "khóa" : "mở khóa";
+    
+    // Get the actual class ID (from URL param or classInfo)
+    const actualClassId = classId || classInfo?.id;
+    
+    if (!actualClassId) {
+      toast.error("Không tìm thấy thông tin lớp học. Vui lòng làm mới trang.");
+      return;
+    }
+
+    if (!studentId) {
+      toast.error("Không tìm thấy thông tin học sinh.");
+      return;
+    }
+
+    // Convert to number if needed
+    const classIdNum = typeof actualClassId === 'string' ? parseInt(actualClassId, 10) : actualClassId;
+    const studentIdNum = typeof studentId === 'string' ? parseInt(studentId, 10) : studentId;
+    
+    if (isNaN(classIdNum) || isNaN(studentIdNum)) {
+      toast.error("Dữ liệu không hợp lệ. Vui lòng thử lại.");
+      return;
+    }
+    
+    if (!window.confirm(
+      `Bạn chắc chắn muốn ${action} học sinh này?`
+    )) {
+      return;
+    }
+
     try {
       setProcessingStudentId(studentId);
       await updateStudentBanStatus({
-        classId,
-        studentId,
-        isBanned: !currentStatus,
+        classId: classIdNum,
+        studentId: studentIdNum,
+        isBanned: newStatus,
       });
+      
+      // Update local state
       setStudents((prev) =>
         prev.map((student) =>
           student.id === studentId
-            ? { ...student, isBanned: !currentStatus }
+            ? { ...student, isBanned: newStatus }
             : student
         )
+      );
+      
+      // Show success message
+      toast.success(
+        newStatus 
+          ? "Đã khóa học sinh thành công" 
+          : "Đã mở khóa học sinh thành công"
       );
     } catch (apiError) {
       const message =
         apiError.body?.message ||
         apiError.message ||
-        "Không thể cập nhật trạng thái học sinh.";
-      alert(message);
+        `Không thể ${action} học sinh. Vui lòng thử lại.`;
+      toast.error(message);
     } finally {
       setProcessingStudentId(null);
     }
