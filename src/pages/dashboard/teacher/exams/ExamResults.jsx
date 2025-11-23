@@ -10,6 +10,7 @@ import {
   FiCheckCircle,
   FiXCircle,
   FiEye,
+  FiDownload,
 } from "react-icons/fi";
 import { toast } from "react-toastify";
 import DashboardLayout from "../../../../layouts/DashboardLayout";
@@ -17,6 +18,7 @@ import { getExamDetail } from "../../../../services/examService";
 import {
   getExamResults,
   updateExamResultFeedback,
+  exportExamResults,
 } from "../../../../services/examResultService";
 import formatDateTime from "../../../../utils/format_time";
 
@@ -29,6 +31,7 @@ function ExamResultsPage() {
   const [editingFeedbackId, setEditingFeedbackId] = useState(null);
   const [feedbackText, setFeedbackText] = useState("");
   const [savingFeedback, setSavingFeedback] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     if (examId) {
@@ -92,6 +95,37 @@ function ExamResultsPage() {
     return ((numScore / numTotalScore) * 100).toFixed(1);
   };
 
+  const handleExportResults = async () => {
+    if (!examId || results.length === 0) {
+      toast.warning("Không có dữ liệu để xuất.");
+      return;
+    }
+
+    setExporting(true);
+    try {
+      const response = await exportExamResults(examId, 'csv');
+      
+      // Create blob and download
+      const blob = new Blob([response], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `ket-qua-thi-${exam?.title?.replace(/[^a-z0-9]/gi, '_') || 'exam'}-${Date.now()}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast.success("Đã xuất kết quả thi thành công.");
+    } catch (error) {
+      toast.error(
+        error?.body?.message || error?.message || "Không thể xuất kết quả thi."
+      );
+    } finally {
+      setExporting(false);
+    }
+  };
+
   if (loading) {
     return (
       <DashboardLayout role="teacher">
@@ -128,6 +162,21 @@ function ExamResultsPage() {
             )}
           </div>
           <div className="flex flex-wrap gap-3">
+            {results.length > 0 && (
+              <button
+                type="button"
+                onClick={handleExportResults}
+                disabled={exporting}
+                className="inline-flex items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2 text-xs font-semibold text-indigo-700 transition hover:bg-indigo-100 disabled:opacity-60"
+              >
+                {exporting ? (
+                  <FiLoader className="animate-spin" />
+                ) : (
+                  <FiDownload />
+                )}
+                {exporting ? "Đang xuất..." : "Xuất Excel/CSV"}
+              </button>
+            )}
             <button
               type="button"
               onClick={() => navigate(`/dashboard/teacher/exams/${examId}/monitoring`)}

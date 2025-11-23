@@ -10,7 +10,7 @@ import {
   FiHeart, 
   FiClock, 
   FiBarChart2,
-
+  FiDollarSign,
 } from "react-icons/fi";
 
 import { SiGoogleclassroom  } from "react-icons/si";
@@ -24,6 +24,7 @@ const SIDEBAR_ITEMS = {
     { label: "Kỳ thi", path: "/dashboard/teacher/exams", icon: FiFileText },
     { label: "Lớp học", path: "/dashboard/teacher/classes", icon: FiUsers },
     { label: "Thông báo", path: "/dashboard/teacher/notifications", icon: FiBell },
+    { label: "Thống kê mua đề thi", path: "/dashboard/teacher/exam-purchases", icon: FiDollarSign },
     { label: "Ví của tôi", path: "/dashboard/wallet",icon: MdPayment},
     { label: "Tài Khoản", path: "/dashboard/profile", icon: CiUser },
   ],

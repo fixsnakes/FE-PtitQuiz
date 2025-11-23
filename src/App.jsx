@@ -18,6 +18,7 @@ import EditExamPage from "./pages/dashboard/teacher/exams/EditExam";
 import ExamResultsPage from "./pages/dashboard/teacher/exams/ExamResults";
 import ExamMonitoringPage from "./pages/dashboard/teacher/exams/ExamMonitoring";
 import NotificationsPage from "./pages/dashboard/teacher/Notifications";
+import TeacherExamPurchases from "./pages/dashboard/teacher/ExamPurchases";
 import StudentClasses from "./pages/dashboard/student/StudentClasses";
 import StudentExams from "./pages/dashboard/student/StudentExams";
 import TakeExam from "./pages/dashboard/student/TakeExam";
@@ -160,6 +161,14 @@ function App() {
         element={
           <ProtectedRoute allowedRoles={["teacher"]}>
             <NotificationsPage />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dashboard/teacher/exam-purchases"
+        element={
+          <ProtectedRoute allowedRoles={["teacher"]}>
+            <TeacherExamPurchases />
           </ProtectedRoute>
         }
       />
