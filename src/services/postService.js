@@ -102,6 +102,18 @@ export function addPostComment(payload) {
   });
 }
 
+/**
+ * Xóa bình luận
+ * @param {number|string} commentId - ID của bình luận
+ */
+export function deletePostComment(commentId) {
+  if (!commentId) {
+    throw new Error("commentId là bắt buộc.");
+  }
+
+  return apiClient.delete(`/api/posts/comment/${commentId}`);
+}
+
 export default {
   createPost,
   getClassPosts,
@@ -109,5 +121,6 @@ export default {
   deletePost,
   getPostComments,
   addPostComment,
+  deletePostComment,
 };
 

@@ -13,6 +13,8 @@ import {
   FiPlus,
   FiEdit2,
   FiMessageSquare,
+  FiFileText,
+  FiExternalLink,
 } from "react-icons/fi";
 import { toast } from "react-toastify";
 import DashboardLayout from "../../../../layouts/DashboardLayout";
@@ -26,7 +28,11 @@ import {
   getClassPosts,
   updatePost,
   deletePost,
+  getPostComments,
+  addPostComment,
+  deletePostComment,
 } from "../../../../services/postService";
+import { listExams } from "../../../../services/examService";
 import formatDateTime from "../../../../utils/format_time";
 
 const PAGE_SIZE = 10;
@@ -87,6 +93,14 @@ export default function ClassDetail() {
   const [showPostForm, setShowPostForm] = useState(false);
   const [editingPost, setEditingPost] = useState(null);
   const [postForm, setPostForm] = useState({ title: "", post: "" });
+  const [comments, setComments] = useState({}); // { postId: [comments] }
+  const [loadingComments, setLoadingComments] = useState({}); // { postId: boolean }
+  const [expandedPosts, setExpandedPosts] = useState(new Set()); // Track which posts show comments
+  const [commentForms, setCommentForms] = useState({}); // { postId: commentText }
+  const [userRole, setUserRole] = useState(""); // User role from localStorage
+  const [currentUserId, setCurrentUserId] = useState(null); // Current user ID from localStorage
+  const [exams, setExams] = useState([]); // List of exams in the class
+  const [loadingExams, setLoadingExams] = useState(false); // Loading state for exams
 
   const filteredStudents = useMemo(() => {
     const keyword = searchTerm.trim().toLowerCase();
@@ -130,12 +144,29 @@ export default function ClassDetail() {
   };
 
   useEffect(() => {
+    // Get user role and id from localStorage
+    try {
+      const storedUser = localStorage.getItem("currentUser");
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        setUserRole(user.role || "");
+        setCurrentUserId(user.id || null);
+      }
+    } catch (error) {
+      console.error("Error reading user from localStorage:", error);
+    }
+  }, []);
+
+  useEffect(() => {
     loadClassDetail();
   }, [classId, classCode]);
 
   useEffect(() => {
     if (activeTab === "posts" && classInfo?.id) {
       loadPosts();
+    }
+    if (activeTab === "exams" && classInfo?.id) {
+      loadExams();
     }
   }, [activeTab, classInfo?.id]);
 
@@ -401,11 +432,172 @@ export default function ClassDetail() {
     setPostForm({ title: "", post: "" });
   };
 
+  // Comments functions
+  const loadComments = async (postId) => {
+    if (!postId) return;
+    setLoadingComments((prev) => ({ ...prev, [postId]: true }));
+    try {
+      const response = await getPostComments(postId);
+      const commentsList = Array.isArray(response) ? response : [];
+      setComments((prev) => ({ ...prev, [postId]: commentsList }));
+    } catch (err) {
+      toast.error(err?.body?.message || err?.message || "Không thể tải bình luận.");
+    } finally {
+      setLoadingComments((prev) => ({ ...prev, [postId]: false }));
+    }
+  };
+
+  const toggleComments = (postId) => {
+    setExpandedPosts((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(postId)) {
+        newSet.delete(postId);
+      } else {
+        newSet.add(postId);
+        if (!comments[postId]) {
+          loadComments(postId);
+        }
+      }
+      return newSet;
+    });
+  };
+
+  const handleAddComment = async (e, postId) => {
+    e.preventDefault();
+    const commentText = commentForms[postId]?.trim();
+    if (!commentText) {
+      toast.error("Vui lòng nhập nội dung bình luận.");
+      return;
+    }
+
+    try {
+      const newComment = await addPostComment({
+        postId,
+        comment: commentText,
+      });
+      setComments((prev) => ({
+        ...prev,
+        [postId]: [...(prev[postId] || []), newComment],
+      }));
+      setCommentForms((prev) => ({ ...prev, [postId]: "" }));
+      toast.success("Đã thêm bình luận thành công.");
+    } catch (err) {
+      toast.error(err?.body?.message || err?.message || "Không thể thêm bình luận.");
+    }
+  };
+
+  const handleDeleteComment = async (commentId, postId) => {
+    if (!window.confirm("Bạn chắc chắn muốn xóa bình luận này?")) return;
+
+    try {
+      await deletePostComment(commentId);
+      setComments((prev) => ({
+        ...prev,
+        [postId]: (prev[postId] || []).filter((c) => c.id !== commentId),
+      }));
+      toast.success("Đã xóa bình luận thành công.");
+    } catch (err) {
+      toast.error(err?.body?.message || err?.message || "Không thể xóa bình luận.");
+    }
+  };
+
+  // Exams functions
+  const loadExams = async () => {
+    if (!classInfo?.id) return;
+    setLoadingExams(true);
+    try {
+      const response = await listExams({ class_id: classInfo.id });
+      const examsList = Array.isArray(response) ? response : [];
+      setExams(examsList);
+    } catch (err) {
+      toast.error(err?.body?.message || err?.message || "Không thể tải danh sách đề thi.");
+    } finally {
+      setLoadingExams(false);
+    }
+  };
+
+  const renderExamsTab = () => (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold text-slate-900">Đề thi trong lớp</h3>
+        <button
+          type="button"
+          onClick={loadExams}
+          className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+        >
+          <FiRefreshCw />
+          Làm mới
+        </button>
+      </div>
+
+      {loadingExams ? (
+        <div className="flex items-center justify-center py-10 text-slate-500">
+          <FiLoader className="mr-2 animate-spin" />
+          Đang tải danh sách đề thi...
+        </div>
+      ) : exams.length === 0 ? (
+        <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/60 p-10 text-center text-sm text-slate-500">
+          Chưa có đề thi nào trong lớp này.
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {exams.map((exam) => (
+            <div
+              key={exam.id}
+              className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:shadow-md"
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3">
+                    <FiFileText className="text-indigo-600 text-xl" />
+                    <h4 className="text-lg font-semibold text-slate-900">{exam.title}</h4>
+                  </div>
+                  {exam.description && (
+                    <p className="mt-2 text-sm text-slate-600">{exam.description}</p>
+                  )}
+                  <div className="mt-3 flex flex-wrap gap-4 text-xs text-slate-500">
+                    {exam.minutes && (
+                      <span>Thời gian: {exam.minutes} phút</span>
+                    )}
+                    {exam.total_questions && (
+                      <span>Số câu hỏi: {exam.total_questions}</span>
+                    )}
+                    {exam.created_at && (
+                      <span>Tạo lúc: {formatDateTime(exam.created_at)}</span>
+                    )}
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/dashboard/teacher/exams/${exam.id}/edit`)}
+                    className="inline-flex items-center gap-2 rounded-xl border border-indigo-200 px-4 py-2 text-sm font-semibold text-indigo-600 transition hover:bg-indigo-50"
+                  >
+                    <FiEdit2 />
+                    Xem chi tiết
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/dashboard/teacher/exams/${exam.id}/results`)}
+                    className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+                  >
+                    <FiExternalLink />
+                    Kết quả
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+
   const renderPostsTab = () => (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold text-slate-900">Bài đăng trong lớp</h3>
-        {!showPostForm && (
+        {userRole === "teacher" && !showPostForm && (
           <button
             type="button"
             onClick={() => setShowPostForm(true)}
@@ -497,24 +689,117 @@ export default function ClassDetail() {
                     {formatDateTime(post.created_at)}
                   </p>
                 </div>
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => startEditPost(post)}
-                    className="inline-flex items-center gap-1 rounded-lg border border-indigo-200 px-3 py-1 text-xs font-semibold text-indigo-600 hover:bg-indigo-50"
-                  >
-                    <FiEdit2 />
-                    Sửa
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleDeletePost(post.id)}
-                    className="inline-flex items-center gap-1 rounded-lg border border-red-200 px-3 py-1 text-xs font-semibold text-red-600 hover:bg-red-50"
-                  >
-                    <FiTrash2 />
-                    Xóa
-                  </button>
-                </div>
+                {userRole === "teacher" && (
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => startEditPost(post)}
+                      className="inline-flex items-center gap-1 rounded-lg border border-indigo-200 px-3 py-1 text-xs font-semibold text-indigo-600 hover:bg-indigo-50"
+                    >
+                      <FiEdit2 />
+                      Sửa
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeletePost(post.id)}
+                      className="inline-flex items-center gap-1 rounded-lg border border-red-200 px-3 py-1 text-xs font-semibold text-red-600 hover:bg-red-50"
+                    >
+                      <FiTrash2 />
+                      Xóa
+                    </button>
+                  </div>
+                )}
+              </div>
+              
+              {/* Comments Section */}
+              <div className="mt-4 border-t border-slate-200 pt-4">
+                <button
+                  type="button"
+                  onClick={() => toggleComments(post.id)}
+                  className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-indigo-600 transition"
+                >
+                  <FiMessageSquare />
+                  {expandedPosts.has(post.id) ? "Ẩn bình luận" : "Xem bình luận"}
+                  {comments[post.id] && (
+                    <span className="rounded-full bg-slate-200 px-2 py-0.5 text-xs">
+                      {comments[post.id].length}
+                    </span>
+                  )}
+                </button>
+
+                {expandedPosts.has(post.id) && (
+                  <div className="mt-4 space-y-4">
+                    {/* Comment Form */}
+                    <form
+                      onSubmit={(e) => handleAddComment(e, post.id)}
+                      className="flex gap-2"
+                    >
+                      <input
+                        type="text"
+                        value={commentForms[post.id] || ""}
+                        onChange={(e) =>
+                          setCommentForms((prev) => ({
+                            ...prev,
+                            [post.id]: e.target.value,
+                          }))
+                        }
+                        placeholder="Viết bình luận..."
+                        className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
+                      />
+                      <button
+                        type="submit"
+                        className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-500"
+                      >
+                        <FiPlus />
+                        Gửi
+                      </button>
+                    </form>
+
+                    {/* Comments List */}
+                    {loadingComments[post.id] ? (
+                      <div className="flex items-center justify-center py-4 text-slate-500">
+                        <FiLoader className="mr-2 animate-spin" />
+                        Đang tải bình luận...
+                      </div>
+                    ) : !comments[post.id] || comments[post.id].length === 0 ? (
+                      <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50/60 p-4 text-center text-sm text-slate-500">
+                        Chưa có bình luận nào.
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {comments[post.id].map((comment) => (
+                          <div
+                            key={comment.id}
+                            className="flex items-start justify-between rounded-lg border border-slate-200 bg-slate-50/60 p-3"
+                          >
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-semibold text-slate-900">
+                                  {comment.author?.fullName || "Người dùng"}
+                                </span>
+                                <span className="text-xs text-slate-400">
+                                  {formatDateTime(comment.created_at)}
+                                </span>
+                              </div>
+                              <p className="mt-1 text-sm text-slate-700 whitespace-pre-wrap">
+                                {comment.text}
+                              </p>
+                            </div>
+                            {userRole === "teacher" && (
+                              <button
+                                type="button"
+                                onClick={() => handleDeleteComment(comment.id, post.id)}
+                                className="ml-2 inline-flex items-center gap-1 rounded-lg border border-red-200 px-2 py-1 text-xs font-semibold text-red-600 hover:bg-red-50"
+                              >
+                                <FiTrash2 />
+                              </button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           ))}
@@ -532,7 +817,7 @@ export default function ClassDetail() {
   const tabContent = {
     students: renderStudentsTab(),
     posts: renderPostsTab(),
-    exams: renderPlaceholderTab("đề thi"),
+    exams: renderExamsTab(),
   };
 
   return (
