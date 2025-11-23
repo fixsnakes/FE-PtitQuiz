@@ -8,6 +8,7 @@ import formatDateTime from "../../../utils/format_time";
 export default function PurchaseManagement() {
   const [purchases, setPurchases] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [userRole, setUserRole] = useState("");
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 10,
@@ -22,6 +23,19 @@ export default function PurchaseManagement() {
     amount: 0,
     reason: "",
   });
+
+  useEffect(() => {
+    // Get user role from localStorage
+    try {
+      const storedUser = localStorage.getItem("currentUser");
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        setUserRole(user.role || "");
+      }
+    } catch (error) {
+      console.error("Error reading user from localStorage:", error);
+    }
+  }, []);
 
   useEffect(() => {
     loadPurchases();
@@ -189,13 +203,15 @@ export default function PurchaseManagement() {
                       </td>
                       <td className="py-3 px-4">
                         <div className="flex items-center justify-center gap-2">
-                          <button
-                            onClick={() => openRefundModal(purchase)}
-                            className="p-2 text-orange-600 hover:bg-orange-50 rounded-lg transition"
-                            title="Hoàn tiền"
-                          >
-                            <FiRotateCcw className="h-4 w-4" />
-                          </button>
+                          {userRole === "superadmin" && (
+                            <button
+                              onClick={() => openRefundModal(purchase)}
+                              className="p-2 text-orange-600 hover:bg-orange-50 rounded-lg transition"
+                              title="Hoàn tiền"
+                            >
+                              <FiRotateCcw className="h-4 w-4" />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>

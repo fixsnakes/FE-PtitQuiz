@@ -15,14 +15,14 @@ import {
 } from "react-icons/fi";
 
 const ADMIN_NAV_ITEMS = [
-  { label: "Tổng quan", path: "/dashboard/admin", icon: FiGrid },
-  { label: "Quản lý người dùng", path: "/dashboard/admin/users", icon: FiUsers },
-  { label: "Quản lý đề thi", path: "/dashboard/admin/exams", icon: FiFileText },
-  { label: "Quản lý lớp học", path: "/dashboard/admin/classes", icon: FiBookOpen },
-  { label: "Quản lý giao dịch", path: "/dashboard/admin/purchases", icon: FiDollarSign },
-  { label: "Báo cáo thống kê", path: "/dashboard/admin/reports", icon: FiBarChart2 },
-  { label: "Thông báo", path: "/dashboard/admin/notifications", icon: FiBell },
-  { label: "Kiểm duyệt nội dung", path: "/dashboard/admin/moderation", icon: FiMessageSquare },
+  { label: "Tổng quan", path: "/dashboard/admin", icon: FiGrid, superAdminOnly: false },
+  { label: "Quản lý người dùng", path: "/dashboard/admin/users", icon: FiUsers, superAdminOnly: true },
+  { label: "Quản lý đề thi", path: "/dashboard/admin/exams", icon: FiFileText, superAdminOnly: false },
+  { label: "Quản lý lớp học", path: "/dashboard/admin/classes", icon: FiBookOpen, superAdminOnly: false },
+  { label: "Quản lý giao dịch", path: "/dashboard/admin/purchases", icon: FiDollarSign, superAdminOnly: false },
+  { label: "Báo cáo thống kê", path: "/dashboard/admin/reports", icon: FiBarChart2, superAdminOnly: false },
+  { label: "Thông báo", path: "/dashboard/admin/notifications", icon: FiBell, superAdminOnly: false },
+  { label: "Kiểm duyệt nội dung", path: "/dashboard/admin/moderation", icon: FiMessageSquare, superAdminOnly: false },
 ];
 
 export default function AdminLayout() {
@@ -71,7 +71,13 @@ export default function AdminLayout() {
         </div>
 
         <nav className="flex-1 space-y-1 p-4 overflow-y-auto">
-          {ADMIN_NAV_ITEMS.map((item) => {
+          {ADMIN_NAV_ITEMS.filter(item => {
+            // Show all items for superadmin, hide superAdminOnly items for admin
+            if (item.superAdminOnly && currentUser?.role !== 'superadmin') {
+              return false;
+            }
+            return true;
+          }).map((item) => {
             const isActive = location.pathname === item.path;
             const Icon = item.icon;
 
@@ -132,7 +138,13 @@ export default function AdminLayout() {
             </div>
 
             <nav className="flex-1 space-y-1 p-4 overflow-y-auto">
-              {ADMIN_NAV_ITEMS.map((item) => {
+              {ADMIN_NAV_ITEMS.filter(item => {
+                // Show all items for superadmin, hide superAdminOnly items for admin
+                if (item.superAdminOnly && currentUser?.role !== 'superadmin') {
+                  return false;
+                }
+                return true;
+              }).map((item) => {
                 const isActive = location.pathname === item.path;
                 const Icon = item.icon;
 

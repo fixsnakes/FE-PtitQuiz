@@ -24,7 +24,9 @@ export default function ProtectedRoute({ allowedRoles, children }) {
     !allowedRoles.includes(currentUser.role)
   ) {
     const fallbackPath =
-      currentUser.role === "teacher"
+      currentUser.role === "superadmin" || currentUser.role === "admin"
+        ? "/dashboard/admin"
+        : currentUser.role === "teacher"
         ? "/dashboard/teacher"
         : currentUser.role === "student"
         ? "/dashboard/student"

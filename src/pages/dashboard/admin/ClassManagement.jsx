@@ -7,6 +7,7 @@ import formatDateTime from "../../../utils/format_time";
 export default function ClassManagement() {
   const [classes, setClasses] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [userRole, setUserRole] = useState("");
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 10,
@@ -18,6 +19,19 @@ export default function ClassManagement() {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedClass, setSelectedClass] = useState(null);
   const [classStudents, setClassStudents] = useState([]);
+
+  useEffect(() => {
+    // Get user role from localStorage
+    try {
+      const storedUser = localStorage.getItem("currentUser");
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        setUserRole(user.role || "");
+      }
+    } catch (error) {
+      console.error("Error reading user from localStorage:", error);
+    }
+  }, []);
 
   useEffect(() => {
     loadClasses();
@@ -199,13 +213,15 @@ export default function ClassManagement() {
                           >
                             <FiEye className="h-4 w-4" />
                           </button>
-                          <button
-                            onClick={() => handleDeleteClass(classItem)}
-                            className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
-                            title="Xóa"
-                          >
-                            <FiTrash2 className="h-4 w-4" />
-                          </button>
+                          {userRole === "superadmin" && (
+                            <button
+                              onClick={() => handleDeleteClass(classItem)}
+                              className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
+                              title="Xóa"
+                            >
+                              <FiTrash2 className="h-4 w-4" />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>

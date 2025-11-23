@@ -38,7 +38,7 @@ export default function Login() {
         })
       );
       let targetPath;
-      if (response.role === "admin") {
+      if (response.role === "admin" || response.role === "superadmin") {
         targetPath = "/dashboard/admin";
       } else if (response.role === "teacher") {
         targetPath = "/dashboard/teacher";
