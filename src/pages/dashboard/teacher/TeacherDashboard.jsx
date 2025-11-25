@@ -186,7 +186,13 @@ export default function TeacherDashboard() {
                   <div
                     key={cls.id}
                     className="cursor-pointer rounded-lg border border-slate-100 p-3 transition hover:bg-slate-50"
-                    onClick={() => navigate(`/teacher/classes/${cls.id}`)}
+                    onClick={() =>
+                      navigate(
+                        `/teacher/classes/${encodeURIComponent(
+                          cls.classCode || cls.id
+                        )}`
+                      )
+                    }
                   >
                     <h3 className="font-semibold text-slate-900">{cls.className}</h3>
                     <p className="mt-1 text-xs text-slate-500">

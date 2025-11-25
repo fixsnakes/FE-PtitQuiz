@@ -88,15 +88,6 @@ export default function DashboardSidebar({ role = "student" }) {
         })}
       </nav>
 
-      <div className="mt-8 rounded-xl border border-slate-200 p-4 text-sm text-slate-600">
-        <div className="flex items-center gap-2 font-semibold text-slate-900">
-            <FiBell className="h-4 w-4 text-indigo-500"/> 
-            <span>Ghi chú</span>
-        </div>
-        <p className="mt-1 text-slate-500">
-          Một vài mô tả placeholder cho tính năng sắp ra mắt.
-        </p>
-      </div>
     </aside>
   );
 }
