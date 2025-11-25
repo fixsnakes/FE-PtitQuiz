@@ -775,7 +775,7 @@ export default function AddQuestionsByText() {
   return (
     <DashboardLayout role="teacher">
       <div className="space-y-6">
-        <header className="flex flex-wrap items-center justify-between gap-4">
+        <header className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-4">
             <button
               type="button"
@@ -784,11 +784,11 @@ export default function AddQuestionsByText() {
             >
               <FiArrowLeft className="h-5 w-5 text-slate-600" />
             </button>
-            <div>
+            <div className="min-w-0 flex-1">
               <p className="text-xs font-semibold uppercase tracking-[0.3em] text-indigo-500">
                 Thêm câu hỏi bằng văn bản
               </p>
-              <h1 className="mt-2 text-3xl font-bold text-slate-900">
+              <h1 className="mt-2 text-2xl lg:text-3xl font-bold text-slate-900 break-words">
                 {exam?.title || "Đề thi"}
               </h1>
               {exam?.question_creation_method && (
@@ -800,7 +800,7 @@ export default function AddQuestionsByText() {
             </div>
           </div>
 
-          <div className="flex gap-3">
+          <div className="flex flex-wrap items-center gap-3">
             <button
               type="button"
               onClick={handleSaveAll}
@@ -810,17 +810,23 @@ export default function AddQuestionsByText() {
                 unsavedQuestionIndexes.length === 0 ||
                 savingQuestionIndex !== null
               }
-              className="inline-flex items-center gap-2 rounded-full bg-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-md disabled:opacity-60 disabled:cursor-not-allowed hover:bg-indigo-700"
+              className="inline-flex items-center gap-2 rounded-full bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md disabled:opacity-60 disabled:cursor-not-allowed hover:bg-indigo-700 whitespace-nowrap"
             >
               {savingQuestionIndex !== null ? (
                 <>
                   <FiLoader className="animate-spin" />
-                  Đang lưu...
+                  <span className="hidden sm:inline">Đang lưu...</span>
+                  <span className="sm:hidden">Đang lưu</span>
                 </>
               ) : (
                 <>
                   <FiSave />
-                  Lưu tất cả ({unsavedQuestionIndexes.length} câu chưa lưu)
+                  <span className="hidden md:inline">
+                    Lưu tất cả ({unsavedQuestionIndexes.length} câu chưa lưu)
+                  </span>
+                  <span className="md:hidden">
+                    Lưu tất cả ({unsavedQuestionIndexes.length})
+                  </span>
                 </>
               )}
             </button>
@@ -828,10 +834,15 @@ export default function AddQuestionsByText() {
               type="button"
               onClick={handleSaveExam}
               disabled={existingQuestions.length === 0}
-              className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-6 py-3 text-sm font-semibold text-white shadow-md disabled:opacity-60 disabled:cursor-not-allowed hover:bg-emerald-700"
+              className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md disabled:opacity-60 disabled:cursor-not-allowed hover:bg-emerald-700 whitespace-nowrap"
             >
               <FiSave />
-              Lưu đề thi ({existingQuestions.length} câu đã lưu)
+              <span className="hidden md:inline">
+                Lưu đề thi ({existingQuestions.length} câu đã lưu)
+              </span>
+              <span className="md:hidden">
+                Lưu đề thi ({existingQuestions.length})
+              </span>
             </button>
           </div>
         </header>
