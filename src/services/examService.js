@@ -61,6 +61,19 @@ export function deleteExam(examId) {
   return apiClient.delete(`/api/exams/${examId}`);
 }
 
+export function switchQuestionCreationMethod(examId, targetMethod) {
+  if (!examId) {
+    throw new Error("examId là bắt buộc.");
+  }
+  if (!targetMethod) {
+    throw new Error("targetMethod là bắt buộc.");
+  }
+
+  return apiClient.post(`/api/exams/${examId}/switch-question-method`, {
+    target_method: targetMethod,
+  });
+}
+
 export async function createQuestion(payload) {
   if (!payload?.exam_id) {
     throw new Error("exam_id là bắt buộc khi tạo câu hỏi.");
@@ -108,6 +121,7 @@ export default {
   getExamDetail,
   updateExam,
   deleteExam,
+  switchQuestionCreationMethod,
   createQuestion,
   createExamWithQuestions,
 };

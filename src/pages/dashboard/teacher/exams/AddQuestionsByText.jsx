@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   FiInfo,
@@ -14,7 +14,13 @@ import { getExamDetail } from "../../../../services/examService";
 import {
   createQuestion as createQuestionApi,
   listQuestions,
+  updateQuestion as updateQuestionApi,
 } from "../../../../services/questionService";
+
+const QUESTION_METHOD_LABELS = {
+  text: "Văn bản",
+  editor: "Trình soạn thảo",
+};
 
 function parseExamText(text) {
   const lines = text.split("\n");
@@ -71,7 +77,127 @@ function parseExamText(text) {
     questions.push(currentQuestion);
   }
 
-  return { questions, errors };
+  const sanitizedQuestions = questions.filter((question) => {
+    const hasTitle = question.text?.trim();
+    const hasOption = question.options?.some((option) => option.text?.trim());
+    return Boolean(hasTitle) || Boolean(hasOption);
+  });
+
+  return { questions: sanitizedQuestions, errors };
+}
+
+function normalizeOption(option = {}) {
+  return {
+    text: (option.text ?? option.answer_text ?? option.content ?? "").trim(),
+    isCorrect: Boolean(
+      option.isCorrect ?? option.is_correct ?? option.correct ?? option.is_true ?? false
+    ),
+  };
+}
+
+function areOptionsEqual(a = [], b = []) {
+  if (a.length !== b.length) return false;
+  for (let index = 0; index < a.length; index += 1) {
+    const optionA = a[index];
+    const optionB = b[index];
+    if ((optionA.text ?? "").trim() !== (optionB.text ?? "").trim()) {
+      return false;
+    }
+    if (Boolean(optionA.isCorrect) !== Boolean(optionB.isCorrect)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+function hasQuestionChanged(existingQuestion, parsedQuestion) {
+  if (!existingQuestion) return true;
+  const existingText = (existingQuestion.text ?? "").trim();
+  const parsedText = (parsedQuestion.text ?? "").trim();
+  if (existingText !== parsedText) return true;
+  if (!areOptionsEqual(existingQuestion.options ?? [], parsedQuestion.options ?? [])) {
+    return true;
+  }
+  return false;
+}
+
+function buildRawTextFromQuestions(questions = []) {
+  if (!Array.isArray(questions) || questions.length === 0) {
+    return "";
+  }
+
+  const blocks = questions.map((question) => {
+    const title = (question.text ?? "").trimEnd();
+    const options = (question.options ?? []).map((option, index) => {
+      const letter = String.fromCharCode(65 + index);
+      const prefix = option.isCorrect ? `*${letter}.` : `${letter}.`;
+      const body = (option.text ?? "").trim();
+      return `${prefix} ${body}`.trimEnd();
+    });
+    return [title, ...options].join("\n").trim();
+  });
+
+  return blocks.join("\n\n").trim();
+}
+
+function updateQuestionInRawText(rawText, questionIndex, updatedQuestion) {
+  const parsed = parseExamText(rawText);
+  if (!parsed.questions) {
+    // Nếu không parse được, trả về rawText mới từ updatedQuestion
+    return buildRawTextFromQuestions([updatedQuestion]);
+  }
+  
+  // Tạo danh sách câu hỏi mới, thay thế câu hỏi tại questionIndex
+  const updatedQuestions = [...parsed.questions];
+  if (questionIndex < updatedQuestions.length) {
+    // Thay thế câu hỏi tại index bằng câu hỏi đã cập nhật
+    updatedQuestions[questionIndex] = {
+      text: updatedQuestion.text || "",
+      options: updatedQuestion.options || [],
+      type: "MCQ",
+    };
+  } else {
+    // Nếu index vượt quá, thêm vào cuối
+    updatedQuestions.push({
+      text: updatedQuestion.text || "",
+      options: updatedQuestion.options || [],
+      type: "MCQ",
+    });
+  }
+  
+  // Tạo lại rawText từ danh sách câu hỏi đã cập nhật
+  return buildRawTextFromQuestions(updatedQuestions);
+}
+
+function buildQuestionPayload(question) {
+  // Đảm bảo answers luôn được tạo từ options
+  const answers = (question.options ?? [])
+    .filter((option) => (option.text ?? "").trim().length > 0) // Loại bỏ options rỗng
+    .map((option) => ({
+      text: (option.text ?? "").trim(),
+      is_correct: Boolean(option.isCorrect),
+    }));
+  
+  // Đảm bảo có ít nhất 2 answers
+  if (answers.length < 2) {
+    throw new Error("Mỗi câu hỏi phải có ≥ 2 đáp án.");
+  }
+  
+  // Đảm bảo có ít nhất 1 đáp án đúng
+  const correctCount = answers.filter((answer) => answer.is_correct).length;
+  if (correctCount === 0) {
+    throw new Error("Mỗi câu hỏi phải có ít nhất 1 đáp án đúng.");
+  }
+  
+  const questionType = correctCount === 1 ? "single_choice" : "multiple_choice";
+  
+  const payload = {
+    question_text: (question.text ?? "").trim(),
+    type: questionType,
+    answers, // Luôn gửi answers array
+  };
+  
+  return payload;
 }
 
 const ExamInstructions = () => (
@@ -128,7 +254,7 @@ function ExamPreview({
         <h3 className="text-sm font-semibold text-slate-700 mb-3">Danh sách câu hỏi</h3>
         <div className="flex flex-wrap gap-2 mb-4">
           {questions.map((question, questionIndex) => {
-            const isSaved = savedQuestions.has(questionIndex);
+            const isSaved = question.isExisting || savedQuestions.has(questionIndex);
             const isSelected = selectedQuestionIndex === questionIndex;
             return (
               <button
@@ -152,49 +278,77 @@ function ExamPreview({
 
       {selectedQuestionIndex !== null && questions[selectedQuestionIndex] && (
         <div className="rounded-lg border-2 border-indigo-200 bg-white p-4 shadow-sm">
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-sm font-semibold text-slate-600">
-              Câu {selectedQuestionIndex + 1} (Một đáp án)
-            </p>
-            {!questions[selectedQuestionIndex]?.isExisting && (
-              <button
-                type="button"
-                onClick={() => onSaveQuestion(selectedQuestionIndex)}
-                disabled={
-                  savingQuestionIndex === selectedQuestionIndex ||
-                  savedQuestions.has(selectedQuestionIndex)
-                }
-                className={`inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
-                  savedQuestions.has(selectedQuestionIndex)
-                    ? "bg-emerald-100 text-emerald-700 cursor-not-allowed"
-                    : "bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50"
-                }`}
-              >
-                {savingQuestionIndex === selectedQuestionIndex ? (
-                  <>
-                    <FiLoader className="animate-spin" />
-                    Đang lưu...
-                  </>
-                ) : savedQuestions.has(selectedQuestionIndex) ? (
-                  <>
-                    <FiCheckCircle />
-                    Đã lưu
-                  </>
-                ) : (
-                  <>
-                    <FiSave />
-                    Lưu câu hỏi
-                  </>
+          {(() => {
+            const question = questions[selectedQuestionIndex];
+            const isExisting = question?.isExisting;
+            const isNewSaved = !isExisting && savedQuestions.has(selectedQuestionIndex);
+            const canUpdateExisting = isExisting && question.hasChanges;
+
+            return (
+              <div className="flex items-center justify-between mb-3">
+                <p className="text-sm font-semibold text-slate-600">
+                  Câu {selectedQuestionIndex + 1} (Một đáp án)
+                </p>
+                {!isExisting && (
+                  <button
+                    type="button"
+                    onClick={() => onSaveQuestion(selectedQuestionIndex)}
+                    disabled={
+                      savingQuestionIndex === selectedQuestionIndex || isNewSaved
+                    }
+                    className={`inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
+                      isNewSaved
+                        ? "bg-emerald-100 text-emerald-700 cursor-not-allowed"
+                        : "bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50"
+                    }`}
+                  >
+                    {savingQuestionIndex === selectedQuestionIndex ? (
+                      <>
+                        <FiLoader className="animate-spin" />
+                        Đang lưu...
+                      </>
+                    ) : isNewSaved ? (
+                      <>
+                        <FiCheckCircle />
+                        Đã lưu
+                      </>
+                    ) : (
+                      <>
+                        <FiSave />
+                        Lưu câu hỏi
+                      </>
+                    )}
+                  </button>
                 )}
-              </button>
-            )}
-            {questions[selectedQuestionIndex]?.isExisting && (
-              <div className="inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold bg-emerald-100 text-emerald-700">
-                <FiCheckCircle />
-                Đã lưu
+                {isExisting &&
+                  (canUpdateExisting ? (
+                    <button
+                      type="button"
+                      onClick={() => onSaveQuestion(selectedQuestionIndex)}
+                      disabled={savingQuestionIndex === selectedQuestionIndex}
+                      className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
+                    >
+                      {savingQuestionIndex === selectedQuestionIndex ? (
+                        <>
+                          <FiLoader className="animate-spin" />
+                          Đang cập nhật...
+                        </>
+                      ) : (
+                        <>
+                          <FiSave />
+                          Cập nhật câu hỏi
+                        </>
+                      )}
+                    </button>
+                  ) : (
+                    <div className="inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold bg-emerald-100 text-emerald-700">
+                      <FiCheckCircle />
+                      Đã lưu
+                    </div>
+                  ))}
               </div>
-            )}
-          </div>
+            );
+          })()}
 
           <p className="font-semibold text-gray-800 whitespace-pre-wrap mb-4">
             {questions[selectedQuestionIndex].text}
@@ -252,6 +406,12 @@ function normalizeExam(raw) {
   return {
     id: raw.id ?? raw.exam_id ?? raw._id,
     title: raw.title ?? raw.name ?? "Đề thi",
+    minutes: raw.minutes ?? raw.duration ?? null,
+    question_creation_method:
+      raw.question_creation_method ??
+      raw.questionMethod ??
+      raw.question_method ??
+      null,
   };
 }
 
@@ -260,10 +420,10 @@ function normalizeExistingQuestion(raw) {
   const answers = raw.answers ?? raw.question_answers ?? [];
   return {
     id: raw.id ?? raw.question_id ?? raw._id,
-    text: raw.question_text ?? raw.question ?? raw.text ?? "",
+    text: (raw.question_text ?? raw.question ?? raw.text ?? "").trim(),
     type: raw.type ?? "single_choice",
     options: answers.map((answer) => ({
-      text: answer.text ?? answer.answer_text ?? answer.content ?? "",
+      text: (answer.text ?? answer.answer_text ?? answer.content ?? "").trim(),
       isCorrect: Boolean(
         answer.is_correct ?? answer.correct ?? answer.isCorrect ?? answer.is_true
       ),
@@ -277,13 +437,23 @@ export default function AddQuestionsByText() {
   const [exam, setExam] = useState(null);
   const [loadingExam, setLoadingExam] = useState(true);
   const [rawText, setRawText] = useState("");
+  const [hasManualRawTextChange, setHasManualRawTextChange] = useState(false);
   const [parsedExam, setParsedExam] = useState({ questions: [], errors: [] });
   const [existingQuestions, setExistingQuestions] = useState([]);
   const [showInstructions, setShowInstructions] = useState(false);
   const [selectedQuestionIndex, setSelectedQuestionIndex] = useState(null);
   const [savedQuestions, setSavedQuestions] = useState(new Set());
   const [savingQuestionIndex, setSavingQuestionIndex] = useState(null);
-  const [existingCount, setExistingCount] = useState(0);
+
+  const refreshExistingQuestions = useCallback(async () => {
+    if (!examId) return;
+    const questionsResponse = await listQuestions({ examId });
+    const normalized = (questionsResponse ?? [])
+      .map(normalizeExistingQuestion)
+      .filter(Boolean);
+    setExistingQuestions(normalized);
+    return normalized;
+  }, [examId]);
 
   useEffect(() => {
     async function loadData() {
@@ -292,17 +462,7 @@ export default function AddQuestionsByText() {
       try {
         const examResponse = await getExamDetail(examId);
         setExam(normalizeExam(examResponse));
-
-        const questionsResponse = await listQuestions({ examId });
-        const normalized = (questionsResponse ?? [])
-          .map(normalizeExistingQuestion)
-          .filter(Boolean);
-        setExistingQuestions(normalized);
-        setExistingCount(normalized.length);
-        // Tự động chọn câu hỏi đầu tiên nếu có
-        if (normalized.length > 0 && selectedQuestionIndex === null) {
-          setSelectedQuestionIndex(0);
-        }
+        await refreshExistingQuestions();
       } catch (err) {
         console.error("Không thể tải thông tin đề thi:", err);
       } finally {
@@ -310,60 +470,128 @@ export default function AddQuestionsByText() {
       }
     }
     loadData();
-  }, [examId]);
+  }, [examId, refreshExistingQuestions]);
 
   useEffect(() => {
-    const parsed = parseExamText(rawText);
-    setParsedExam(parsed);
-    const totalQuestions = existingQuestions.length + parsed.questions.length;
-    // Reset selected question if it's out of bounds
-    if (selectedQuestionIndex !== null && selectedQuestionIndex >= totalQuestions) {
+    if (loadingExam) return;
+    if (!examId) return;
+    if (!exam) return;
+
+    const method = exam.question_creation_method;
+    if (!method) {
+      navigate(`/dashboard/teacher/exams/${examId}/questions`, { replace: true });
+      return;
+    }
+    if (method !== "text") {
+      navigate(`/dashboard/teacher/exams/${examId}/questions/${method}`, { replace: true });
+    }
+  }, [exam, examId, loadingExam, navigate]);
+
+  useEffect(() => {
+    if (hasManualRawTextChange) return;
+    if (rawText.trim().length > 0) return;
+    if (existingQuestions.length === 0) return;
+
+    const generated = buildRawTextFromQuestions(existingQuestions);
+    if (generated) {
+      setRawText(generated);
+    }
+  }, [existingQuestions, hasManualRawTextChange, rawText]);
+
+  useEffect(() => {
+    setParsedExam(parseExamText(rawText));
+  }, [rawText]);
+
+  const normalizedParsedQuestions = useMemo(() => {
+    if (!parsedExam.questions || parsedExam.questions.length === 0) {
+      return [];
+    }
+
+    return parsedExam.questions.map((parsedQuestion, index) => {
+      const text = (parsedQuestion.text ?? "").trim();
+      const options = (parsedQuestion.options ?? []).map((option) => normalizeOption(option));
+      const existingQuestion = existingQuestions[index];
+      const hasChanges = hasQuestionChanged(existingQuestion, { text, options });
+
+      if (existingQuestion) {
+        return {
+          ...existingQuestion,
+          text,
+          options,
+          isExisting: true,
+          hasChanges,
+        };
+      }
+
+      return {
+        id: undefined,
+        text,
+        options,
+        isExisting: false,
+        hasChanges: true,
+      };
+    });
+  }, [parsedExam.questions, existingQuestions]);
+
+  const allQuestions = useMemo(() => {
+    if (normalizedParsedQuestions.length > 0) {
+      const additionalExisting = existingQuestions
+        .slice(normalizedParsedQuestions.length)
+        .map((question) => ({
+          ...question,
+          isExisting: true,
+          hasChanges: false,
+        }));
+      return [...normalizedParsedQuestions, ...additionalExisting];
+    }
+    return existingQuestions.map((question) => ({
+      ...question,
+      isExisting: true,
+      hasChanges: false,
+    }));
+  }, [normalizedParsedQuestions, existingQuestions]);
+
+  const newQuestionIndexes = useMemo(() => {
+    return allQuestions
+      .map((question, index) => (!question.isExisting ? index : null))
+      .filter((index) => index !== null);
+  }, [allQuestions]);
+
+  const unsavedQuestionIndexes = useMemo(() => {
+    return allQuestions
+      .map((question, index) => {
+        if (question.isExisting) {
+          return question.hasChanges ? index : null;
+        }
+        return savedQuestions.has(index) ? null : index;
+      })
+      .filter((index) => index !== null);
+  }, [allQuestions, savedQuestions]);
+
+  const newQuestionsCount = newQuestionIndexes.length;
+
+  useEffect(() => {
+    if (allQuestions.length === 0) {
       setSelectedQuestionIndex(null);
+      return;
     }
-    // Reset saved questions for new questions only (existing questions are always saved)
-    if (parsed.questions.length === 0) {
-      setSavedQuestions(new Set());
-    }
-    // Tự động chọn câu hỏi đầu tiên khi có câu hỏi mới hoặc khi load lại
-    if (totalQuestions > 0 && selectedQuestionIndex === null) {
+    if (selectedQuestionIndex === null) {
       setSelectedQuestionIndex(0);
+      return;
     }
-  }, [rawText, selectedQuestionIndex, existingQuestions.length]);
+    if (selectedQuestionIndex >= allQuestions.length) {
+      setSelectedQuestionIndex(allQuestions.length - 1);
+    }
+  }, [allQuestions, selectedQuestionIndex]);
 
   const hasContent = useMemo(
-    () => rawText.trim().length > 0 || existingQuestions.length > 0,
-    [rawText, existingQuestions.length]
+    () => rawText.trim().length > 0 || allQuestions.length > 0,
+    [rawText, allQuestions.length]
   );
-
-  // Merge existing questions và parsed questions
-  const allQuestions = useMemo(() => {
-    return [
-      ...existingQuestions.map((q) => ({ ...q, isExisting: true })),
-      ...parsedExam.questions.map((q) => ({ ...q, isExisting: false })),
-    ];
-  }, [existingQuestions, parsedExam.questions]);
-
-  // Cập nhật savedQuestions để bao gồm tất cả existing questions
-  useEffect(() => {
-    const existingIndices = new Set(
-      Array.from({ length: existingQuestions.length }, (_, i) => i)
-    );
-    setSavedQuestions((prev) => {
-      const newSet = new Set(existingIndices);
-      // Giữ lại các câu hỏi mới đã lưu (index offset by existingQuestions.length)
-      prev.forEach((index) => {
-        if (index >= existingQuestions.length) {
-          newSet.add(index);
-        }
-      });
-      return newSet;
-    });
-  }, [existingQuestions.length]);
 
   const validateQuestion = (questionIndex) => {
     const question = allQuestions[questionIndex];
-    if (!question || question.isExisting) return true; // Existing questions are already validated
-
+    if (!question) return false;
     if (question.options.length < 2) {
       alert("Mỗi câu hỏi phải có ≥ 2 lựa chọn.");
       return false;
@@ -378,44 +606,77 @@ export default function AddQuestionsByText() {
   };
 
   const handleSaveQuestion = async (questionIndex) => {
-    if (savedQuestions.has(questionIndex)) return;
-    
     const question = allQuestions[questionIndex];
-    if (!question || question.isExisting) return;
-    
+    if (!question) return;
+
+    const isExisting = question.isExisting;
+    const isAlreadySaved = isExisting ? !question.hasChanges : savedQuestions.has(questionIndex);
+    if (isAlreadySaved) return;
+
     if (!validateQuestion(questionIndex)) return;
 
     setSavingQuestionIndex(questionIndex);
 
     try {
-      // Tính số câu hỏi mới đã được lưu trong session này (không bao gồm existing)
-      const newlySavedCount = savedQuestions.size - existingQuestions.length;
+      // Tạo payload với đầy đủ thông tin bao gồm answers
+      const payload = buildQuestionPayload(question);
       
-      // Tự động phát hiện single_choice hay multiple_choice dựa trên số đáp án đúng
-      const correctCount = question.options.filter((opt) => opt.isCorrect).length;
-      const questionType = correctCount === 1 ? "single_choice" : "multiple_choice";
-      
-      await createQuestionApi({
-        exam_id: examId,
-        question_text: question.text.trim(),
-        type: questionType,
-        order: existingQuestions.length + newlySavedCount + 1,
-        answers: question.options.map((option) => ({
-          text: option.text.trim(),
-          is_correct: option.isCorrect,
-        })),
-      });
+      // Đảm bảo payload luôn có answers khi cập nhật
+      if (isExisting) {
+        if (!payload.answers || !Array.isArray(payload.answers) || payload.answers.length === 0) {
+          alert("Lỗi: Không thể tạo payload cập nhật vì thiếu đáp án. Vui lòng thử lại.");
+          return;
+        }
+        
+        // Đảm bảo có ít nhất 1 đáp án đúng
+        const correctCount = payload.answers.filter((a) => a.is_correct).length;
+        if (correctCount === 0) {
+          alert("Lỗi: Phải có ít nhất 1 đáp án đúng.");
+          return;
+        }
+      }
 
-      setSavedQuestions((prev) => new Set([...prev, questionIndex]));
+      if (isExisting) {
+        // Gửi payload cập nhật bao gồm cả answers
+        await updateQuestionApi(question.id, payload);
+      } else {
+        await createQuestionApi({
+          exam_id: examId,
+          order: existingQuestions.length + 1,
+          ...payload,
+        });
+      }
+
+      if (!isExisting) {
+        setSavedQuestions((prev) => new Set([...prev, questionIndex]));
+      }
+
+      // Refresh questions và lấy dữ liệu đã cập nhật
+      const updatedQuestions = await refreshExistingQuestions();
       
-      // Reload existing questions để đồng bộ với database
-      const questionsResponse = await listQuestions({ examId });
-      const normalized = (questionsResponse ?? [])
-        .map(normalizeExistingQuestion)
-        .filter(Boolean);
-      setExistingQuestions(normalized);
-      // Cập nhật existingCount để khớp với số lượng câu hỏi đã load
-      setExistingCount(normalized.length);
+      // Sau khi refresh, cập nhật rawText để đồng bộ với câu hỏi vừa cập nhật
+      // Chỉ cập nhật câu hỏi tại questionIndex để không làm mất các chỉnh sửa khác
+      if (isExisting && question.id && updatedQuestions) {
+        // Tìm câu hỏi đã cập nhật theo ID trong danh sách mới
+        const updatedQuestion = updatedQuestions.find((q) => q.id === question.id);
+        if (updatedQuestion) {
+          // Cập nhật rawText để phản ánh trạng thái đã lưu của câu hỏi này
+          // Sử dụng questionIndex vì nó tương ứng với vị trí trong parsed questions
+          setRawText((currentRawText) => {
+            return updateQuestionInRawText(currentRawText, questionIndex, updatedQuestion);
+          });
+        }
+      } else if (!isExisting && updatedQuestions) {
+        // Đối với câu hỏi mới, sau khi tạo và refresh, regenerate toàn bộ rawText
+        // để đảm bảo đồng bộ
+        const generated = buildRawTextFromQuestions(updatedQuestions);
+        if (generated) {
+          setRawText(generated);
+          setHasManualRawTextChange(false);
+        }
+      }
+      
+      setSavedQuestions(new Set());
     } catch (error) {
       const message =
         error?.body?.message || error?.message || "Không thể lưu câu hỏi. Vui lòng thử lại.";
@@ -426,18 +687,13 @@ export default function AddQuestionsByText() {
   };
 
   const handleSaveAll = async () => {
-    // Chỉ lưu các câu hỏi mới (không phải existing)
-    const unsavedQuestions = allQuestions
-      .map((_, index) => index)
-      .filter((index) => !savedQuestions.has(index) && !allQuestions[index].isExisting);
-
-    if (unsavedQuestions.length === 0) {
+    if (unsavedQuestionIndexes.length === 0) {
       alert("Tất cả câu hỏi đã được lưu.");
       return;
     }
 
     // Validate tất cả câu hỏi trước
-    for (const index of unsavedQuestions) {
+    for (const index of unsavedQuestionIndexes) {
       if (!validateQuestion(index)) {
         return;
       }
@@ -445,32 +701,26 @@ export default function AddQuestionsByText() {
 
     // Lưu từng câu hỏi
     let savedCount = 0;
-    // Tính số câu hỏi mới đã được lưu trong session này (không bao gồm existing)
-    const newlySavedCount = savedQuestions.size - existingQuestions.length;
+    const baseOrder = existingQuestions.length;
+    let createdCount = 0;
     
-    for (const questionIndex of unsavedQuestions) {
+    for (const questionIndex of unsavedQuestionIndexes) {
       const question = allQuestions[questionIndex];
-      if (!question || question.isExisting) continue;
+      if (!question) continue;
       
       try {
         setSavingQuestionIndex(questionIndex);
-        // Tự động phát hiện single_choice hay multiple_choice dựa trên số đáp án đúng
-        const correctCount = question.options.filter((opt) => opt.isCorrect).length;
-        const questionType = correctCount === 1 ? "single_choice" : "multiple_choice";
-        
-        // Order = số câu hỏi existing + số câu hỏi mới đã lưu + số câu hỏi đang lưu trong batch này
-        await createQuestionApi({
-          exam_id: examId,
-          question_text: question.text.trim(),
-          type: questionType,
-          order: existingQuestions.length + newlySavedCount + savedCount + 1,
-          answers: question.options.map((option) => ({
-            text: option.text.trim(),
-            is_correct: option.isCorrect,
-          })),
-        });
+        if (question.isExisting) {
+          await updateQuestionApi(question.id, buildQuestionPayload(question));
+        } else {
+          await createQuestionApi({
+            exam_id: examId,
+            order: baseOrder + createdCount + 1,
+            ...buildQuestionPayload(question),
+          });
+          createdCount += 1;
+        }
 
-        setSavedQuestions((prev) => new Set([...prev, questionIndex]));
         savedCount += 1;
       } catch (error) {
         const message =
@@ -484,20 +734,28 @@ export default function AddQuestionsByText() {
 
     if (savedCount > 0) {
       alert(`Đã lưu ${savedCount} câu hỏi thành công!`);
-      
-      // Reload existing questions để đồng bộ với database
-      const questionsResponse = await listQuestions({ examId });
-      const normalized = (questionsResponse ?? [])
-        .map(normalizeExistingQuestion)
-        .filter(Boolean);
-      setExistingQuestions(normalized);
-      // Cập nhật existingCount để khớp với số lượng câu hỏi đã load
-      setExistingCount(normalized.length);
+      await refreshExistingQuestions();
+      setSavedQuestions(new Set());
     }
   };
 
+  const handleRawTextChange = (value) => {
+    setRawText(value);
+    setHasManualRawTextChange(true);
+  };
+
+  const regenerateRawText = () => {
+    const generated = buildRawTextFromQuestions(existingQuestions);
+    if (!generated) {
+      alert("Hiện không có câu hỏi đã lưu để khôi phục.");
+      return;
+    }
+    setHasManualRawTextChange(false);
+    setRawText(generated);
+  };
+
   const handleSaveExam = () => {
-    if (savedQuestions.size === 0) {
+    if (existingQuestions.length === 0) {
       alert("Vui lòng lưu ít nhất một câu hỏi trước khi quay lại.");
       return;
     }
@@ -533,6 +791,12 @@ export default function AddQuestionsByText() {
               <h1 className="mt-2 text-3xl font-bold text-slate-900">
                 {exam?.title || "Đề thi"}
               </h1>
+              {exam?.question_creation_method && (
+                <p className="mt-1 text-xs font-semibold uppercase tracking-[0.3em] text-emerald-600">
+                  Phương thức:{" "}
+                  {QUESTION_METHOD_LABELS[exam.question_creation_method] || "Không xác định"}
+                </p>
+              )}
             </div>
           </div>
 
@@ -541,11 +805,9 @@ export default function AddQuestionsByText() {
               type="button"
               onClick={handleSaveAll}
               disabled={
-                parsedExam.questions.length === 0 ||
+                newQuestionsCount === 0 ||
                 parsedExam.errors.length > 0 ||
-                allQuestions
-                  .filter((q) => !q.isExisting)
-                  .every((_, index) => savedQuestions.has(existingQuestions.length + index)) ||
+                unsavedQuestionIndexes.length === 0 ||
                 savingQuestionIndex !== null
               }
               className="inline-flex items-center gap-2 rounded-full bg-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-md disabled:opacity-60 disabled:cursor-not-allowed hover:bg-indigo-700"
@@ -558,21 +820,18 @@ export default function AddQuestionsByText() {
               ) : (
                 <>
                   <FiSave />
-                  Lưu tất cả (
-                  {parsedExam.questions.length -
-                    (savedQuestions.size - existingQuestions.length)}{" "}
-                  câu chưa lưu)
+                  Lưu tất cả ({unsavedQuestionIndexes.length} câu chưa lưu)
                 </>
               )}
             </button>
             <button
               type="button"
               onClick={handleSaveExam}
-              disabled={savedQuestions.size === 0}
+              disabled={existingQuestions.length === 0}
               className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-6 py-3 text-sm font-semibold text-white shadow-md disabled:opacity-60 disabled:cursor-not-allowed hover:bg-emerald-700"
             >
               <FiSave />
-              Lưu đề thi ({savedQuestions.size} câu đã lưu)
+              Lưu đề thi ({existingQuestions.length} câu đã lưu)
             </button>
           </div>
         </header>
@@ -601,11 +860,26 @@ export default function AddQuestionsByText() {
               </label>
               <textarea
                 value={rawText}
-                onChange={(event) => setRawText(event.target.value)}
+                onChange={(event) => handleRawTextChange(event.target.value)}
                 placeholder="Ví dụ:&#10;When we went back to the bookstore, the bookseller_ the book we wanted.&#10;A. sold&#10;*B. had sold&#10;C. sells&#10;D. has sold&#10;&#10;By the end of last summer, the farmers_ all the crop.&#10;A. harvested&#10;*B. had harvested&#10;C. harvest&#10;D. are harvested"
                 rows={30}
                 className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 font-mono text-sm focus:border-indigo-500 focus:bg-white focus:outline-none"
               />
+              <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                <button
+                  type="button"
+                  onClick={regenerateRawText}
+                  disabled={existingQuestions.length === 0}
+                  className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Khôi phục văn bản từ câu hỏi đã lưu
+                </button>
+                <span>
+                  {existingQuestions.length > 0
+                    ? `Đang có ${existingQuestions.length} câu hỏi đã lưu.`
+                    : "Chưa có câu hỏi đã lưu để khôi phục."}
+                </span>
+              </div>
             </div>
           </div>
 
@@ -613,7 +887,7 @@ export default function AddQuestionsByText() {
             <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-slate-700">
               <FiCalendar />
               Xem trước ({allQuestions.length} câu - {existingQuestions.length} đã lưu,{" "}
-              {parsedExam.questions.length} mới)
+              {newQuestionsCount} mới)
             </div>
             <div className="max-h-[80vh] overflow-y-auto pr-2">
               <ExamPreview

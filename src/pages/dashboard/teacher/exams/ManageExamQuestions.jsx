@@ -38,6 +38,11 @@ const DIFFICULTY_OPTIONS = [
 
 const ANSWER_TYPES = ["single_choice", "multiple_choice", "true_false"];
 
+const QUESTION_METHOD_LABELS = {
+  text: "Văn bản",
+  editor: "Trình soạn thảo",
+};
+
 const makeBlankAnswers = (count = 4) =>
   Array.from({ length: count }, (_, index) => ({
     text: "",
@@ -94,6 +99,11 @@ function normalizeExam(raw) {
     start_time: raw.start_time ?? raw.startTime ?? null,
     end_time: raw.end_time ?? raw.endTime ?? null,
     class_name: raw.class?.className ?? raw.className ?? raw.class_name,
+    question_creation_method:
+      raw.question_creation_method ??
+      raw.questionMethod ??
+      raw.question_method ??
+      null,
   };
 }
 
@@ -231,6 +241,21 @@ export default function ManageExamQuestions() {
     fetchQuestions();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [examId]);
+
+  useEffect(() => {
+    if (loadingExam) return;
+    if (!examId) return;
+    if (!exam) return;
+
+    const method = exam.question_creation_method;
+    if (!method) {
+      navigate(`/dashboard/teacher/exams/${examId}/questions`, { replace: true });
+      return;
+    }
+    if (method !== "editor") {
+      navigate(`/dashboard/teacher/exams/${examId}/questions/${method}`, { replace: true });
+    }
+  }, [exam, examId, loadingExam, navigate]);
 
   const sortedQuestions = useMemo(() => {
     return [...questions].sort(
@@ -773,6 +798,12 @@ export default function ManageExamQuestions() {
             {exam?.minutes && (
               <p className="text-sm text-slate-500">
                 Thời lượng: {exam.minutes} phút
+              </p>
+            )}
+            {exam?.question_creation_method && (
+              <p className="mt-2 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.3em] text-emerald-600">
+                Phương thức:{" "}
+                {QUESTION_METHOD_LABELS[exam.question_creation_method] || "Không xác định"}
               </p>
             )}
           </div>

@@ -326,20 +326,7 @@ export default function TeacherClasses() {
                               <FiCopy />
                             )}
                           </button>
-                          <Link
-                            to={`/teacher/classes/${encodeURIComponent(
-                              classItem.classCode || classItem.id
-                            )}`}
-                            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-600 transition hover:bg-slate-50"
-                          >
-                            <FiShare2 />
-                          </Link>
-                          <button
-                            type="button"
-                            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-600 transition hover:bg-slate-50"
-                          >
-                            <FiMoreHorizontal />
-                          </button>
+                         
                         </div>
 
                         <div className="flex items-center gap-2">

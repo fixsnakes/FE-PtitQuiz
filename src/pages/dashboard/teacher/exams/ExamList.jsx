@@ -75,6 +75,11 @@ function normalizeExam(exam) {
     status,
     className:
       exam.class?.className ?? exam.class_name ?? exam.className ?? exam.class?.name ?? null,
+    questionMethod:
+      exam.question_creation_method ??
+      exam.questionMethod ??
+      exam.question_method ??
+      null,
   };
 }
 
@@ -373,12 +378,22 @@ export default function ExamListPage() {
                       </div>
                     </div>
                     <div className="mt-4 flex flex-wrap gap-3">
-                      <Link
-                        to={`/dashboard/teacher/exams/${exam.id}/questions`}
-                        className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-700"
-                      >
-                        Quản lý câu hỏi
-                      </Link>
+                      {(() => {
+                        const method = exam.questionMethod;
+                        const targetPath = method
+                          ? `/dashboard/teacher/exams/${exam.id}/questions/${
+                              method === "text" ? "text" : "editor"
+                            }`
+                          : `/dashboard/teacher/exams/${exam.id}/questions`;
+                        return (
+                          <Link
+                            to={targetPath}
+                            className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-700"
+                          >
+                            Quản lý câu hỏi
+                          </Link>
+                        );
+                      })()}
                       <Link
                         to={`/dashboard/teacher/exams/${exam.id}/edit`}
                         className="inline-flex items-center gap-2 rounded-full border border-indigo-200 px-4 py-2 text-xs font-semibold text-indigo-600"
