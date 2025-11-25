@@ -628,7 +628,8 @@ export default function TakeExam() {
                         Câu hỏi {currentQuestionIndex + 1} / {questions.length}
                       </div>
                       <div className="mt-1 text-xs text-slate-400">
-                        {currentQuestion.type === "multiple_choice" && "Trắc nghiệm"}
+                        {currentQuestion.type === "single_choice" && "Trắc nghiệm (1 đáp án đúng)"}
+                        {currentQuestion.type === "multiple_choice" && "Trắc nghiệm (nhiều đáp án đúng)"}
                         {currentQuestion.type === "true_false" && "Đúng / Sai"}
                         {currentQuestion.type === "short_answer" && "Tự luận ngắn"}
                         {currentQuestion.type === "essay" && "Bài luận"}
@@ -661,8 +662,8 @@ export default function TakeExam() {
                   </div>
                 )}
 
-                {/* Multiple Choice / True-False */}
-                {(currentQuestion.type === "multiple_choice" ||
+                {/* Single Choice / True-False (Radio buttons) */}
+                {(currentQuestion.type === "single_choice" ||
                   currentQuestion.type === "true_false") && (
                   <div className="space-y-3">
                     {currentQuestion.answers?.map((answer, idx) => {
@@ -697,6 +698,50 @@ export default function TakeExam() {
                               })
                             }
                             className="h-5 w-5 cursor-pointer text-indigo-600 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                          />
+                          <span className="flex-1 text-lg text-slate-700">
+                            {answer.text}
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Multiple Choice (Checkboxes) */}
+                {currentQuestion.type === "multiple_choice" && (
+                  <div className="space-y-3">
+                    {currentQuestion.answers?.map((answer, idx) => {
+                      const isSelected = currentAnswer?.selected_answer_id === answer.id;
+                      const letter = String.fromCharCode(65 + idx); // A, B, C, D...
+
+                      return (
+                        <label
+                          key={answer.id}
+                          className={`group flex cursor-pointer items-center gap-4 rounded-xl border-2 p-5 transition-all hover:shadow-md ${
+                            isSelected
+                              ? "border-indigo-500 bg-gradient-to-r from-indigo-50 to-blue-50 shadow-md"
+                              : "border-slate-200 bg-white hover:border-slate-300"
+                          }`}
+                        >
+                          <div
+                            className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg font-bold transition-all ${
+                              isSelected
+                                ? "bg-gradient-to-br from-indigo-500 to-blue-500 text-white shadow-md"
+                                : "bg-slate-100 text-slate-600 group-hover:bg-slate-200"
+                            }`}
+                          >
+                            {letter}
+                          </div>
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() =>
+                              handleAnswer(currentQuestion.id, {
+                                selected_answer_id: isSelected ? null : answer.id,
+                              })
+                            }
+                            className="h-5 w-5 cursor-pointer text-indigo-600 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 rounded"
                           />
                           <span className="flex-1 text-lg text-slate-700">
                             {answer.text}

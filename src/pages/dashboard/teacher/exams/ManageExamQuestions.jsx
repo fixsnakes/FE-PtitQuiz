@@ -23,7 +23,8 @@ import {
 } from "../../../../services/questionService";
 
 const QUESTION_TYPES = [
-  { value: "multiple_choice", label: "Trắc nghiệm" },
+  { value: "single_choice", label: "Trắc nghiệm (1 đáp án đúng)" },
+  { value: "multiple_choice", label: "Trắc nghiệm (nhiều đáp án đúng)" },
   { value: "true_false", label: "Đúng / Sai" },
   { value: "short_answer", label: "Tự luận ngắn" },
   { value: "essay", label: "Bài luận dài" },
@@ -35,7 +36,7 @@ const DIFFICULTY_OPTIONS = [
   { value: "hard", label: "Khó" },
 ];
 
-const ANSWER_TYPES = ["multiple_choice", "true_false"];
+const ANSWER_TYPES = ["single_choice", "multiple_choice", "true_false"];
 
 const makeBlankAnswers = (count = 4) =>
   Array.from({ length: count }, (_, index) => ({
@@ -48,7 +49,7 @@ const TRUE_FALSE_PRESET = [
   { text: "Sai", is_correct: false },
 ];
 
-const createDefaultFormState = (type = "multiple_choice") => ({
+const createDefaultFormState = (type = "single_choice") => ({
   question_text: "",
   type,
   difficulty: "medium",
@@ -76,7 +77,7 @@ function normalizeQuestion(raw) {
     id: raw.id ?? raw.question_id ?? raw._id,
     question_text:
       raw.question_text ?? raw.question ?? raw.text ?? "Không có tiêu đề",
-    type: raw.type ?? raw.question_type ?? "multiple_choice",
+    type: raw.type ?? raw.question_type ?? "single_choice",
     order: raw.order ?? raw.question_order ?? raw.position ?? 0,
     difficulty: raw.difficulty ?? "medium",
     image_url: raw.image_url ?? "",
@@ -109,15 +110,24 @@ function AnswersEditor({ type, answers, onChange, disabled }) {
   };
 
   const toggleCorrect = (index) => {
-    const next = answers.map((answer, idx) => ({
-      ...answer,
-      is_correct: idx === index,
-    }));
-    onChange(next);
+    if (type === "single_choice" || type === "true_false") {
+      // Single choice: chỉ cho phép 1 đáp án đúng
+      const next = answers.map((answer, idx) => ({
+        ...answer,
+        is_correct: idx === index,
+      }));
+      onChange(next);
+    } else if (type === "multiple_choice") {
+      // Multiple choice: cho phép nhiều đáp án đúng
+      const next = answers.map((answer, idx) =>
+        idx === index ? { ...answer, is_correct: !answer.is_correct } : answer
+      );
+      onChange(next);
+    }
   };
 
   const addAnswer = () => {
-    if (type !== "multiple_choice") return;
+    if (type !== "single_choice" && type !== "multiple_choice") return;
     onChange([...answers, { text: "", is_correct: false }]);
   };
 
@@ -127,7 +137,7 @@ function AnswersEditor({ type, answers, onChange, disabled }) {
     onChange(next);
   };
 
-  const minOptions = type === "multiple_choice" ? 2 : 2;
+  const minOptions = (type === "single_choice" || type === "multiple_choice") ? 2 : 2;
 
   return (
     <div className="space-y-3">
@@ -163,7 +173,7 @@ function AnswersEditor({ type, answers, onChange, disabled }) {
             </p>
           </div>
 
-          {type === "multiple_choice" && answers.length > minOptions && (
+          {(type === "single_choice" || type === "multiple_choice") && answers.length > minOptions && (
             <button
               type="button"
               disabled={disabled}
@@ -177,7 +187,7 @@ function AnswersEditor({ type, answers, onChange, disabled }) {
         </div>
       ))}
 
-      {type === "multiple_choice" && (
+      {(type === "single_choice" || type === "multiple_choice") && (
         <button
           type="button"
           disabled={disabled}
@@ -202,7 +212,7 @@ export default function ManageExamQuestions() {
   const [loadingQuestions, setLoadingQuestions] = useState(true);
   const [reorderLoading, setReorderLoading] = useState(false);
   const [formState, setFormState] = useState(() =>
-    createDefaultFormState("multiple_choice")
+    createDefaultFormState("single_choice")
   );
   const [creating, setCreating] = useState(false);
   const [message, setMessage] = useState("");
@@ -210,7 +220,7 @@ export default function ManageExamQuestions() {
 
   const [editingQuestionId, setEditingQuestionId] = useState(null);
   const [editForm, setEditForm] = useState(() =>
-    createDefaultFormState("multiple_choice")
+    createDefaultFormState("single_choice")
   );
   const [updating, setUpdating] = useState(false);
   const [selectedQuestionId, setSelectedQuestionId] = useState(null);
@@ -280,8 +290,12 @@ export default function ManageExamQuestions() {
       if (answers.length < 2) {
         throw new Error("Cần ít nhất 2 đáp án cho câu hỏi trắc nghiệm.");
       }
-      if (!answers.some((answer) => answer.is_correct)) {
+      const correctCount = answers.filter((answer) => answer.is_correct).length;
+      if (correctCount === 0) {
         throw new Error("Vui lòng chọn ít nhất 1 đáp án đúng.");
+      }
+      if (payload.type === "single_choice" && correctCount !== 1) {
+        throw new Error("Câu hỏi trắc nghiệm (1 đáp án đúng) phải có đúng 1 đáp án đúng.");
       }
       if (answers.some((answer) => !answer.text?.trim())) {
         throw new Error("Đáp án không được để trống.");
@@ -299,7 +313,7 @@ export default function ManageExamQuestions() {
       if (field === "type") {
         if (value === "true_false") {
           next.answers = TRUE_FALSE_PRESET.map((answer) => ({ ...answer }));
-        } else if (value === "multiple_choice") {
+        } else if (value === "single_choice" || value === "multiple_choice") {
           next.answers = makeBlankAnswers();
         } else {
           next.answers = [];

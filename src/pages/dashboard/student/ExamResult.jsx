@@ -201,8 +201,9 @@ export default function ExamResult() {
                       </div>
                     </div>
 
-                    {/* Multiple Choice / True-False */}
-                    {(question?.type === "multiple_choice" ||
+                    {/* Single Choice / Multiple Choice / True-False */}
+                    {(question?.type === "single_choice" ||
+                      question?.type === "multiple_choice" ||
                       question?.type === "true_false") && (
                       <div className="space-y-2">
                         {question.answers?.map((ans) => {

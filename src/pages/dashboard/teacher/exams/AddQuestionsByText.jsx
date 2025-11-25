@@ -261,7 +261,7 @@ function normalizeExistingQuestion(raw) {
   return {
     id: raw.id ?? raw.question_id ?? raw._id,
     text: raw.question_text ?? raw.question ?? raw.text ?? "",
-    type: raw.type ?? "multiple_choice",
+    type: raw.type ?? "single_choice",
     options: answers.map((answer) => ({
       text: answer.text ?? answer.answer_text ?? answer.content ?? "",
       isCorrect: Boolean(
@@ -391,10 +391,14 @@ export default function AddQuestionsByText() {
       // Tính số câu hỏi mới đã được lưu trong session này (không bao gồm existing)
       const newlySavedCount = savedQuestions.size - existingQuestions.length;
       
+      // Tự động phát hiện single_choice hay multiple_choice dựa trên số đáp án đúng
+      const correctCount = question.options.filter((opt) => opt.isCorrect).length;
+      const questionType = correctCount === 1 ? "single_choice" : "multiple_choice";
+      
       await createQuestionApi({
         exam_id: examId,
         question_text: question.text.trim(),
-        type: "multiple_choice",
+        type: questionType,
         order: existingQuestions.length + newlySavedCount + 1,
         answers: question.options.map((option) => ({
           text: option.text.trim(),
@@ -450,11 +454,15 @@ export default function AddQuestionsByText() {
       
       try {
         setSavingQuestionIndex(questionIndex);
+        // Tự động phát hiện single_choice hay multiple_choice dựa trên số đáp án đúng
+        const correctCount = question.options.filter((opt) => opt.isCorrect).length;
+        const questionType = correctCount === 1 ? "single_choice" : "multiple_choice";
+        
         // Order = số câu hỏi existing + số câu hỏi mới đã lưu + số câu hỏi đang lưu trong batch này
         await createQuestionApi({
           exam_id: examId,
           question_text: question.text.trim(),
-          type: "multiple_choice",
+          type: questionType,
           order: existingQuestions.length + newlySavedCount + savedCount + 1,
           answers: question.options.map((option) => ({
             text: option.text.trim(),
