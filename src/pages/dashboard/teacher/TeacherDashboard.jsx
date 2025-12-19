@@ -66,126 +66,148 @@ export default function TeacherDashboard() {
   return (
     <DashboardLayout role="teacher">
       <div className="space-y-6">
-        <section className="rounded-2xl border border-dashed border-indigo-200 bg-white p-6 shadow-sm">
-          <h1 className="text-3xl font-bold text-slate-900">
-            Chào mừng trở lại, cô/thầy!
-          </h1>
-          <p className="mt-2 text-slate-600">
-            Đây là khu vực quản trị dành cho giáo viên. Quản lý kỳ thi, câu hỏi và lớp học của bạn.
-          </p>
+        <section className="relative overflow-hidden rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50 via-white to-purple-50 p-8 shadow-sm">
+          <div className="relative z-10">
+            <h1 className="text-3xl font-bold text-slate-900">
+              Chào mừng trở lại, cô/thầy! 👋
+            </h1>
+            <p className="mt-2 text-base text-slate-600">
+              Đây là khu vực quản trị dành cho giáo viên. Quản lý kỳ thi, câu hỏi và lớp học của bạn.
+            </p>
+          </div>
+          <div className="absolute right-0 top-0 h-32 w-32 rounded-full bg-indigo-200 opacity-20 blur-3xl"></div>
         </section>
 
-        <section className="grid gap-4 md:grid-cols-3 lg:grid-cols-4">
-          <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-sm font-semibold text-slate-500">Tổng kỳ thi</h2>
-                <p className="mt-1 text-3xl font-bold text-slate-900">
+        <section className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+          <article className="group relative overflow-hidden rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition-all hover:border-indigo-300 hover:shadow-md">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-500">Tổng kỳ thi</h2>
+                <p className="mt-2 text-3xl font-bold text-slate-900">
                   {summary.totalExams || 0}
                 </p>
-                <p className="mt-1 text-xs text-slate-500">
+                <p className="mt-2 text-xs font-medium text-slate-600">
                   {summary.examsByStatus?.ongoing || 0} đang diễn ra
                 </p>
               </div>
-              <FiFileText className="text-3xl text-indigo-500 opacity-50" />
+              <div className="rounded-lg bg-indigo-100 p-3">
+                <FiFileText className="text-2xl text-indigo-600" />
+              </div>
             </div>
+            <div className="absolute bottom-0 left-0 h-1 w-full bg-gradient-to-r from-indigo-500 to-purple-500 opacity-0 transition-opacity group-hover:opacity-100"></div>
           </article>
 
-          <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-sm font-semibold text-slate-500">Lớp học</h2>
-                <p className="mt-1 text-3xl font-bold text-slate-900">
+          <article className="group relative overflow-hidden rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition-all hover:border-emerald-300 hover:shadow-md">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-500">Lớp học</h2>
+                <p className="mt-2 text-3xl font-bold text-slate-900">
                   {summary.totalClasses || 0}
                 </p>
-                <p className="mt-1 text-xs text-slate-500">
+                <p className="mt-2 text-xs font-medium text-slate-600">
                   {summary.totalStudents || 0} học sinh
                 </p>
               </div>
-              <FiUsers className="text-3xl text-emerald-500 opacity-50" />
+              <div className="rounded-lg bg-emerald-100 p-3">
+                <FiUsers className="text-2xl text-emerald-600" />
+              </div>
             </div>
+            <div className="absolute bottom-0 left-0 h-1 w-full bg-gradient-to-r from-emerald-500 to-teal-500 opacity-0 transition-opacity group-hover:opacity-100"></div>
           </article>
 
-          <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-sm font-semibold text-slate-500">Yêu cầu chấm bài</h2>
-                <p className="mt-1 text-3xl font-bold text-slate-900">
+          <article className="group relative overflow-hidden rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition-all hover:border-amber-300 hover:shadow-md">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-500">Yêu cầu chấm bài</h2>
+                <p className="mt-2 text-3xl font-bold text-slate-900">
                   {summary.pendingFeedback || 0}
                 </p>
-                <p className="mt-1 text-xs text-slate-500">
+                <p className="mt-2 text-xs font-medium text-slate-600">
                   Cần phản hồi
                 </p>
               </div>
-              <FiCheckCircle className="text-3xl text-amber-500 opacity-50" />
+              <div className="rounded-lg bg-amber-100 p-3">
+                <FiCheckCircle className="text-2xl text-amber-600" />
+              </div>
             </div>
+            <div className="absolute bottom-0 left-0 h-1 w-full bg-gradient-to-r from-amber-500 to-orange-500 opacity-0 transition-opacity group-hover:opacity-100"></div>
           </article>
 
-          <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-sm font-semibold text-slate-500">Đang thi</h2>
-                <p className="mt-1 text-3xl font-bold text-slate-900">
+          <article className="group relative overflow-hidden rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition-all hover:border-blue-300 hover:shadow-md">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-500">Đang thi</h2>
+                <p className="mt-2 text-3xl font-bold text-slate-900">
                   {summary.activeSessions || 0}
                 </p>
-                <p className="mt-1 text-xs text-slate-500">
+                <p className="mt-2 text-xs font-medium text-slate-600">
                   Phiên thi đang hoạt động
                 </p>
               </div>
-              <FiClock className="text-3xl text-blue-500 opacity-50" />
+              <div className="rounded-lg bg-blue-100 p-3">
+                <FiClock className="text-2xl text-blue-600" />
+              </div>
             </div>
+            <div className="absolute bottom-0 left-0 h-1 w-full bg-gradient-to-r from-blue-500 to-cyan-500 opacity-0 transition-opacity group-hover:opacity-100"></div>
           </article>
         </section>
 
-        <section className="grid gap-4 md:grid-cols-2">
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-slate-900">Kỳ thi gần đây</h2>
+        <section className="grid gap-5 md:grid-cols-2">
+          <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="mb-5 flex items-center justify-between border-b border-slate-100 pb-4">
+              <h2 className="text-lg font-bold text-slate-900">Kỳ thi gần đây</h2>
               <button
                 onClick={() => navigate("/dashboard/teacher/exams")}
-                className="text-sm font-semibold text-indigo-600 hover:text-indigo-700"
+                className="text-sm font-semibold text-indigo-600 transition hover:text-indigo-700 hover:underline"
               >
                 Xem tất cả →
               </button>
             </div>
             {recent.exams && recent.exams.length > 0 ? (
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {recent.exams.map((exam) => (
                   <div
                     key={exam.id}
-                    className="cursor-pointer rounded-lg border border-slate-100 p-3 transition hover:bg-slate-50"
+                    className="group cursor-pointer rounded-lg border border-slate-100 bg-slate-50 p-4 transition-all hover:border-indigo-200 hover:bg-indigo-50"
                     onClick={() => navigate(`/dashboard/teacher/exams/${exam.id}/edit`)}
                   >
-                    <h3 className="font-semibold text-slate-900">{exam.title}</h3>
-                    <p className="mt-1 text-xs text-slate-500">
-                      {new Date(exam.created_at).toLocaleDateString("vi-VN")}
+                    <h3 className="font-semibold text-slate-900 group-hover:text-indigo-700">{exam.title}</h3>
+                    <p className="mt-1.5 text-xs text-slate-500">
+                      {new Date(exam.created_at).toLocaleDateString("vi-VN", {
+                        day: "2-digit",
+                        month: "2-digit",
+                        year: "numeric"
+                      })}
                     </p>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="py-4 text-center text-sm text-slate-500">
-                Chưa có kỳ thi nào
-              </p>
+              <div className="py-8 text-center">
+                <FiFileText className="mx-auto mb-2 text-2xl text-slate-300" />
+                <p className="text-sm text-slate-500">
+                  Chưa có kỳ thi nào
+                </p>
+              </div>
             )}
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-semibold text-slate-900">Lớp học gần đây</h2>
+          <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="mb-5 flex items-center justify-between border-b border-slate-100 pb-4">
+              <h2 className="text-lg font-bold text-slate-900">Lớp học gần đây</h2>
               <button
                 onClick={() => navigate("/teacher/classes")}
-                className="text-sm font-semibold text-indigo-600 hover:text-indigo-700"
+                className="text-sm font-semibold text-indigo-600 transition hover:text-indigo-700 hover:underline"
               >
                 Xem tất cả →
               </button>
             </div>
             {recent.classes && recent.classes.length > 0 ? (
-              <div className="space-y-3">
+              <div className="space-y-2">
                 {recent.classes.map((cls) => (
                   <div
                     key={cls.id}
-                    className="cursor-pointer rounded-lg border border-slate-100 p-3 transition hover:bg-slate-50"
+                    className="group cursor-pointer rounded-lg border border-slate-100 bg-slate-50 p-4 transition-all hover:border-emerald-200 hover:bg-emerald-50"
                     onClick={() =>
                       navigate(
                         `/teacher/classes/${encodeURIComponent(
@@ -194,42 +216,52 @@ export default function TeacherDashboard() {
                       )
                     }
                   >
-                    <h3 className="font-semibold text-slate-900">{cls.className}</h3>
-                    <p className="mt-1 text-xs text-slate-500">
-                      Mã: {cls.classCode} • {new Date(cls.created_at).toLocaleDateString("vi-VN")}
+                    <h3 className="font-semibold text-slate-900 group-hover:text-emerald-700">{cls.className}</h3>
+                    <p className="mt-1.5 text-xs text-slate-500">
+                      Mã: <span className="font-mono font-medium">{cls.classCode}</span> • {new Date(cls.created_at).toLocaleDateString("vi-VN", {
+                        day: "2-digit",
+                        month: "2-digit",
+                        year: "numeric"
+                      })}
                     </p>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="py-4 text-center text-sm text-slate-500">
-                Chưa có lớp học nào
-              </p>
+              <div className="py-8 text-center">
+                <FiUsers className="mx-auto mb-2 text-2xl text-slate-300" />
+                <p className="text-sm text-slate-500">
+                  Chưa có lớp học nào
+                </p>
+              </div>
             )}
           </div>
         </section>
 
-        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="text-xl font-semibold text-slate-900">
+        <section className="rounded-xl border border-slate-200 bg-gradient-to-br from-slate-50 to-white p-6 shadow-sm">
+          <h2 className="mb-4 text-lg font-bold text-slate-900">
             Gợi ý thao tác nhanh
           </h2>
-          <div className="mt-4 flex flex-wrap gap-3">
+          <div className="flex flex-wrap gap-3">
             <button
               onClick={() => navigate("/dashboard/teacher/exams/create")}
-              className="rounded-lg border border-indigo-200 px-4 py-2 text-indigo-600 transition hover:bg-indigo-50"
+              className="group inline-flex items-center gap-2 rounded-lg border border-indigo-200 bg-white px-5 py-2.5 text-sm font-semibold text-indigo-600 shadow-sm transition-all hover:border-indigo-300 hover:bg-indigo-50 hover:shadow-md"
             >
-              + Tạo kỳ thi mới
+              <FiFileText className="text-base" />
+              Tạo kỳ thi mới
             </button>
             <button
               onClick={() => navigate("/teacher/classes/create")}
-              className="rounded-lg border border-indigo-200 px-4 py-2 text-indigo-600 transition hover:bg-indigo-50"
+              className="group inline-flex items-center gap-2 rounded-lg border border-emerald-200 bg-white px-5 py-2.5 text-sm font-semibold text-emerald-600 shadow-sm transition-all hover:border-emerald-300 hover:bg-emerald-50 hover:shadow-md"
             >
-              + Tạo lớp học mới
+              <FiUsers className="text-base" />
+              Tạo lớp học mới
             </button>
             <button
               onClick={() => navigate("/teacher/classes")}
-              className="rounded-lg border border-indigo-200 px-4 py-2 text-indigo-600 transition hover:bg-indigo-50"
+              className="group inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition-all hover:border-slate-300 hover:bg-slate-50 hover:shadow-md"
             >
+              <FiTrendingUp className="text-base" />
               Xem tất cả lớp học
             </button>
           </div>

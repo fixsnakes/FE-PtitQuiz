@@ -254,8 +254,31 @@ export default function TakeExam() {
         } catch (error) {
           // Nếu chưa có session, tạo mới
           if (error.status === 404) {
-            const startData = await startExamSession(examId);
-            currentSession = startData.session;
+            try {
+              const startData = await startExamSession(examId);
+              currentSession = startData.session;
+              // Nếu có thông báo từ backend về việc trừ tiền, hiển thị
+              if (startData.message && startData.message.includes("started")) {
+                // Session đã được tạo thành công (có thể đã trừ tiền nếu là đề thi trả phí)
+              }
+            } catch (startError) {
+              // Xử lý lỗi không đủ tiền hoặc lỗi khác
+              if (startError.status === 400) {
+                const errorMessage = startError.body?.message || startError.message || "Không thể bắt đầu bài thi";
+                if (errorMessage.includes("Insufficient balance") || errorMessage.includes("không đủ")) {
+                  toast.error("Số dư không đủ để làm bài thi này. Vui lòng nạp thêm tiền.", {
+                    autoClose: 5000
+                  });
+                  navigate("/dashboard/student/payment");
+                  return;
+                } else {
+                  toast.error(errorMessage);
+                  navigate("/dashboard/student");
+                  return;
+                }
+              }
+              throw startError;
+            }
           } else {
             throw error;
           }
