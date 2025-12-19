@@ -1,143 +1,241 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { toast } from "react-toastify";
-import {
-  getStudentExamsWithStatus,
-  getStudentExamsByStatus,
-} from "../../../services/studentExamService";
 import DashboardLayout from "../../../layouts/DashboardLayout";
 import {
-  Clock,
-  BookOpen,
-  Users,
   AlertCircle,
-  Play,
-  CheckCircle2,
-  RotateCcw,
-  Trophy,
+  Eye,
+  ChevronLeft,
+  ChevronRight,
+  Search,
 } from "lucide-react";
 
 export default function StudentExams() {
   const navigate = useNavigate();
-  const [exams, setExams] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState("all"); // all, not_started, in_progress, completed
 
+  // State cho phần lịch sử làm bài (bảng)
+  const [allCompletedExams, setAllCompletedExams] = useState([]);
+  const [loadingCompleted, setLoadingCompleted] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [searchTerm, setSearchTerm] = useState("");
+  const itemsPerPage = 10;
+
+  // Giả lập data bài thi đã làm
   useEffect(() => {
-    loadExams();
-  }, [filter]);
+    setLoadingCompleted(true);
+    // Mock data - giả lập danh sách bài thi đã làm
+    const mockCompletedExams = [
+      {
+        id: 1,
+        examId: 101,
+        examCode: "EXAM001",
+        examTitle: "Kiểm tra giữa kỳ môn Toán",
+        score: 8.5,
+        correctCount: 17,
+        wrongCount: 3,
+        completedAt: "2024-01-15T10:30:00",
+        endTime: "2024-01-15T11:30:00",
+        sessionId: "session-001",
+      },
+      {
+        id: 2,
+        examId: 102,
+        examCode: "EXAM002",
+        examTitle: "Bài kiểm tra Vật lý",
+        score: 7.0,
+        correctCount: 14,
+        wrongCount: 6,
+        completedAt: "2024-01-14T14:20:00",
+        endTime: "2024-01-14T15:05:00",
+        sessionId: "session-002",
+      },
+      {
+        id: 3,
+        examId: 103,
+        examCode: "EXAM003",
+        examTitle: "Thi cuối kỳ Hóa học",
+        score: 9.0,
+        correctCount: 18,
+        wrongCount: 2,
+        completedAt: "2024-01-13T09:15:00",
+        endTime: "2024-01-13T10:45:00",
+        sessionId: "session-003",
+      },
+      {
+        id: 4,
+        examId: 104,
+        examCode: "EXAM004",
+        examTitle: "Kiểm tra tiếng Anh",
+        score: 8.0,
+        correctCount: 16,
+        wrongCount: 4,
+        completedAt: "2024-01-12T16:45:00",
+        endTime: "2024-01-12T17:35:00",
+        sessionId: "session-004",
+      },
+      {
+        id: 5,
+        examId: 105,
+        examCode: "EXAM005",
+        examTitle: "Bài thi Lịch sử",
+        score: 6.5,
+        correctCount: 13,
+        wrongCount: 7,
+        completedAt: "2024-01-11T11:00:00",
+        endTime: "2024-01-11T11:40:00",
+        sessionId: "session-005",
+      },
+      {
+        id: 6,
+        examId: 106,
+        examCode: "EXAM006",
+        examTitle: "Kiểm tra Địa lý",
+        score: 7.5,
+        correctCount: 15,
+        wrongCount: 5,
+        completedAt: "2024-01-10T13:30:00",
+        endTime: "2024-01-10T14:05:00",
+        sessionId: "session-006",
+      },
+      {
+        id: 7,
+        examId: 107,
+        examCode: "EXAM007",
+        examTitle: "Thi thử Toán nâng cao",
+        score: 9.5,
+        correctCount: 19,
+        wrongCount: 1,
+        completedAt: "2024-01-09T15:20:00",
+        endTime: "2024-01-09T16:35:00",
+        sessionId: "session-007",
+      },
+      {
+        id: 8,
+        examId: 108,
+        examCode: "EXAM008",
+        examTitle: "Bài kiểm tra Sinh học",
+        score: 8.0,
+        correctCount: 16,
+        wrongCount: 4,
+        completedAt: "2024-01-08T10:00:00",
+        endTime: "2024-01-08T10:55:00",
+        sessionId: "session-008",
+      },
+      {
+        id: 9,
+        examId: 109,
+        examCode: "EXAM009",
+        examTitle: "Kiểm tra Văn học",
+        score: 7.0,
+        correctCount: 14,
+        wrongCount: 6,
+        completedAt: "2024-01-07T14:15:00",
+        endTime: "2024-01-07T14:55:00",
+        sessionId: "session-009",
+      },
+      {
+        id: 10,
+        examId: 110,
+        examCode: "EXAM010",
+        examTitle: "Thi thử Tin học",
+        score: 8.5,
+        correctCount: 17,
+        wrongCount: 3,
+        completedAt: "2024-01-06T09:30:00",
+        endTime: "2024-01-06T10:20:00",
+        sessionId: "session-010",
+      },
+      {
+        id: 11,
+        examId: 111,
+        examCode: "EXAM011",
+        examTitle: "Bài kiểm tra GDCD",
+        score: 9.0,
+        correctCount: 18,
+        wrongCount: 2,
+        completedAt: "2024-01-05T11:45:00",
+        endTime: "2024-01-05T12:35:00",
+        sessionId: "session-011",
+      },
+      {
+        id: 12,
+        examId: 112,
+        examCode: "EXAM012",
+        examTitle: "Kiểm tra Công nghệ",
+        score: 7.5,
+        correctCount: 15,
+        wrongCount: 5,
+        completedAt: "2024-01-04T13:00:00",
+        endTime: "2024-01-04T13:35:00",
+        sessionId: "session-012",
+      },
+      {
+        id: 13,
+        examId: 113,
+        examCode: "EXAM013",
+        examTitle: "Kiểm tra Vật lý nâng cao",
+        score: 8.5,
+        correctCount: 17,
+        wrongCount: 3,
+        completedAt: "2024-01-03T10:00:00",
+        endTime: "2024-01-03T10:45:00",
+        sessionId: "session-013",
+      },
+      {
+        id: 14,
+        examId: 114,
+        examCode: "EXAM014",
+        examTitle: "Thi thử Hóa học",
+        score: 9.0,
+        correctCount: 18,
+        wrongCount: 2,
+        completedAt: "2024-01-02T14:30:00",
+        endTime: "2024-01-02T16:00:00",
+        sessionId: "session-014",
+      },
+      {
+        id: 15,
+        examId: 115,
+        examCode: "EXAM015",
+        examTitle: "Bài kiểm tra Toán cơ bản",
+        score: 7.5,
+        correctCount: 15,
+        wrongCount: 5,
+        completedAt: "2024-01-01T09:00:00",
+        endTime: "2024-01-01T09:40:00",
+        sessionId: "session-015",
+      },
+    ];
 
-  const loadExams = async () => {
-    try {
-      setLoading(true);
-      let response;
-      
-      if (filter === "all") {
-        response = await getStudentExamsWithStatus();
-      } else {
-        response = await getStudentExamsByStatus({ status: filter });
-      }
+    setTimeout(() => {
+      setAllCompletedExams(mockCompletedExams);
+      setLoadingCompleted(false);
+    }, 500);
+  }, []);
 
-      // Xử lý response có thể có success wrapper hoặc không
-      const data = response?.success !== undefined 
-        ? (response?.data || [])
-        : (Array.isArray(response) ? response : []);
-      
-      setExams(data);
-    } catch (error) {
-      console.error("Error loading exams:", error);
-      toast.error(
-        error?.body?.message || error?.message || "Không thể tải danh sách bài thi"
-      );
-    } finally {
-      setLoading(false);
+  // Filter exams theo search term
+  const filteredExams = useMemo(() => {
+    if (!searchTerm.trim()) {
+      return allCompletedExams;
     }
-  };
-
-  // Tính toán status của exam dựa trên thời gian
-  const computeExamStatus = (exam) => {
-    const now = new Date();
-    const start = exam.start_time ? new Date(exam.start_time) : null;
-    const end = exam.end_time ? new Date(exam.end_time) : null;
-
-    if (start && now < start) return "upcoming";
-    if (start && end) {
-      if (now >= start && now <= end) return "ongoing";
-      if (now > end) return "ended";
-    }
-    if (end && now > end) return "ended";
-    return "ongoing";
-  };
-
-  const getExamStatusBadge = (exam) => {
-    const status = computeExamStatus(exam);
-    const badges = {
-      upcoming: {
-        label: "Sắp diễn ra",
-        className: "bg-blue-100 text-blue-700",
-      },
-      ongoing: {
-        label: "Đang diễn ra",
-        className: "bg-green-100 text-green-700",
-      },
-      ended: {
-        label: "Đã kết thúc",
-        className: "bg-gray-100 text-gray-700",
-      },
-    };
-
-    const badge = badges[status] || badges.ended;
-    return (
-      <span
-        className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${badge.className}`}
-      >
-        {badge.label}
-      </span>
+    const term = searchTerm.toLowerCase().trim();
+    return allCompletedExams.filter(
+      (exam) =>
+        exam.examTitle.toLowerCase().includes(term) ||
+        exam.examCode.toLowerCase().includes(term)
     );
-  };
+  }, [allCompletedExams, searchTerm]);
 
-  const getAttemptStatusBadge = (attemptStatus) => {
-    if (!attemptStatus) {
-      return (
-        <span className="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">
-          Chưa làm
-        </span>
-      );
-    }
+  // Tính toán phân trang
+  const totalPages = Math.ceil(filteredExams.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedExams = filteredExams.slice(startIndex, endIndex);
 
-    const badges = {
-      not_started: {
-        label: "Chưa làm",
-        className: "bg-slate-100 text-slate-600",
-        icon: null,
-      },
-      in_progress: {
-        label: "Đang làm",
-        className: "bg-amber-100 text-amber-700",
-        icon: <RotateCcw className="h-3 w-3" />,
-      },
-      completed: {
-        label: "Đã hoàn thành",
-        className: "bg-emerald-100 text-emerald-700",
-        icon: <CheckCircle2 className="h-3 w-3" />,
-      },
-    };
+  // Reset về trang 1 khi search thay đổi
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm]);
 
-    const badge = badges[attemptStatus.status] || badges.not_started;
-    return (
-      <span
-        className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium ${badge.className}`}
-      >
-        {badge.icon}
-        {badge.label}
-        {attemptStatus.attempt_count > 0 && (
-          <span className="ml-1 font-semibold">
-            ({attemptStatus.attempt_count} lần)
-          </span>
-        )}
-      </span>
-    );
-  };
 
   const formatDate = (dateString) => {
     if (!dateString) return "N/A";
@@ -151,212 +249,220 @@ export default function StudentExams() {
     });
   };
 
-  const handleStartExam = (examId) => {
-    navigate(`/student/exams/${examId}/take`);
+  const handleViewDetail = (examId, sessionId) => {
+    navigate(`/student/exams/${examId}/result/${sessionId}`);
   };
 
-  const filteredExams = exams.filter((exam) => {
-    if (filter === "all") return true;
-    const attemptStatus = exam.attempt_status;
-    if (!attemptStatus) {
-      return filter === "not_started";
+  const handlePageChange = (newPage) => {
+    setCurrentPage(newPage);
+  };
+
+  // Tính toán các số trang để hiển thị
+  const getPageNumbers = () => {
+    const pages = [];
+    const maxVisible = 5;
+
+    if (totalPages <= maxVisible) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      if (currentPage <= 3) {
+        for (let i = 1; i <= 5; i++) {
+          pages.push(i);
+        }
+      } else if (currentPage >= totalPages - 2) {
+        for (let i = totalPages - 4; i <= totalPages; i++) {
+          pages.push(i);
+        }
+      } else {
+        for (let i = currentPage - 2; i <= currentPage + 2; i++) {
+          pages.push(i);
+        }
+      }
     }
-    return attemptStatus.status === filter;
-  });
+    return pages;
+  };
 
   return (
     <DashboardLayout role="student">
-      <div className="min-h-screen bg-gray-50 py-8">
-        <div className="mx-auto max-w-7xl px-4">
-          {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">Danh sách bài thi</h1>
-            <p className="mt-2 text-gray-600">
-              Chọn bài thi để bắt đầu làm bài
-            </p>
-          </div>
+      <div className="space-y-6">
 
-          {/* Filters */}
-          <div className="mb-6 flex flex-wrap gap-2">
-            <button
-              onClick={() => setFilter("all")}
-              className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
-                filter === "all"
-                  ? "bg-indigo-600 text-white shadow-md"
-                  : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-200"
-              }`}
-            >
-              Tất cả
-            </button>
-            <button
-              onClick={() => setFilter("not_started")}
-              className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
-                filter === "not_started"
-                  ? "bg-indigo-600 text-white shadow-md"
-                  : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-200"
-              }`}
-            >
-              Chưa làm
-            </button>
-            <button
-              onClick={() => setFilter("in_progress")}
-              className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
-                filter === "in_progress"
-                  ? "bg-indigo-600 text-white shadow-md"
-                  : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-200"
-              }`}
-            >
-              Đang làm
-            </button>
-            <button
-              onClick={() => setFilter("completed")}
-              className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
-                filter === "completed"
-                  ? "bg-indigo-600 text-white shadow-md"
-                  : "bg-white text-gray-700 hover:bg-gray-100 border border-gray-200"
-              }`}
-            >
-              Đã hoàn thành
-            </button>
-          </div>
 
-          {/* Exams List */}
-          {loading ? (
-            <div className="flex h-64 items-center justify-center">
-              <div className="text-center">
-                <div className="mb-4 inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-blue-500 border-r-transparent"></div>
-                <p className="text-gray-600">Đang tải...</p>
+        {/* Filter Section */}
+        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center">
+            <div className="flex flex-1 items-center gap-3 rounded-full border border-slate-200 px-4 py-2">
+              <Search className="text-slate-400" size={20} />
+              <input
+                type="text"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Tìm kiếm theo tên bài thi hoặc mã bài thi..."
+                className="w-full border-none bg-transparent text-sm text-slate-600 outline-none focus:ring-0"
+              />
+            </div>
+          </div>
+        </section>
+
+        {/* Table Section */}
+        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+
+          {loadingCompleted ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="flex items-center gap-2 text-slate-500">
+                <div className="inline-block h-6 w-6 animate-spin rounded-full border-4 border-solid border-indigo-600 border-r-transparent"></div>
+                Đang tải dữ liệu...
               </div>
             </div>
-          ) : filteredExams.length === 0 ? (
-            <div className="rounded-lg border bg-white p-12 text-center shadow-sm">
-              <AlertCircle className="mx-auto mb-4 h-12 w-12 text-gray-400" />
-              <p className="text-gray-600">
-                {filter === "all"
-                  ? "Chưa có bài thi nào"
-                  : filter === "not_started"
-                  ? "Chưa có bài thi nào chưa làm"
-                  : filter === "in_progress"
-                  ? "Chưa có bài thi nào đang làm"
+          ) : paginatedExams.length === 0 ? (
+            <div className="text-center py-12 text-slate-500">
+              <AlertCircle className="mx-auto mb-4 h-12 w-12 text-slate-400" />
+              <p>
+                {searchTerm
+                  ? "Không tìm thấy bài thi nào phù hợp"
                   : "Chưa có bài thi nào đã hoàn thành"}
               </p>
             </div>
           ) : (
-            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {filteredExams.map((exam) => {
-                const attemptStatus = exam.attempt_status;
-                const examStatus = computeExamStatus(exam);
-                const canStart = examStatus !== "ended" && examStatus !== "upcoming";
-
-                return (
-                  <div
-                    key={exam.id}
-                    className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition-all hover:shadow-lg"
-                  >
-                    <div className="mb-4 flex items-start justify-between gap-2">
-                      <div className="flex-1">
-                        <h3 className="mb-2 text-lg font-bold text-gray-900">
-                          {exam.title}
-                        </h3>
-                        <div className="flex flex-wrap items-center gap-2">
-                          {getExamStatusBadge(exam)}
-                          {getAttemptStatusBadge(attemptStatus)}
-                        </div>
-                      </div>
-                    </div>
-
-                    {exam.des && (
-                      <p className="mb-4 line-clamp-2 text-sm text-gray-600">
-                        {exam.des}
-                      </p>
-                    )}
-
-                    {/* Thông tin điểm số nếu đã làm */}
-                    {attemptStatus && attemptStatus.attempt_count > 0 && (
-                      <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 p-3">
-                        <div className="flex items-center justify-between text-sm">
-                          <div className="flex items-center gap-2 text-emerald-700">
-                            <Trophy className="h-4 w-4" />
-                            <span className="font-semibold">Điểm cao nhất:</span>
-                          </div>
-                          <span className="font-bold text-emerald-800">
-                            {typeof attemptStatus.best_score === 'number'
-                              ? attemptStatus.best_score.toFixed(1)
-                              : parseFloat(attemptStatus.best_score || 0).toFixed(1)}
-                            /{exam.total_score}
-                          </span>
-                        </div>
-                        {attemptStatus.last_score && (
-                          <div className="mt-2 flex items-center justify-between text-xs text-emerald-600">
-                            <span>Điểm lần cuối:</span>
-                            <span className="font-semibold">
-                              {typeof attemptStatus.last_score === 'number'
-                                ? attemptStatus.last_score.toFixed(1)
-                                : parseFloat(attemptStatus.last_score || 0).toFixed(1)}
-                              /{exam.total_score}
+            <>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b-2 border-slate-200 bg-gradient-to-r from-slate-50 to-white">
+                      <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-700">
+                        Mã bài thi
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-700">
+                        Tên bài thi
+                      </th>
+                      <th className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wider text-slate-700">
+                        Số câu làm đúng
+                      </th>
+                      <th className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wider text-slate-700">
+                        Số câu làm sai
+                      </th>
+                      <th className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wider text-slate-700">
+                        Điểm số
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-700">
+                        Ngày hoàn thành
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-700">
+                        Ngày kết thúc bài thi
+                      </th>
+                      <th className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wider text-slate-700">
+                        Hành động
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 bg-white">
+                    {paginatedExams.map((item) => {
+                      const isPassed = item.score >= 5.0;
+                      return (
+                        <tr
+                          key={item.id}
+                          className="transition-colors hover:bg-indigo-50/50"
+                        >
+                          <td className="px-6 py-4">
+                            <div className="text-sm font-semibold text-indigo-600">
+                              {item.examCode}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="text-sm font-medium text-slate-900">
+                              {item.examTitle}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 text-center">
+                            <span className="inline-flex items-center rounded-full bg-emerald-100 px-3 py-1 text-sm font-semibold text-emerald-700">
+                              {item.correctCount} câu
                             </span>
-                          </div>
-                        )}
-                      </div>
-                    )}
+                          </td>
+                          <td className="px-6 py-4 text-center">
+                            <span className="inline-flex items-center rounded-full bg-red-100 px-3 py-1 text-sm font-semibold text-red-700">
+                              {item.wrongCount} câu
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-center">
+                            <span
+                              className={`text-base font-bold ${isPassed ? "text-emerald-600" : "text-red-600"
+                                }`}
+                            >
+                              {item.score.toFixed(1)}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="text-sm text-slate-600">
+                              {formatDate(item.completedAt)}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4">
+                            <div className="text-sm text-slate-600">
+                              {formatDate(item.endTime)}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 text-center">
+                            <button
+                              onClick={() =>
+                                handleViewDetail(item.examId, item.sessionId)
+                              }
+                              className="inline-flex items-center gap-1.5 rounded-full border border-indigo-300 bg-indigo-50 px-4 py-2 text-xs font-semibold text-indigo-700 transition hover:bg-indigo-100 hover:border-indigo-400"
+                            >
+                              <Eye className="h-4 w-4" />
+                              Xem chi tiết
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
 
-                    <div className="mb-4 space-y-2 text-sm text-gray-600">
-                      {exam.class && (
-                        <div className="flex items-center gap-2">
-                          <Users className="h-4 w-4" />
-                          <span>{exam.class.className}</span>
-                        </div>
-                      )}
-                      <div className="flex items-center gap-2">
-                        <Clock className="h-4 w-4" />
-                        <span>{exam.minutes} phút</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <BookOpen className="h-4 w-4" />
-                        <span>{exam.total_score} điểm</span>
-                      </div>
-                      {exam.start_time && (
-                        <div className="text-xs text-gray-500">
-                          Bắt đầu: {formatDate(exam.start_time)}
-                        </div>
-                      )}
-                      {exam.end_time && (
-                        <div className="text-xs text-gray-500">
-                          Kết thúc: {formatDate(exam.end_time)}
-                        </div>
-                      )}
-                    </div>
-
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="mt-6 flex items-center justify-between border-t border-slate-200 pt-4">
+                  <div className="text-sm text-slate-600">
+                    Hiển thị <span className="font-semibold">{startIndex + 1}</span> -{" "}
+                    <span className="font-semibold">
+                      {Math.min(endIndex, filteredExams.length)}
+                    </span>{" "}
+                    trong tổng số <span className="font-semibold">{filteredExams.length}</span> bài thi
+                  </div>
+                  <div className="flex items-center gap-2">
                     <button
-                      onClick={() => handleStartExam(exam.id)}
-                      disabled={!canStart}
-                      className={`w-full rounded-lg px-4 py-2 font-semibold text-white transition ${
-                        !canStart
-                          ? "cursor-not-allowed bg-gray-400"
-                          : attemptStatus?.status === "in_progress"
-                          ? "bg-amber-600 hover:bg-amber-700"
-                          : attemptStatus?.status === "completed"
-                          ? "bg-indigo-600 hover:bg-indigo-700"
-                          : "bg-blue-600 hover:bg-blue-700"
-                      } flex items-center justify-center gap-2`}
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      disabled={currentPage === 1}
+                      className="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <Play className="h-4 w-4" />
-                      {!canStart
-                        ? examStatus === "ended"
-                          ? "Đã kết thúc"
-                          : "Chưa đến thời gian"
-                        : attemptStatus?.status === "in_progress"
-                        ? "Tiếp tục làm bài"
-                        : attemptStatus?.status === "completed"
-                        ? "Làm lại bài thi"
-                        : "Bắt đầu làm bài"}
+                      <ChevronLeft className="h-4 w-4" />
+                    </button>
+                    {getPageNumbers().map((pageNum) => (
+                      <button
+                        key={pageNum}
+                        onClick={() => handlePageChange(pageNum)}
+                        className={`h-10 w-10 rounded-lg border text-sm font-semibold transition ${currentPage === pageNum
+                          ? "border-indigo-600 bg-indigo-600 text-white shadow-md"
+                          : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+                          }`}
+                      >
+                        {pageNum}
+                      </button>
+                    ))}
+                    <button
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                      className="inline-flex items-center justify-center rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <ChevronRight className="h-4 w-4" />
                     </button>
                   </div>
-                );
-              })}
-            </div>
+                </div>
+              )}
+            </>
           )}
-        </div>
+        </section>
       </div>
     </DashboardLayout>
   );

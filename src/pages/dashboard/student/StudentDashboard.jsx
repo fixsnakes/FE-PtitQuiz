@@ -1,66 +1,163 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { FiLoader, FiFileText, FiUsers, FiCheckCircle, FiClock, FiTrendingUp } from "react-icons/fi";
 import DashboardLayout from "../../../layouts/DashboardLayout";
+import { toast } from "react-toastify";
 
 export default function StudentDashboard() {
+  const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [stats, setStats] = useState({
+    upcomingExams: 0,
+    completedToday: 0,
+    averageScore: 0,
+    totalClasses: 0,
+  });
+
+  useEffect(() => {
+    // Load stats if API available
+    // For now, using placeholder data
+    setLoading(false);
+  }, []);
+
+  if (loading) {
+    return (
+      <DashboardLayout role="student">
+        <div className="flex items-center justify-center py-20">
+          <FiLoader className="animate-spin text-3xl text-indigo-600" />
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout role="student">
       <div className="space-y-6">
-        <section className="rounded-2xl bg-linear-to-r from-blue-500 to-purple-500 p-6 text-white shadow-lg">
-          <p className="text-sm uppercase tracking-widest text-white/80">
-            Học sinh
-          </p>
-          <h1 className="text-3xl font-bold">Chào mừng bạn quay lại!</h1>
-          <p className="text-sm text-white/80">
-            Đây là khu vực dành cho học sinh theo dõi tiến độ học tập. Nội dung
-            hiện chỉ mang tính minh hoạ mô tả giao diện.
+        <section className="rounded-2xl border border-dashed border-indigo-200 bg-white p-6 shadow-sm">
+          <h1 className="text-3xl font-bold text-slate-900">
+            Chào mừng trở lại!
+          </h1>
+          <p className="mt-2 text-slate-600">
+            Đây là khu vực dành cho học sinh theo dõi tiến độ học tập và làm bài thi.
           </p>
         </section>
 
-        <section className="grid gap-4 md:grid-cols-3">
+        <section className="grid gap-4 md:grid-cols-3 lg:grid-cols-4">
           <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <h2 className="text-sm font-semibold text-slate-500">
-              Kỳ thi sắp diễn ra
-            </h2>
-            <p className="text-3xl font-bold text-slate-900">2</p>
-            <p className="text-sm text-slate-500">Chưa tới hạn.</p>
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-sm font-semibold text-slate-500">Kỳ thi sắp diễn ra</h2>
+                <p className="mt-1 text-3xl font-bold text-slate-900">
+                  {stats.upcomingExams || 0}
+                </p>
+                <p className="mt-1 text-xs text-slate-500">
+                  Chưa tới hạn
+                </p>
+              </div>
+              <FiFileText className="text-3xl text-indigo-500 opacity-50" />
+            </div>
           </article>
+
           <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <h2 className="text-sm font-semibold text-slate-500">
-              Luyện tập hôm nay
-            </h2>
-            <p className="text-3xl font-bold text-slate-900">45</p>
-            <p className="text-sm text-slate-500">
-              Câu hỏi bạn đã hoàn thành.
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-sm font-semibold text-slate-500">Luyện tập hôm nay</h2>
+                <p className="mt-1 text-3xl font-bold text-slate-900">
+                  {stats.completedToday || 0}
+                </p>
+                <p className="mt-1 text-xs text-slate-500">
+                  Câu hỏi đã hoàn thành
+                </p>
+              </div>
+              <FiCheckCircle className="text-3xl text-emerald-500 opacity-50" />
+            </div>
+          </article>
+
+          <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-sm font-semibold text-slate-500">Điểm trung bình</h2>
+                <p className="mt-1 text-3xl font-bold text-slate-900">
+                  {stats.averageScore > 0 ? stats.averageScore.toFixed(1) : "0.0"}
+                </p>
+                <p className="mt-1 text-xs text-slate-500">
+                  Trong 5 bài gần nhất
+                </p>
+              </div>
+              <FiTrendingUp className="text-3xl text-amber-500 opacity-50" />
+            </div>
+          </article>
+
+          <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-sm font-semibold text-slate-500">Lớp học</h2>
+                <p className="mt-1 text-3xl font-bold text-slate-900">
+                  {stats.totalClasses || 0}
+                </p>
+                <p className="mt-1 text-xs text-slate-500">
+                  Lớp đã tham gia
+                </p>
+              </div>
+              <FiUsers className="text-3xl text-blue-500 opacity-50" />
+            </div>
+          </article>
+        </section>
+
+        <section className="grid gap-4 md:grid-cols-2">
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-slate-900">Bài thi gần đây</h2>
+              <button
+                onClick={() => navigate("/dashboard/student/exams")}
+                className="text-sm font-semibold text-indigo-600 hover:text-indigo-700"
+              >
+                Xem tất cả →
+              </button>
+            </div>
+            <p className="py-4 text-center text-sm text-slate-500">
+              Chưa có bài thi nào
             </p>
-          </article>
-          <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <h2 className="text-sm font-semibold text-slate-500">
-              Điểm trung bình
-            </h2>
-            <p className="text-3xl font-bold text-slate-900">8.4</p>
-            <p className="text-sm text-slate-500">Trong 5 bài gần nhất.</p>
-          </article>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-slate-900">Lớp học gần đây</h2>
+              <button
+                onClick={() => navigate("/dashboard/student/classes")}
+                className="text-sm font-semibold text-indigo-600 hover:text-indigo-700"
+              >
+                Xem tất cả →
+              </button>
+            </div>
+            <p className="py-4 text-center text-sm text-slate-500">
+              Chưa có lớp học nào
+            </p>
+          </div>
         </section>
 
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <h2 className="text-xl font-semibold text-slate-900">
-            Hành động nhanh
+            Gợi ý thao tác nhanh
           </h2>
-          <p className="text-slate-600">
-            Các nút dưới đây mô tả tính năng đang phát triển.
-          </p>
-          <div className="mt-4 grid gap-3 md:grid-cols-2">
-            <button className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-left text-blue-700 transition hover:border-blue-400">
-              Tiếp tục luyện đề
-              <span className="block text-sm text-blue-500">
-                Còn 20 câu hỏi chưa làm
-              </span>
+          <div className="mt-4 flex flex-wrap gap-3">
+            <button
+              onClick={() => navigate("/dashboard/student/exams")}
+              className="rounded-lg border border-indigo-200 px-4 py-2 text-indigo-600 transition hover:bg-indigo-50"
+            >
+              Xem danh sách bài thi
             </button>
-            <button className="rounded-xl border border-blue-200 bg-white px-4 py-3 text-left text-blue-600 transition hover:border-blue-400">
-              Xem lịch thi
-              <span className="block text-sm text-blue-400">
-                3 lịch thi sắp tới
-              </span>
+            <button
+              onClick={() => navigate("/dashboard/student/classes")}
+              className="rounded-lg border border-indigo-200 px-4 py-2 text-indigo-600 transition hover:bg-indigo-50"
+            >
+              Xem lớp học của tôi
+            </button>
+            <button
+              onClick={() => navigate("/dashboard/student/results")}
+              className="rounded-lg border border-indigo-200 px-4 py-2 text-indigo-600 transition hover:bg-indigo-50"
+            >
+              Xem kết quả thi
             </button>
           </div>
         </section>

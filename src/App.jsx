@@ -20,10 +20,13 @@ import ExamMonitoringPage from "./pages/dashboard/teacher/exams/ExamMonitoring";
 import NotificationsPage from "./pages/dashboard/teacher/Notifications";
 import TeacherExamPurchases from "./pages/dashboard/teacher/ExamPurchases";
 import StudentClasses from "./pages/dashboard/student/StudentClasses";
+import StudentClassDetail from "./pages/dashboard/student/StudentClassDetail";
 import StudentExams from "./pages/dashboard/student/StudentExams";
 import TakeExam from "./pages/dashboard/student/TakeExam";
 import ExamResult from "./pages/dashboard/student/ExamResult";
-
+import RecentExams from "./pages/dashboard/student/RecentExams";
+import FavoriteExams from "./pages/dashboard/student/FavoriteExams";
+import StudentPayment from "./pages/dashboard/student/StudentPayment";
 // Admin imports
 import AdminLayout from "./layouts/AdminLayout";
 import AdminDashboard from "./pages/dashboard/admin/AdminDashboard";
@@ -198,6 +201,22 @@ function App() {
         }
       />
       <Route
+        path="/dashboard/student/classes/:classId"
+        element={
+          <ProtectedRoute allowedRoles={["student"]}>
+            <StudentClassDetail />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dashboard/student/payment"
+        element={
+          <ProtectedRoute allowedRoles={["student"]}>
+            <StudentPayment />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/dashboard/student/exams"
         element={
           <ProtectedRoute allowedRoles={["student"]}>
@@ -218,6 +237,22 @@ function App() {
         element={
           <ProtectedRoute allowedRoles={["student"]}>
             <ExamResult />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dashboard/student/recent"
+        element={
+          <ProtectedRoute allowedRoles={["student"]}>
+            <RecentExams />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dashboard/student/favorite"
+        element={
+          <ProtectedRoute allowedRoles={["student"]}>
+            <FavoriteExams />
           </ProtectedRoute>
         }
       />
