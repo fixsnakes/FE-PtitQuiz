@@ -61,39 +61,42 @@ export default function CreateClass() {
   return (
     <DashboardLayout role="teacher">
       <div className="space-y-6">
-        <header className="flex flex-wrap items-center gap-4">
-          <button
-            type="button"
-            onClick={() => navigate(-1)}
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 shadow-sm transition hover:bg-slate-50"
-          >
-            <FiArrowLeft />
-            Quay lại
-          </button>
-          <div>
-            <p className="text-xs uppercase tracking-wide text-indigo-600">
-              Tạo lớp học mới
-            </p>
-            <h1 className="text-2xl font-bold text-slate-900">
-              Khởi tạo lớp cho học sinh của bạn
-            </h1>
+        <header className="relative overflow-hidden rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50 via-white to-purple-50 p-6 shadow-sm">
+          <div className="relative z-10 flex flex-wrap items-center gap-4">
+            <button
+              type="button"
+              onClick={() => navigate(-1)}
+              className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 shadow-sm transition hover:bg-slate-50 hover:shadow-md"
+            >
+              <FiArrowLeft />
+              Quay lại
+            </button>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-indigo-500">
+                Tạo lớp học mới
+              </p>
+              <h1 className="mt-2 text-3xl font-bold text-slate-900">
+                Khởi tạo lớp cho học sinh của bạn
+              </h1>
+            </div>
           </div>
+          <div className="absolute right-0 top-0 h-24 w-24 rounded-full bg-indigo-200 opacity-20 blur-2xl"></div>
         </header>
 
         <section className="grid gap-6 lg:grid-cols-3">
           <form
             onSubmit={handleSubmit}
-            className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm lg:col-span-2"
+            className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm lg:col-span-2"
           >
-            <h2 className="text-lg font-semibold text-slate-900">
+            <h2 className="text-lg font-bold text-slate-900">
               Thông tin lớp học
             </h2>
-            <p className="mt-1 text-sm text-slate-500">
+            <p className="mt-1.5 text-sm text-slate-600">
               Điền tên lớp để hệ thống tạo mã lớp tự động.
             </p>
 
             <div className="mt-6 space-y-2">
-              <label className="text-sm font-medium text-slate-600">
+              <label className="block text-sm font-medium text-slate-700 mb-1">
                 Tên lớp <span className="text-red-500">*</span>
               </label>
               <input
@@ -101,7 +104,7 @@ export default function CreateClass() {
                 value={className}
                 onChange={(event) => setClassName(event.target.value)}
                 placeholder="Ví dụ: Lớp Toán 10A"
-                className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100"
+                className="w-full rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
               />
             </div>
 
@@ -115,7 +118,7 @@ export default function CreateClass() {
               <button
                 type="submit"
                 disabled={loading}
-                className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-500 disabled:opacity-60"
+                className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md transition hover:bg-indigo-700 hover:shadow-lg disabled:opacity-60"
               >
                 {loading ? (
                   <>
@@ -133,7 +136,7 @@ export default function CreateClass() {
                 <button
                   type="button"
                   onClick={resetForm}
-                  className="rounded-xl border border-slate-200 px-5 py-3 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+                  className="rounded-lg border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-600 shadow-sm transition hover:bg-slate-50 hover:shadow-md"
                 >
                   Tạo lớp khác
                 </button>
@@ -141,21 +144,24 @@ export default function CreateClass() {
             </div>
           </form>
 
-          <aside className="rounded-2xl border border-indigo-100 bg-indigo-50 p-6 shadow-sm">
-            <h3 className="text-lg font-semibold text-indigo-900">
+          <aside className="rounded-xl border border-indigo-200 bg-gradient-to-br from-indigo-50 to-white p-6 shadow-sm">
+            <h3 className="text-lg font-bold text-indigo-900">
               Hướng dẫn nhanh
             </h3>
-            <ul className="mt-4 list-disc space-y-2 pl-5 text-sm text-indigo-900/80">
-              <li>Sau khi tạo, bạn sẽ nhận được mã lớp duy nhất.</li>
-              <li>Gửi mã lớp cho học sinh để họ tham gia.</li>
-              <li>
-                Có thể quản lý học sinh, bài đăng và đề thi ở trang chi tiết
-                lớp.
+            <ul className="mt-4 space-y-3 text-sm text-indigo-900/80">
+              <li className="flex items-start gap-2">
+                <span className="mt-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-indigo-100 text-xs font-semibold text-indigo-600">1</span>
+                <span>Sau khi tạo, bạn sẽ nhận được mã lớp duy nhất.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="mt-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-indigo-100 text-xs font-semibold text-indigo-600">2</span>
+                <span>Gửi mã lớp cho học sinh để họ tham gia.</span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="mt-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-indigo-100 text-xs font-semibold text-indigo-600">3</span>
+                <span>Có thể quản lý học sinh, bài đăng và đề thi ở trang chi tiết lớp.</span>
               </li>
             </ul>
-            <p className="mt-4 rounded-xl bg-white/80 px-4 py-3 text-sm text-indigo-800 shadow-inner">
-              API sử dụng: <code className="font-semibold">POST /api/classes</code>
-            </p>
           </aside>
         </section>
 

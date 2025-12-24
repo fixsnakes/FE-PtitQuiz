@@ -42,6 +42,7 @@ function normalizeExam(exam) {
     minutes: exam.minutes ?? 45,
     startTime: toLocalDateTime(exam.start_time),
     endTime: toLocalDateTime(exam.end_time),
+    noTimeLimit: !exam.start_time || !exam.end_time,
     classId: exam.class_id ?? exam.classId ?? "",
     description: exam.des ?? exam.description ?? "",
     totalScore: exam.total_score ?? exam.totalScore ?? "",
@@ -131,7 +132,28 @@ function EditExamPage() {
   }, [examId, navigate]);
 
   const updateConfig = (field, value) => {
-    setConfig((prev) => ({ ...prev, [field]: value }));
+    setConfig((prev) => {
+      const newConfig = { ...prev, [field]: value };
+      
+      // Nếu thay đổi startTime và endTime đã có giá trị, đảm bảo endTime >= startTime
+      if (field === 'startTime' && newConfig.endTime && value) {
+        const startDate = new Date(value);
+        const endDate = new Date(newConfig.endTime);
+        if (endDate <= startDate) {
+          // Tự động set endTime = startTime + 1 giờ
+          const newEndTime = new Date(startDate);
+          newEndTime.setHours(newEndTime.getHours() + 1);
+          const year = newEndTime.getFullYear();
+          const month = String(newEndTime.getMonth() + 1).padStart(2, "0");
+          const day = String(newEndTime.getDate()).padStart(2, "0");
+          const hours = String(newEndTime.getHours()).padStart(2, "0");
+          const minutes = String(newEndTime.getMinutes()).padStart(2, "0");
+          newConfig.endTime = `${year}-${month}-${day}T${hours}:${minutes}`;
+        }
+      }
+      
+      return newConfig;
+    });
   };
 
   const validateForm = () => {
@@ -150,14 +172,23 @@ function EditExamPage() {
       return false;
     }
 
-    if (config.startTime && config.endTime && config.startTime >= config.endTime) {
-      toast.error("Thời gian kết thúc phải sau thời gian bắt đầu.");
-      return false;
+    if (!config.noTimeLimit) {
+      if (!config.startTime || !config.endTime) {
+        toast.error("Vui lòng chọn thời gian bắt đầu và kết thúc, hoặc chọn 'Không giới hạn thời gian'.");
+        return false;
+      }
+      if (config.startTime >= config.endTime) {
+        toast.error("Thời gian kết thúc phải sau thời gian bắt đầu.");
+        return false;
+      }
     }
 
-    if (config.isPaid && (!config.fee || Number(config.fee) <= 0)) {
-      toast.error("Vui lòng nhập mức phí hợp lệ.");
-      return false;
+    if (config.isPaid) {
+      const feeValue = Number(config.fee);
+      if (!config.fee || isNaN(feeValue) || feeValue <= 0) {
+        toast.error("Vui lòng nhập mức phí hợp lệ (lớn hơn 0).");
+        return false;
+      }
     }
 
     return true;
@@ -171,8 +202,8 @@ function EditExamPage() {
     const examPayload = {
       title: config.title.trim(),
       minutes: Number(config.minutes),
-      start_time: toIso(config.startTime),
-      end_time: toIso(config.endTime),
+      start_time: config.noTimeLimit ? null : toIso(config.startTime),
+      end_time: config.noTimeLimit ? null : toIso(config.endTime),
       class_id: config.classId || null,
       des: config.description.trim() || null,
       total_score: config.totalScore ? Number(config.totalScore) : null,
@@ -180,6 +211,12 @@ function EditExamPage() {
       is_paid: config.isPaid,
       fee: config.isPaid ? Number(config.fee) : null,
     };
+
+    // Đảm bảo fee là số hợp lệ khi is_paid = true
+    if (examPayload.is_paid && (!examPayload.fee || isNaN(examPayload.fee) || examPayload.fee <= 0)) {
+      toast.error("Vui lòng nhập mức phí hợp lệ (lớn hơn 0).");
+      return;
+    }
 
     setSubmitState({ loading: true, message: "" });
     try {
@@ -223,46 +260,54 @@ function EditExamPage() {
   return (
     <DashboardLayout role="teacher">
       <div className="space-y-6">
-        <header className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <button
-              type="button"
-              onClick={() => navigate(-1)}
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-xs font-semibold text-slate-600 transition hover:bg-slate-50"
-            >
-              <FiArrowLeft />
-              Quay lại
-            </button>
-            <p className="mt-3 text-xs font-semibold uppercase tracking-[0.3em] text-indigo-500">
-              Chỉnh sửa đề thi
-            </p>
-            <h1 className="mt-2 text-3xl font-bold text-slate-900">{config.title}</h1>
-          </div>
+        <header className="relative overflow-hidden rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50 via-white to-purple-50 p-6 shadow-sm">
+          <div className="relative z-10 flex flex-wrap items-center justify-between gap-4">
+            <div className="flex-1">
+              <div className="flex items-center gap-3 mb-3">
+                <button
+                  type="button"
+                  onClick={() => navigate(-1)}
+                  className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 shadow-sm transition hover:bg-slate-50 hover:shadow-md"
+                >
+                  <FiArrowLeft />
+                  Quay lại
+                </button>
+                <p className="text-xs font-semibold uppercase tracking-[0.3em] text-indigo-500">
+                  Chỉnh sửa đề thi
+                </p>
+              </div>
+              <h1 className="text-3xl font-bold text-slate-900">{config.title}</h1>
+              <p className="mt-1.5 text-sm text-slate-600">
+                Cập nhật thông tin đề thi. Sau khi lưu, bạn có thể tiếp tục quản lý câu hỏi.
+              </p>
+            </div>
 
-          <div className="flex gap-3">
-            <button
-              type="button"
-              onClick={handleDelete}
-              disabled={deleteLoading}
-              className="inline-flex items-center gap-2 rounded-full border border-red-200 px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50 disabled:opacity-60"
-            >
-              {deleteLoading ? <FiLoader className="animate-spin" /> : <FiTrash2 />}
-              Xóa đề thi
-            </button>
-            <button
-              type="button"
-              onClick={handleSubmit}
-              disabled={submitState.loading}
-              className="inline-flex items-center gap-2 rounded-full bg-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-md disabled:opacity-60"
-            >
-              {submitState.loading && <FiLoader className="animate-spin" />}
-              Lưu thay đổi
-            </button>
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={deleteLoading}
+                className="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-white px-4 py-2.5 text-sm font-semibold text-red-600 shadow-sm transition hover:bg-red-50 hover:shadow-md disabled:opacity-60"
+              >
+                {deleteLoading ? <FiLoader className="animate-spin" /> : <FiTrash2 />}
+                Xóa đề thi
+              </button>
+              <button
+                type="button"
+                onClick={handleSubmit}
+                disabled={submitState.loading}
+                className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-md transition hover:bg-indigo-700 hover:shadow-lg disabled:opacity-60"
+              >
+                {submitState.loading && <FiLoader className="animate-spin" />}
+                Lưu thay đổi
+              </button>
+            </div>
           </div>
+          <div className="absolute right-0 top-0 h-24 w-24 rounded-full bg-indigo-200 opacity-20 blur-2xl"></div>
         </header>
 
         {submitState.message && (
-          <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+          <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-medium text-emerald-700 shadow-sm">
             {submitState.message}
           </div>
         )}
@@ -271,79 +316,131 @@ function EditExamPage() {
           <FormSection title="Thông tin chung">
             <div className="grid gap-4 md:grid-cols-2">
               <div>
-                <label className="block text-sm font-medium text-gray-700">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
                   Tên đề thi <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
                   value={config.title}
                   onChange={(event) => updateConfig("title", event.target.value)}
-                  className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 focus:border-indigo-500 focus:outline-none"
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
                   placeholder="Nhập tên đề thi"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700">Tổng điểm</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Tổng điểm</label>
                 <input
                   type="number"
                   value={config.totalScore}
                   min={0}
                   onChange={(event) => updateConfig("totalScore", event.target.value)}
-                  className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 focus:border-indigo-500 focus:outline-none"
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
                   placeholder="Ví dụ: 100"
                 />
               </div>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-3">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  Thời gian làm bài (phút) <span className="text-red-500">*</span>
-                </label>
+            <div className="space-y-4">
+              <div className="flex items-start gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
                 <input
-                  type="number"
-                  min={1}
-                  value={config.minutes}
-                  onChange={(event) => updateConfig("minutes", event.target.value)}
-                  className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 focus:border-indigo-500 focus:outline-none"
+                  type="checkbox"
+                  id="noTimeLimit"
+                  checked={config.noTimeLimit}
+                  onChange={(event) => {
+                    updateConfig("noTimeLimit", event.target.checked);
+                    if (event.target.checked) {
+                      updateConfig("startTime", "");
+                      updateConfig("endTime", "");
+                    } else {
+                      const now = new Date();
+                      const year = now.getFullYear();
+                      const month = String(now.getMonth() + 1).padStart(2, "0");
+                      const day = String(now.getDate()).padStart(2, "0");
+                      const hours = String(now.getHours()).padStart(2, "0");
+                      const minutes = String(now.getMinutes()).padStart(2, "0");
+                      const defaultStartTime = `${year}-${month}-${day}T${hours}:${minutes}`;
+                      updateConfig("startTime", defaultStartTime);
+                    }
+                  }}
+                  className="mt-0.5 h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-2 focus:ring-indigo-500"
                 />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Bắt đầu</label>
-                <div className="relative">
-                  <input
-                    type="datetime-local"
-                    value={config.startTime}
-                    onChange={(event) => updateConfig("startTime", event.target.value)}
-                    step="60"
-                    className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 focus:border-indigo-500 focus:outline-none"
-                  />
-                 
+                <div className="flex-1">
+                  <label htmlFor="noTimeLimit" className="text-sm font-semibold text-gray-700 cursor-pointer">
+                    Không giới hạn thời gian
+                  </label>
+                  <p className="mt-1 text-xs text-slate-600">
+                    Nếu chọn, học sinh có thể làm bài thi bất cứ lúc nào mà không bị giới hạn bởi thời gian bắt đầu và kết thúc.
+                  </p>
                 </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Kết thúc</label>
-                <div className="relative">
+              
+              <div className="grid gap-4 md:grid-cols-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Thời gian làm bài (phút) <span className="text-red-500">*</span>
+                  </label>
                   <input
-                    type="datetime-local"
-                    value={config.endTime}
-                    min={config.startTime || undefined}
-                    onChange={(event) => updateConfig("endTime", event.target.value)}
-                    step="60"
-                    className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 focus:border-indigo-500 focus:outline-none"
+                    type="number"
+                    min={1}
+                    value={config.minutes}
+                    onChange={(event) => updateConfig("minutes", event.target.value)}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
                   />
-                
                 </div>
+                {!config.noTimeLimit && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Bắt đầu <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="datetime-local"
+                        value={config.startTime}
+                        onChange={(event) => updateConfig("startTime", event.target.value)}
+                        step="60"
+                        max={config.endTime || undefined}
+                        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Kết thúc <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="datetime-local"
+                        value={config.endTime}
+                        min={config.startTime || undefined}
+                        onChange={(event) => {
+                          const newEndTime = event.target.value;
+                          if (config.startTime && newEndTime) {
+                            const startDate = new Date(config.startTime);
+                            const endDate = new Date(newEndTime);
+                            if (endDate <= startDate) {
+                              toast.error("Thời gian kết thúc phải lớn hơn thời gian bắt đầu!");
+                              return;
+                            }
+                          }
+                          updateConfig("endTime", newEndTime);
+                        }}
+                        step="60"
+                        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                      />
+                      {config.startTime && config.endTime && new Date(config.endTime) <= new Date(config.startTime) && (
+                        <p className="mt-1 text-xs text-red-600">Thời gian kết thúc phải lớn hơn thời gian bắt đầu</p>
+                      )}
+                    </div>
+                  </>
+                )}
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700">Mô tả</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Mô tả</label>
               <textarea
                 rows={3}
                 value={config.description}
                 onChange={(event) => updateConfig("description", event.target.value)}
-                className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 focus:border-indigo-500 focus:outline-none"
+                className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200 resize-none"
                 placeholder="Thông tin mô tả đề thi, hướng dẫn, ghi chú..."
               />
             </div>
@@ -357,11 +454,11 @@ function EditExamPage() {
               </div>
             ) : (
               <div>
-                <label className="block text-sm font-medium text-gray-700">Chọn lớp</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Chọn lớp</label>
                 <select
                   value={config.classId}
                   onChange={(event) => updateConfig("classId", event.target.value)}
-                  className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 focus:border-indigo-500 focus:outline-none"
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200 bg-white"
                 >
                   <option value="">Không gán lớp</option>
                   {classes.map((cls) => (
@@ -375,33 +472,51 @@ function EditExamPage() {
           </FormSection>
 
           <FormSection title="Công khai và thu phí">
-            <div className="grid gap-4 md:grid-cols-2">
-              <Toggle
-                label="Cho phép học sinh bên ngoài lớp truy cập (is_public)"
-                checked={config.isPublic}
-                onChange={(value) => updateConfig("isPublic", value)}
-              />
-              <Toggle
-                label="Thu phí tham gia đề thi"
-                checked={config.isPaid}
-                onChange={(value) => updateConfig("isPaid", value)}
-                description="Nếu bật, cần nhập số tiền (đơn vị VNĐ)."
-              />
+            <div className="grid gap-6 md:grid-cols-2">
+              <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                <Toggle
+                  label="Cho phép học sinh bên ngoài lớp truy cập"
+                  checked={config.isPublic}
+                  onChange={(value) => updateConfig("isPublic", value)}
+                  description="Nếu bật, học sinh không thuộc lớp được gán cũng có thể làm bài thi này."
+                />
+              </div>
+              <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                <Toggle
+                  label="Thu phí mỗi lần làm bài"
+                  checked={config.isPaid}
+                  onChange={(value) => {
+                    updateConfig("isPaid", value);
+                    // Nếu bật isPaid và fee chưa có giá trị, set giá trị mặc định
+                    if (value && (!config.fee || Number(config.fee) <= 0)) {
+                      updateConfig("fee", "10000");
+                    }
+                  }}
+                  description="Học sinh sẽ bị trừ tiền mỗi lần bắt đầu làm bài thi này (đơn vị VNĐ)."
+                />
+              </div>
             </div>
 
             {config.isPaid && (
-              <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Mức phí (VNĐ)</label>
-                  <input
-                    type="number"
-                    min={0}
-                    value={config.fee}
-                    onChange={(event) => updateConfig("fee", event.target.value)}
-                    className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 focus:border-indigo-500 focus:outline-none"
-                    placeholder="Ví dụ: 50000"
-                  />
-                </div>
+              <div className="mt-4 rounded-lg border border-indigo-200 bg-indigo-50 p-4">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Phí mỗi lần làm bài (VNĐ) <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  min={1}
+                  required
+                  value={config.fee}
+                  onChange={(event) => updateConfig("fee", event.target.value)}
+                  className="w-full max-w-md rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                  placeholder="Ví dụ: 50000"
+                />
+                {(!config.fee || Number(config.fee) <= 0) && (
+                  <p className="mt-1 text-xs text-red-600">Vui lòng nhập mức phí hợp lệ (lớn hơn 0)</p>
+                )}
+                <p className="mt-2 text-xs text-slate-600">
+                  Số tiền sẽ được trừ từ tài khoản học sinh mỗi lần họ bắt đầu làm bài thi.
+                </p>
               </div>
             )}
           </FormSection>

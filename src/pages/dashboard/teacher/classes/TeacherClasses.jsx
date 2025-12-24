@@ -48,8 +48,8 @@ function normalizeClasses(payload) {
     className: item.className ?? item.name ?? "Chưa đặt tên",
     classCode: item.classCode ?? item.class_code ?? "—",
     studentCount:
+      item.studentCount ??  // Ưu tiên field từ backend
       item.studentsCount ??
-      item.studentCount ??
       item.totalStudents ??
       item.students?.length ??
       0,
@@ -144,8 +144,8 @@ export default function TeacherClasses() {
   return (
     <DashboardLayout role="teacher">
       <div className="space-y-6">
-        <header className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="flex flex-wrap items-center justify-between gap-4">
+        <header className="relative overflow-hidden rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50 via-white to-purple-50 p-6 shadow-sm">
+          <div className="relative z-10 flex flex-wrap items-center justify-between gap-4">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.3em] text-indigo-500">
                 Quản lý lớp học
@@ -153,62 +153,79 @@ export default function TeacherClasses() {
               <h1 className="mt-2 text-3xl font-bold text-slate-900">
                 Danh sách lớp và hoạt động
               </h1>
-      
             </div>
             <Link
               to="/teacher/classes/create"
-              className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:opacity-90"
+              className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md transition hover:bg-indigo-700 hover:shadow-lg"
             >
               <FiPlus />
               Tạo lớp mới
             </Link>
           </div>
-
-          <div className="mt-6 grid gap-4 md:grid-cols-3">
-            <div className="rounded-2xl border border-violet-100 bg-gradient-to-br from-violet-50 to-white p-5">
-              <p className="text-sm font-medium text-violet-500">Tổng số lớp</p>
-              <p className="mt-2 text-3xl font-bold text-violet-900">
-                {classes.length}
-              </p>
-              <p className="text-xs text-violet-500">
-                Các lớp do bạn tạo và quản lý
-              </p>
+          <div className="absolute right-0 top-0 h-24 w-24 rounded-full bg-indigo-200 opacity-20 blur-2xl"></div>
+          
+          <div className="mt-6 grid gap-5 md:grid-cols-3">
+            <div className="group relative overflow-hidden rounded-xl border border-violet-200 bg-white p-6 shadow-sm transition-all hover:border-violet-300 hover:shadow-md">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-violet-500">Tổng số lớp</p>
+                  <p className="mt-2 text-3xl font-bold text-slate-900">
+                    {classes.length}
+                  </p>
+                  <p className="mt-2 text-xs font-medium text-slate-600">
+                    Các lớp do bạn tạo và quản lý
+                  </p>
+                </div>
+                <div className="rounded-lg bg-violet-100 p-3">
+                  <FiUsers className="text-2xl text-violet-600" />
+                </div>
+              </div>
+              <div className="absolute bottom-0 left-0 h-1 w-full bg-gradient-to-r from-violet-500 to-purple-500 opacity-0 transition-opacity group-hover:opacity-100"></div>
             </div>
-            <div className="rounded-2xl border border-sky-100 bg-gradient-to-br from-sky-50 to-white p-5">
-              <p className="text-sm font-medium text-sky-500">
-                Học sinh đã tham gia
-              </p>
-              <p className="mt-2 text-3xl font-bold text-sky-900">
-                {totalStudents}
-              </p>
-              <p className="text-xs text-sky-500">
-                Bao gồm cả lớp đang ẩn hoặc khóa
-              </p>
+            <div className="group relative overflow-hidden rounded-xl border border-sky-200 bg-white p-6 shadow-sm transition-all hover:border-sky-300 hover:shadow-md">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-sky-500">
+                    Học sinh đã tham gia
+                  </p>
+                  <p className="mt-2 text-3xl font-bold text-slate-900">
+                    {totalStudents}
+                  </p>
+                  <p className="mt-2 text-xs font-medium text-slate-600">
+                    Bao gồm cả lớp đang ẩn hoặc khóa
+                  </p>
+                </div>
+                <div className="rounded-lg bg-sky-100 p-3">
+                  <FiUsers className="text-2xl text-sky-600" />
+                </div>
+              </div>
+              <div className="absolute bottom-0 left-0 h-1 w-full bg-gradient-to-r from-sky-500 to-cyan-500 opacity-0 transition-opacity group-hover:opacity-100"></div>
             </div>
-            <div className="rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-50 to-white p-5">
-              <p className="text-sm font-medium text-emerald-500">
-                Lớp đang hiển thị
-              </p>
-              <p className="mt-2 text-3xl font-bold text-emerald-900">
-                {filteredClasses.length}
-              </p>
-              <p className="text-xs text-emerald-500">
-                Kết quả sau khi áp dụng bộ lọc hiện tại
-              </p>
+            <div className="group relative overflow-hidden rounded-xl border border-emerald-200 bg-white p-6 shadow-sm transition-all hover:border-emerald-300 hover:shadow-md">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-emerald-500">
+                    Lớp đang hiển thị
+                  </p>
+                  <p className="mt-2 text-3xl font-bold text-slate-900">
+                    {filteredClasses.length}
+                  </p>
+                  <p className="mt-2 text-xs font-medium text-slate-600">
+                    Kết quả sau khi áp dụng bộ lọc hiện tại
+                  </p>
+                </div>
+                <div className="rounded-lg bg-emerald-100 p-3">
+                  <FiBookOpen className="text-2xl text-emerald-600" />
+                </div>
+              </div>
+              <div className="absolute bottom-0 left-0 h-1 w-full bg-gradient-to-r from-emerald-500 to-teal-500 opacity-0 transition-opacity group-hover:opacity-100"></div>
             </div>
           </div>
         </header>
 
-        <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+        <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="flex flex-wrap items-center gap-4">
-            {/* <div className="flex items-center gap-2 rounded-full bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-700">
-              <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-white text-indigo-600">
-                {classes.length}
-              </span>
-              Lớp học
-            </div> */}
-
-            <div className="flex flex-1 items-center gap-3 rounded-full border border-slate-200 px-4 py-2">
+            <div className="flex flex-1 items-center gap-3 rounded-lg border border-slate-200 bg-white px-4 py-2.5 shadow-sm focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-200">
               <FiSearch className="text-slate-400" />
               <input
                 value={searchTerm}
@@ -220,7 +237,7 @@ export default function TeacherClasses() {
 
             <button
               type="button"
-              className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+              className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 shadow-sm transition hover:bg-slate-50 hover:shadow-md"
             >
               <FiFilter />
               Bộ lọc
@@ -265,10 +282,10 @@ export default function TeacherClasses() {
                 {paginatedClasses.map((classItem, index) => (
                   <article
                     key={classItem.id}
-                    className="flex flex-col rounded-3xl border border-slate-100 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
+                    className="group flex flex-col rounded-xl border border-slate-200 bg-white shadow-sm transition-all hover:-translate-y-1 hover:border-indigo-200 hover:shadow-lg"
                   >
                     <div
-                      className={`relative h-32 w-full rounded-3xl bg-gradient-to-r ${CARD_GRADIENTS[index % CARD_GRADIENTS.length]} px-5 py-4`}
+                      className={`relative h-32 w-full rounded-t-xl bg-gradient-to-r ${CARD_GRADIENTS[index % CARD_GRADIENTS.length]} px-5 py-4`}
                     >
                       <div className="flex items-start justify-between">
                         <div className="space-y-2">
@@ -316,17 +333,17 @@ export default function TeacherClasses() {
                             onClick={() =>
                               handleCopyCode(classItem.id, classItem.classCode)
                             }
-                            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-slate-200 text-slate-600 transition hover:bg-slate-50"
+                            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600 shadow-sm transition hover:bg-slate-50 hover:shadow-md"
+                            title="Copy mã lớp"
                           >
                             {copiedCodeId === classItem.id ? (
                               <span className="text-xs font-semibold text-indigo-600">
-                                OK
+                                ✓
                               </span>
                             ) : (
                               <FiCopy />
                             )}
                           </button>
-                         
                         </div>
 
                         <div className="flex items-center gap-2">
@@ -334,7 +351,7 @@ export default function TeacherClasses() {
                             to={`/teacher/classes/${encodeURIComponent(
                               classItem.classCode || classItem.id
                             )}`}
-                            className="rounded-full bg-indigo-600 px-4 py-2 text-xs font-semibold text-white shadow transition hover:bg-indigo-500"
+                            className="rounded-lg bg-indigo-600 px-4 py-2 text-xs font-semibold text-white shadow-md transition hover:bg-indigo-700 hover:shadow-lg"
                           >
                             Vào quản lý
                           </Link>
@@ -344,7 +361,8 @@ export default function TeacherClasses() {
                               handleDelete(classItem.id, classItem.className)
                             }
                             disabled={deletingClassId === classItem.id}
-                            className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-red-200 text-red-500 transition hover:bg-red-50 disabled:opacity-60"
+                            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-red-200 bg-white text-red-600 shadow-sm transition hover:bg-red-50 hover:shadow-md disabled:opacity-60"
+                            title="Xóa lớp"
                           >
                             {deletingClassId === classItem.id ? (
                               <FiLoader className="animate-spin" />
