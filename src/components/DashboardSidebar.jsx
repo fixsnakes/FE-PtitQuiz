@@ -25,6 +25,7 @@ const SIDEBAR_ITEMS = {
     { label: "Lớp học", path: "/dashboard/teacher/classes", icon: FiUsers },
     { label: "Thông báo", path: "/dashboard/teacher/notifications", icon: FiBell },
     { label: "Thống kê mua đề thi", path: "/dashboard/teacher/exam-purchases", icon: FiDollarSign },
+    { label: "Lịch sử giao dịch", path: "/dashboard/teacher/transactions", icon: FiClock },
     { label: "Ví của tôi", path: "/dashboard/wallet", icon: MdPayment },
     { label: "Tài Khoản", path: "/dashboard/profile", icon: CiUser },
   ],
@@ -37,6 +38,7 @@ const SIDEBAR_ITEMS = {
     { label: "Lớp học", path: "/dashboard/student/classes", icon: FiUsers },
     { label: "Thông báo", path: "/dashboard/notifications", icon: FiBell },
     { label: "Ví của tôi", path: "/dashboard/student/payment", icon: MdPayment },
+    { label: "Lịch sử giao dịch", path: "/dashboard/student/transactions", icon: FiClock },
     { label: "Tài Khoản", path: "/dashboard/profile", icon: CiUser },
   ],
 };

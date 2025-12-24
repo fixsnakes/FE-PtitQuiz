@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import DashboardLayout from "../../../layouts/DashboardLayout";
+import { getDepositHistory } from "../../../services/walletservice";
+import { createDepositRequest } from "../../../services/walletservice";
 import {
     FiRefreshCw,
     FiEye,
@@ -8,6 +10,8 @@ import {
     FiX,
     FiCopy,
     FiCheck,
+    FiChevronLeft,
+    FiChevronRight,
 } from "react-icons/fi";
 import { Search } from "lucide-react";
 
@@ -24,125 +28,134 @@ const generateTransactionCode = () => {
 export default function StudentPayment() {
     const [amount, setAmount] = useState(50000);
     const [promoCode, setPromoCode] = useState("");
-    const [paymentMethod, setPaymentMethod] = useState("ACB");
+    const [paymentMethod, setPaymentMethod] = useState("Chuyển khoản ngân hàng ACB");
     const [showQRModal, setShowQRModal] = useState(false);
     const [currentTransaction, setCurrentTransaction] = useState(null);
     const [paymentOrders, setPaymentOrders] = useState([]);
+    const [pagination, setPagination] = useState({
+        total: 0,
+        page: 1,
+        limit: 10,
+        totalPages: 1,
+    });
+    const [currentPage, setCurrentPage] = useState(1);
+    const [pageSize, setPageSize] = useState(10);
     const [searchTerm, setSearchTerm] = useState("");
     const [statusFilter, setStatusFilter] = useState("all");
     const [copiedField, setCopiedField] = useState(null);
     const [qrImageUrl, setQrImageUrl] = useState("");
+    const [loading, setLoading] = useState(false);
 
-    // Mock data cho danh sách lệnh thanh toán
+    // fetch history data
     useEffect(() => {
-        const mockOrders = [
-            {
-                id: 1,
-                createdAt: "2025-12-19T10:29:43",
-                transactionCode: "PNJLZNJX",
-                method: "ACB",
-                amount: 50000,
-                status: "pending", // pending, success, failed
-                countdown: 300, // seconds
-                isVisible: true,
-            },
-            {
-                id: 2,
-                createdAt: "2025-12-08T05:57:37",
-                transactionCode: "9JQY28YH",
-                method: "ACB",
-                amount: 10000,
-                status: "success",
-                countdown: 0,
-                isVisible: true,
-            },
-            {
-                id: 3,
-                createdAt: "2025-12-07T14:20:15",
-                transactionCode: "K3M9P2XZ",
-                method: "ACB",
-                amount: 20000,
-                status: "success",
-                countdown: 0,
-                isVisible: true,
-            },
-        ];
-        setPaymentOrders(mockOrders);
-    }, []);
+        const fetchDepositHistory = async () => {
+            setLoading(true);
+            try {
+                const response = await getDepositHistory(currentPage, pageSize);
+                if (response?.data && response?.message) {
+                    setPaymentOrders(response.data.deposits || []);
+                    setPagination(response.data.pagination || {
+                        total: 0,
+                        page: 1,
+                        limit: 10,
+                        totalPages: 1,
+                    });
+                } else {
+                    setPaymentOrders([]);
+                }
+            } catch (error) {
+                console.error("Error fetching deposit history:", error);
+                setPaymentOrders([]);
+                toast.error("Không thể tải lịch sử giao dịch");
+            } finally {
+                setLoading(false);
+            }
+        }
+        fetchDepositHistory();
+    }, [currentPage, pageSize]);
 
-    // Countdown timer cho các giao dịch pending
-    useEffect(() => {
-        const interval = setInterval(() => {
-            setPaymentOrders((prev) =>
-                prev.map((order) => {
-                    if (order.status === "pending" && order.countdown > 0) {
-                        return { ...order, countdown: order.countdown - 1 };
-                    }
-                    if (order.status === "pending" && order.countdown === 0) {
-                        return { ...order, status: "failed" };
-                    }
-                    return order;
-                })
-            );
-        }, 1000);
 
-        return () => clearInterval(interval);
-    }, []);
 
-    const formatCountdown = (seconds) => {
-        const mins = Math.floor(seconds / 60);
-        const secs = seconds % 60;
-        return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
-    };
 
     const handleAmountChange = (delta) => {
         setAmount((prev) => Math.max(10000, prev + delta));
     };
 
-    const handleContinue = () => {
+    const handleContinue = async () => {
         if (amount < 10000) {
             toast.error("Số tiền tối thiểu là 10,000 đ");
             return;
         }
 
-        const transactionCode = generateTransactionCode();
-        const newOrder = {
-            id: paymentOrders.length + 1,
-            createdAt: new Date().toISOString(),
-            transactionCode,
-            method: paymentMethod,
-            amount,
-            status: "pending",
-            countdown: 600, // 10 minutes
-            isVisible: true,
-        };
+        try {
+            setLoading(true);
+            // Parse payment method to get bank name (assuming format like "ACB" or "Vietcombank")
+            const bankName = paymentMethod === "Chuyển khoản ngân hàng";
 
-        setPaymentOrders((prev) => [newOrder, ...prev]);
-        setCurrentTransaction(newOrder);
+            const payload = {
+                bankName: "ACB",
+                bankAccountName: "DAO TUNG LAM",
+                bankAccountNumber: "22929031",
+                amount: amount,
+            };
 
-        // Generate QR code URL
-        const qrUrl = `https://qr.sepay.vn/img?bank=${paymentMethod}&acc=22929031&template=compact&amount=${amount.toFixed(3)}&des=${transactionCode}`;
-        setQrImageUrl(qrUrl);
-        setShowQRModal(true);
+            const response = await createDepositRequest(payload);
+
+            if (response?.message && response?.data) {
+                const depositData = response.data;
+                console.log(depositData);
+                // Set current transaction for modal
+                setCurrentTransaction({
+                    deposit_code: depositData.deposit_code,
+                    bankName: depositData.bankName,
+                    bankAccountName: depositData.bankAccountName,
+                    bankAccountNumber: depositData.bankAccountNumber,
+                    deposit_amount: depositData.amount.toString(),
+                    deposit_status: depositData.deposit_status || "pending",
+                });
+
+                setQrImageUrl(`data:image/png;base64,${depositData.qr_base64}`);
+                setShowQRModal(true);
+                toast.success("Tạo yêu cầu nạp tiền thành công");
+
+                // Refresh deposit history
+                const historyResponse = await getDepositHistory(1, pageSize);
+                if (historyResponse?.data) {
+                    setPaymentOrders(historyResponse.data.deposits || []);
+                    setPagination(historyResponse.data.pagination || {
+                        total: 0,
+                        page: 1,
+                        limit: 10,
+                        totalPages: 1,
+                    });
+                    setCurrentPage(1);
+                }
+            } else {
+                toast.error(response?.message || "Không thể tạo yêu cầu nạp tiền");
+            }
+        } catch (error) {
+            console.error("Error creating deposit request:", error);
+            toast.error(error?.response?.data?.message || "Không thể tạo yêu cầu nạp tiền");
+        } finally {
+            setLoading(false);
+        }
     };
 
     const handleCopy = async (text, field) => {
+        if (!text) {
+            toast.error("Không có nội dung để sao chép");
+            return;
+        }
+
         try {
             await navigator.clipboard.writeText(text);
             setCopiedField(field);
             toast.success("Đã sao chép!");
             setTimeout(() => setCopiedField(null), 2000);
         } catch (error) {
+            console.error("Error copying to clipboard:", error);
             toast.error("Không thể sao chép");
         }
-    };
-
-    const handleToggleVisibility = (orderId) => {
-        setPaymentOrders((prev) =>
-            prev.map((order) =>
-                order.id === orderId ? { ...order, isVisible: !order.isVisible } : order
-            )
-        );
     };
 
     const formatDate = (dateString) => {
@@ -161,33 +174,33 @@ export default function StudentPayment() {
         return new Intl.NumberFormat("vi-VN").format(value);
     };
 
-    const filteredOrders = paymentOrders.filter((order) => {
+    const filteredOrders = (paymentOrders || []).filter((deposit) => {
         const matchesSearch =
-            order.transactionCode.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            formatDate(order.createdAt).toLowerCase().includes(searchTerm.toLowerCase());
+            deposit.deposit_code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            formatDate(deposit.created_at).toLowerCase().includes(searchTerm.toLowerCase());
         const matchesStatus =
-            statusFilter === "all" || order.status === statusFilter;
+            statusFilter === "all" || deposit.deposit_status === statusFilter;
         return matchesSearch && matchesStatus;
     });
 
-    const getStatusBadge = (order) => {
-        if (order.status === "pending") {
+    const getStatusBadge = (deposit) => {
+        if (deposit.deposit_status === "pending") {
             return (
-                <div className="flex items-center gap-2">
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent"></div>
-                    <span className="text-sm font-semibold text-indigo-600">
-                        {formatCountdown(order.countdown)}
-                    </span>
-                </div>
+                <span className="text-sm font-semibold text-amber-600">Đang chờ</span>
             );
         }
-        if (order.status === "success") {
+        if (deposit.deposit_status === "success") {
             return (
                 <span className="text-sm font-semibold text-emerald-600">Thành Công</span>
             );
         }
+        if (deposit.deposit_status === "failed") {
+            return (
+                <span className="text-sm font-semibold text-red-600">Thất bại</span>
+            );
+        }
         return (
-            <span className="text-sm font-semibold text-red-600">Thất bại</span>
+            <span className="text-sm font-semibold text-slate-600">Không xác định</span>
         );
     };
 
@@ -250,34 +263,13 @@ export default function StudentPayment() {
                                     </div>
                                 </div>
 
-                                {/* Promo Code */}
-                                <div>
-                                    <label className="mb-2 block text-sm font-medium text-slate-700">
-                                        Mã khuyến mãi nạp
-                                    </label>
-                                    <div className="flex gap-2">
-                                        <input
-                                            type="text"
-                                            value={promoCode}
-                                            onChange={(e) => setPromoCode(e.target.value)}
-                                            placeholder="Nhập mã khuyến mãi nạp (nếu có)"
-                                            className="flex-1 rounded-lg border border-slate-300 px-4 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
-                                        />
-                                        <button
-                                            type="button"
-                                            className="rounded-lg bg-indigo-600 px-6 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700"
-                                        >
-                                            Áp Dụng
-                                        </button>
-                                    </div>
-                                </div>
-
                                 {/* Continue Button */}
                                 <button
                                     onClick={handleContinue}
-                                    className="w-full rounded-lg bg-indigo-600 px-6 py-3 text-base font-semibold text-white shadow-lg transition hover:bg-indigo-700"
+                                    disabled={loading}
+                                    className="w-full rounded-lg bg-indigo-600 px-6 py-3 text-base font-semibold text-white shadow-lg transition hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
-                                    Tiếp Tục
+                                    {loading ? "Đang xử lý..." : "Tạo yêu cầu nạp tiền"}
                                 </button>
                             </div>
                         </section>
@@ -290,38 +282,45 @@ export default function StudentPayment() {
 
                             {/* Filters */}
                             <div className="mb-4 flex flex-wrap items-center gap-3">
-                                <div className="flex flex-1 items-center gap-2 rounded-lg border border-slate-200 px-3 py-2">
-                                    <Search className="h-4 w-4 text-slate-400" />
-                                    <input
-                                        type="text"
-                                        value={searchTerm}
-                                        onChange={(e) => setSearchTerm(e.target.value)}
-                                        placeholder="Tìm kiếm"
-                                        className="flex-1 border-none bg-transparent text-sm outline-none focus:ring-0"
-                                    />
-                                </div>
-                                <select
-                                    value={statusFilter}
-                                    onChange={(e) => setStatusFilter(e.target.value)}
-                                    className="rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
-                                >
-                                    <option value="all">Tình trạng</option>
-                                    <option value="pending">Đang chờ</option>
-                                    <option value="success">Thành công</option>
-                                    <option value="failed">Thất bại</option>
-                                </select>
                                 <button
                                     type="button"
-                                    onClick={() => window.location.reload()}
-                                    className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+                                    onClick={async () => {
+                                        setLoading(true);
+                                        try {
+                                            const response = await getDepositHistory(currentPage, pageSize);
+                                            if (response?.data) {
+                                                setPaymentOrders(response.data.deposits || []);
+                                                setPagination(response.data.pagination || {
+                                                    total: 0,
+                                                    page: 1,
+                                                    limit: 10,
+                                                    totalPages: 1,
+                                                });
+                                            }
+                                        } catch (error) {
+                                            console.error("Error refreshing deposit history:", error);
+                                            toast.error("Không thể làm mới dữ liệu");
+                                        } finally {
+                                            setLoading(false);
+                                        }
+                                    }}
+                                    disabled={loading}
+                                    className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 disabled:opacity-50"
                                 >
-                                    <FiRefreshCw />
+                                    <FiRefreshCw className={loading ? "animate-spin" : ""} />
                                     Làm Mới
                                 </button>
-                                <select className="rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none">
-                                    <option>10</option>
-                                    <option>20</option>
-                                    <option>50</option>
+                                <select
+                                    value={pageSize}
+                                    onChange={(e) => {
+                                        setPageSize(Number(e.target.value));
+                                        setCurrentPage(1);
+                                    }}
+                                    className="rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
+                                >
+                                    <option value={10}>10</option>
+                                    <option value={20}>20</option>
+                                    <option value={50}>50</option>
                                 </select>
                             </div>
 
@@ -345,75 +344,116 @@ export default function StudentPayment() {
                                             <th className="px-4 py-3 text-left text-xs font-bold uppercase text-slate-700">
                                                 TRẠNG THÁI
                                             </th>
-                                            <th className="px-4 py-3 text-center text-xs font-bold uppercase text-slate-700">
-                                                HÀNH ĐỘNG
-                                            </th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100">
-                                        {filteredOrders.length === 0 ? (
+                                        {loading ? (
                                             <tr>
                                                 <td
-                                                    colSpan={8}
+                                                    colSpan={6}
+                                                    className="px-4 py-8 text-center text-slate-500"
+                                                >
+                                                    <div className="flex items-center justify-center gap-2">
+                                                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-indigo-600 border-t-transparent"></div>
+                                                        <span>Đang tải dữ liệu...</span>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        ) : filteredOrders.length === 0 ? (
+                                            <tr>
+                                                <td
+                                                    colSpan={6}
                                                     className="px-4 py-8 text-center text-slate-500"
                                                 >
                                                     Chưa có lệnh thanh toán nào
                                                 </td>
                                             </tr>
                                         ) : (
-                                            filteredOrders.map((order, index) => (
+                                            filteredOrders.map((deposit, index) => (
                                                 <tr
-                                                    key={order.id}
+                                                    key={deposit.id}
                                                     className="transition-colors hover:bg-slate-50"
                                                 >
                                                     <td className="px-4 py-3 text-slate-600">
-                                                        {formatDate(order.createdAt)}
+                                                        {formatDate(deposit.created_at)}
                                                     </td>
                                                     <td className="px-4 py-3">
                                                         <button
                                                             onClick={() => {
-                                                                setCurrentTransaction(order);
-                                                                const qrUrl = `https://qr.sepay.vn/img?bank=${order.method}&acc=22929031&template=compact&amount=${order.amount.toFixed(3)}&des=${order.transactionCode}`;
-                                                                setQrImageUrl(qrUrl);
-                                                                setShowQRModal(true);
+                                                                setCurrentTransaction(deposit);
                                                             }}
-                                                            className="font-semibold text-indigo-600 hover:text-indigo-700 hover:underline"
+                                                            className="font-semibold text-indigo-600 hover:text-indigo-700"
                                                         >
-                                                            {order.transactionCode}
+                                                            {deposit.deposit_code}
                                                         </button>
                                                     </td>
                                                     <td className="px-4 py-3">
                                                         <div className="flex items-center gap-2">
                                                             <span className="inline-flex h-2 w-2 rounded-full bg-emerald-500"></span>
-                                                            <span className="font-medium text-slate-700">{order.method}</span>
+                                                            <span className="font-medium text-slate-700">{deposit.bankName}</span>
                                                         </div>
                                                     </td>
                                                     <td className="px-4 py-3 font-semibold text-slate-700">
-                                                        {formatCurrency(order.amount)} đ
+                                                        {formatCurrency(parseFloat(deposit.deposit_amount || 0))} đ
                                                     </td>
-                                                    <td className="px-4 py-3">{getStatusBadge(order)}</td>
-                                                    <td className="px-4 py-3">
-                                                        <div className="flex items-center justify-center gap-2">
-                                                            <button
-                                                                onClick={() => {
-                                                                    setCurrentTransaction(order);
-                                                                    const qrUrl = `https://qr.sepay.vn/img?bank=${order.method}&acc=22929031&template=compact&amount=${order.amount.toFixed(3)}&des=${order.transactionCode}`;
-                                                                    setQrImageUrl(qrUrl);
-                                                                    setShowQRModal(true);
-                                                                }}
-                                                                className="rounded-lg p-2 text-slate-600 transition hover:bg-slate-100"
-                                                            >
-                                                                <FiEye className="h-4 w-4" />
-                                                            </button>
-
-                                                        </div>
-                                                    </td>
+                                                    <td className="px-4 py-3">{getStatusBadge(deposit)}</td>
                                                 </tr>
                                             ))
                                         )}
                                     </tbody>
                                 </table>
                             </div>
+
+                            {/* Pagination */}
+                            {pagination.totalPages > 1 && (
+                                <div className="mt-4 flex items-center justify-between text-sm text-slate-600">
+                                    <p>
+                                        Đang hiển thị {((pagination.page - 1) * pagination.limit) + 1} đến{" "}
+                                        {Math.min(pagination.page * pagination.limit, pagination.total)} của{" "}
+                                        {pagination.total} bản ghi
+                                    </p>
+                                    <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                                            disabled={currentPage === 1}
+                                            className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                        >
+                                            <FiChevronLeft className="h-4 w-4" />
+                                        </button>
+                                        {Array.from({ length: Math.min(5, pagination.totalPages) }, (_, i) => {
+                                            let pageNum;
+                                            if (pagination.totalPages <= 5) {
+                                                pageNum = i + 1;
+                                            } else if (currentPage <= 3) {
+                                                pageNum = i + 1;
+                                            } else if (currentPage >= pagination.totalPages - 2) {
+                                                pageNum = pagination.totalPages - 4 + i;
+                                            } else {
+                                                pageNum = currentPage - 2 + i;
+                                            }
+                                            return (
+                                                <button
+                                                    key={pageNum}
+                                                    onClick={() => setCurrentPage(pageNum)}
+                                                    className={`h-9 w-9 rounded-lg border text-sm font-semibold transition ${currentPage === pageNum
+                                                        ? "border-indigo-600 bg-indigo-600 text-white"
+                                                        : "border-slate-200 text-slate-600 hover:bg-slate-50"
+                                                        }`}
+                                                >
+                                                    {pageNum}
+                                                </button>
+                                            );
+                                        })}
+                                        <button
+                                            onClick={() => setCurrentPage(Math.min(pagination.totalPages, currentPage + 1))}
+                                            disabled={currentPage === pagination.totalPages}
+                                            className="flex h-9 w-9 items-center justify-center rounded-lg border border-slate-200 text-slate-600 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                        >
+                                            <FiChevronRight className="h-4 w-4" />
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
                         </section>
                     </div>
 
@@ -491,10 +531,10 @@ export default function StudentPayment() {
                                         </span>
                                         <div className="flex items-center gap-2">
                                             <span className="font-semibold text-slate-900">
-                                                NGUYEN QUANG TRONG
+                                                {currentTransaction.bankAccountName || "N/A"}
                                             </span>
                                             <button
-                                                onClick={() => handleCopy("NGUYEN QUANG TRONG", "accountHolder")}
+                                                onClick={() => handleCopy(currentTransaction.bankAccountName || "", "accountHolder")}
                                                 className="rounded-lg p-1.5 text-slate-600 transition hover:bg-white"
                                             >
                                                 {copiedField === "accountHolder" ? (
@@ -510,9 +550,9 @@ export default function StudentPayment() {
                                             Số tài khoản
                                         </span>
                                         <div className="flex items-center gap-2">
-                                            <span className="font-semibold text-slate-900">2495666</span>
+                                            <span className="font-semibold text-slate-900">{currentTransaction.bankAccountNumber || "N/A"}</span>
                                             <button
-                                                onClick={() => handleCopy("2495666", "accountNumber")}
+                                                onClick={() => handleCopy(currentTransaction.bankAccountNumber || "", "accountNumber")}
                                                 className="rounded-lg p-1.5 text-slate-600 transition hover:bg-white"
                                             >
                                                 {copiedField === "accountNumber" ? (
@@ -527,7 +567,7 @@ export default function StudentPayment() {
                                         <span className="text-sm font-medium text-slate-700">
                                             Ngân hàng
                                         </span>
-                                        <span className="font-semibold text-slate-900">ACB</span>
+                                        <span className="font-semibold text-slate-900">{currentTransaction.bankName || "N/A"}</span>
                                     </div>
                                     <div className="flex items-center justify-between">
                                         <span className="text-sm font-medium text-slate-700">
@@ -536,12 +576,12 @@ export default function StudentPayment() {
                                         </span>
                                         <div className="flex items-center gap-2">
                                             <span className="font-semibold text-indigo-600">
-                                                {currentTransaction.transactionCode}
+                                                {currentTransaction.deposit_code}
                                             </span>
                                             <button
                                                 onClick={() =>
                                                     handleCopy(
-                                                        currentTransaction.transactionCode,
+                                                        currentTransaction.deposit_code || "",
                                                         "transactionContent"
                                                     )
                                                 }
@@ -560,7 +600,7 @@ export default function StudentPayment() {
                                             Số tiền nạp
                                         </span>
                                         <span className="font-semibold text-slate-900">
-                                            {formatCurrency(currentTransaction.amount)}
+                                            {formatCurrency(parseFloat(currentTransaction.deposit_amount || 0))} đ
                                         </span>
                                     </div>
                                 </div>

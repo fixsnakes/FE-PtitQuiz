@@ -27,6 +27,7 @@ import ExamResult from "./pages/dashboard/student/ExamResult";
 import RecentExams from "./pages/dashboard/student/RecentExams";
 import FavoriteExams from "./pages/dashboard/student/FavoriteExams";
 import StudentPayment from "./pages/dashboard/student/StudentPayment";
+import TransactionHistory from "./pages/dashboard/common/TransactionHistory";
 // Admin imports
 import AdminLayout from "./layouts/AdminLayout";
 import AdminDashboard from "./pages/dashboard/admin/AdminDashboard";
@@ -176,6 +177,14 @@ function App() {
         }
       />
       <Route
+        path="/dashboard/teacher/transactions"
+        element={
+          <ProtectedRoute allowedRoles={["teacher"]}>
+            <TransactionHistory role="teacher" />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/dashboard/student"
         element={
           <ProtectedRoute allowedRoles={["student"]}>
@@ -213,6 +222,14 @@ function App() {
         element={
           <ProtectedRoute allowedRoles={["student"]}>
             <StudentPayment />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dashboard/student/transactions"
+        element={
+          <ProtectedRoute allowedRoles={["student"]}>
+            <TransactionHistory role="student" />
           </ProtectedRoute>
         }
       />
