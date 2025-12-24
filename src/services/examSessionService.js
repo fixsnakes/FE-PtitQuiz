@@ -89,6 +89,13 @@ export function getSessionResult(sessionId) {
   return apiClient.get(`/api/sessions/${sessionId}/result`);
 }
 
+/**
+ * Lấy tất cả exam sessions của student (để hiển thị recent exams)
+ */
+export function getStudentSessions() {
+  return apiClient.get("/api/exam-sessions/my-sessions");
+}
+
 export default {
   startExamSession,
   getCurrentSession,
@@ -97,5 +104,6 @@ export default {
   getSessionAnswers,
   submitExam,
   getSessionResult,
+  getStudentSessions,
 };
 

@@ -22,10 +22,9 @@ import {
   FiMapPin 
 } from "react-icons/fi";
 
-import { getUserInformation } from "../../../services/userService";
+import { getUserInformation, UpdateProfile, uploadAvatar } from "../../../services/userService";
 import formatDateTime from "../../../utils/format_time";
 import { data } from "react-router-dom";
-import { UpdateProfile } from "../../../services/userService";
 import formatCurrency from "../../../utils/format_currentcy";
 import { ChangePassword } from "../../../services/userService";
 export default function Profile() {
@@ -38,9 +37,13 @@ export default function Profile() {
     role: "",
     join: "",
     balance: null,
+    avatar_url: null,
   });
 
   const [lastLogins,setlastLogins] = useState(null)
+  const [avatarPreview, setAvatarPreview] = useState(null);
+  const [avatarFile, setAvatarFile] = useState(null);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: "",
@@ -81,10 +84,19 @@ export default function Profile() {
             email: data.email,
             role: data.role,
             balance: data.balance,
-            join: data.created_at
+            join: data.created_at,
+            avatar_url: data.avatar_url || null
         })
 
         setlastLogins(data.login_list)
+        
+        // Set avatar preview nếu có
+        if (data.avatar_url) {
+          const avatarUrl = data.avatar_url.startsWith('http') 
+            ? data.avatar_url 
+            : `${import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, "") || "http://localhost:5005"}${data.avatar_url}`;
+          setAvatarPreview(avatarUrl);
+        }
 
 
     }
@@ -121,6 +133,32 @@ export default function Profile() {
     setPasswordFeedback(null);
   };
 
+  const handleAvatarChange = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error("Vui lòng chọn file ảnh");
+      return;
+    }
+
+    // Validate file size (2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("Kích thước ảnh không được vượt quá 2MB");
+      return;
+    }
+
+    setAvatarFile(file);
+    
+    // Create preview
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setAvatarPreview(reader.result);
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleProfileSubmit = async (event) => {
     event.preventDefault();
     const trimmedName = profileForm.fullName.trim();
@@ -134,28 +172,62 @@ export default function Profile() {
       return;
     }
 
+    let avatarUrl = profileForm.avatar_url;
 
-    const response = await UpdateProfile(trimmedName,trimmedEmail)
-
-    if(!response.status){
-        toast.error("Lỗi khi cập nhạt profile")
+    // Upload avatar nếu có file mới
+    if (avatarFile) {
+      setUploadingAvatar(true);
+      try {
+        const uploadResponse = await uploadAvatar(avatarFile);
+        if (uploadResponse.status) {
+          avatarUrl = uploadResponse.data.avatar_url;
+        } else {
+          toast.error(uploadResponse.message || "Lỗi khi upload avatar");
+          setUploadingAvatar(false);
+          return;
+        }
+      } catch (error) {
+        toast.error("Lỗi khi upload avatar");
+        setUploadingAvatar(false);
+        return;
+      }
+      setUploadingAvatar(false);
     }
 
-    toast.success("Cập nhật profile thành công")
+    const response = await UpdateProfile(trimmedName, trimmedEmail, avatarUrl);
 
+    if(!response.status){
+        toast.error("Lỗi khi cập nhật profile")
+        return;
+    }
 
+    toast.success("Cập nhật profile thành công");
 
-
-    // Logic lưu cũ...
-    const updatedUser = {
-      ...currentUser,
+    // Update local state
+    setProfileForm(prev => ({
+      ...prev,
       fullName: trimmedName,
       email: trimmedEmail,
+      avatar_url: avatarUrl
+    }));
 
-    };
+    // Update localStorage
+    try {
+      const storedUser = localStorage.getItem("currentUser");
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        user.fullName = trimmedName;
+        user.email = trimmedEmail;
+        user.avatar_url = avatarUrl;
+        localStorage.setItem("currentUser", JSON.stringify(user));
+        setCurrentUser(user);
+      }
+    } catch (error) {
+      console.error("Error updating localStorage:", error);
+    }
 
-    localStorage.setItem("currentUser", JSON.stringify(updatedUser));
-    setCurrentUser(updatedUser);
+    // Reset avatar file
+    setAvatarFile(null);
   };
 
   const handlePasswordSubmit = async (event) => {
@@ -217,8 +289,27 @@ export default function Profile() {
             <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
               <div className="flex items-center gap-4">
                 {/* Avatar */}
-                <div className="flex h-20 w-20 items-center justify-center rounded-full bg-white/20 text-3xl text-white backdrop-blur-sm border-2 border-white/30">
-                  <FiUser />
+                <div className="relative group">
+                  <div className="flex h-20 w-20 items-center justify-center rounded-full bg-white/20 text-3xl text-white backdrop-blur-sm border-2 border-white/30 overflow-hidden">
+                    {avatarPreview ? (
+                      <img 
+                        src={avatarPreview} 
+                        alt="Avatar" 
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <FiUser />
+                    )}
+                  </div>
+                  <label className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                    <FiEdit2 className="h-5 w-5 text-white" />
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleAvatarChange}
+                      className="hidden"
+                    />
+                  </label>
                 </div>
                 {/* Info Text */}
                 <div className="text-white">
@@ -288,6 +379,41 @@ export default function Profile() {
               </div>
 
               <form onSubmit={handleProfileSubmit} className="space-y-6">
+                {/* Avatar Upload Section */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">Ảnh đại diện</label>
+                  <div className="flex items-center gap-4">
+                    <div className="relative">
+                      <div className="flex h-24 w-24 items-center justify-center rounded-full border-2 border-slate-200 bg-slate-50 overflow-hidden">
+                        {avatarPreview ? (
+                          <img 
+                            src={avatarPreview} 
+                            alt="Avatar preview" 
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <FiUser className="h-12 w-12 text-slate-400" />
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50">
+                        <FiEdit2 className="h-4 w-4" />
+                        {avatarFile ? "Đã chọn ảnh mới" : "Chọn ảnh đại diện"}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleAvatarChange}
+                          className="hidden"
+                        />
+                      </label>
+                      <p className="mt-1 text-xs text-slate-500">
+                        JPG, PNG hoặc GIF. Tối đa 2MB
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
                 <div className="grid gap-6 md:grid-cols-2">
                   {/* Email Field (Disabled per UI) */}
                   <div className="space-y-2">
@@ -341,10 +467,20 @@ export default function Profile() {
                 <div className="flex justify-end pt-4">
                   <button
                     type="submit"
-                    className="flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700 focus:ring-4 focus:ring-blue-200"
+                    disabled={uploadingAvatar}
+                    className="flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700 focus:ring-4 focus:ring-blue-200 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <FiSave className="h-4 w-4" />
-                    Cập nhật thông tin
+                    {uploadingAvatar ? (
+                      <>
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-r-transparent"></div>
+                        Đang tải lên...
+                      </>
+                    ) : (
+                      <>
+                        <FiSave className="h-4 w-4" />
+                        Cập nhật thông tin
+                      </>
+                    )}
                   </button>
                 </div>
               </form>

@@ -13,16 +13,62 @@ export const getUserInformation = async () => {
 };
 
 /**
+ * Upload avatar
+ * @param {File} avatarFile - File ảnh avatar
+ */
+export const uploadAvatar = async (avatarFile) => {
+  try {
+    const formData = new FormData();
+    formData.append('avatar', avatarFile);
+
+    const API_BASE_URL =
+      import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, "") ||
+      "http://localhost:5005";
+    
+    const token = localStorage.getItem("accessToken");
+    
+    const response = await fetch(`${API_BASE_URL}/api/upload/avatar`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "x-access-token": token,
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ message: response.statusText }));
+      throw new Error(errorData.message || "Upload failed");
+    }
+
+    const data = await response.json();
+    return { status: true, data };
+  } catch (error) {
+    return {
+      status: false,
+      message: error.message || "Lỗi khi upload avatar",
+    };
+  }
+};
+
+/**
  * Cập nhật profile
  * @param {string} newfullName - Tên mới
  * @param {string} email - Email
+ * @param {string} avatar_url - URL avatar (optional)
  */
-export const UpdateProfile = async (newfullName, email) => {
+export const UpdateProfile = async (newfullName, email, avatar_url = null) => {
   try {
-    const data = await apiClient.post("/api/user/profile", {
+    const payload = {
       fullName: newfullName,
       email: email,
-    });
+    };
+    
+    if (avatar_url !== null) {
+      payload.avatar_url = avatar_url;
+    }
+    
+    const data = await apiClient.post("/api/user/profile", payload);
     return { status: true, data };
   } catch (error) {
     return {

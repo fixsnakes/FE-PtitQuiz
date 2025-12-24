@@ -11,6 +11,7 @@ import {
   Award,
   ArrowLeft,
   Star,
+  BookOpen,
 } from "lucide-react";
 
 export default function ExamResult() {
@@ -130,13 +131,24 @@ export default function ExamResult() {
     <DashboardLayout role="student">
       <div className="space-y-6">
         <header className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <button
-            onClick={() => navigate("/dashboard/student")}
-            className="mb-4 flex items-center gap-2 text-slate-600 transition hover:text-slate-900"
-          >
-            <ArrowLeft className="h-5 w-5" />
-            <span>Quay lại</span>
-          </button>
+          <div className="mb-4 flex items-center gap-3">
+            <button
+              onClick={() => navigate("/dashboard/student")}
+              className="flex items-center gap-2 text-slate-600 transition hover:text-slate-900"
+            >
+              <ArrowLeft className="h-5 w-5" />
+              <span>Quay lại</span>
+            </button>
+            {examId && (
+              <button
+                onClick={() => navigate(`/dashboard/student/exams/${examId}`)}
+                className="flex items-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-medium text-indigo-700 transition hover:bg-indigo-100"
+              >
+                <BookOpen className="h-4 w-4" />
+                <span>Quay lại đề thi</span>
+              </button>
+            )}
+          </div>
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-indigo-500">
             Kết quả thi
           </p>
@@ -409,6 +421,15 @@ export default function ExamResult() {
 
         {/* Action buttons */}
         <div className="flex justify-center gap-4">
+          {examId && (
+            <button
+              onClick={() => navigate(`/dashboard/student/exams/${examId}`)}
+              className="flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-6 py-3 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100"
+            >
+              <BookOpen className="h-4 w-4" />
+              Quay lại đề thi
+            </button>
+          )}
           <button
             onClick={() => navigate("/dashboard/student")}
             className="rounded-full border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"

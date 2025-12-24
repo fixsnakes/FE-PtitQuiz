@@ -1,13 +1,16 @@
 import React, { useState } from "react";
 import { useEffectOnce } from "../../../hooks/useEffectOnce";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 import DashboardLayout from "../../../layouts/DashboardLayout";
+import { getStudentSessions } from "../../../services/examSessionService";
 import {
     Clock,
     AlertCircle,
     Play,
     Calendar,
     RotateCcw,
+    BookOpen,
 } from "lucide-react";
 
 export default function RecentExams() {
@@ -19,70 +22,56 @@ export default function RecentExams() {
         loadRecentExams();
     }, []);
 
-    const loadRecentExams = () => {
+    const loadRecentExams = async () => {
         setLoading(true);
-        // Mock data - giả lập danh sách bài thi truy cập gần đây
-        const mockRecentExams = [
-            {
-                id: 1,
-                examId: 101,
-                examCode: "EXAM001",
-                examTitle: "Kiểm tra giữa kỳ môn Toán",
-                minutes: 60,
-                createdAt: "2024-01-10T10:00:00",
-                attemptCount: 3,
-            },
-            {
-                id: 2,
-                examId: 102,
-                examCode: "EXAM002",
-                examTitle: "Bài kiểm tra Vật lý",
-                minutes: 45,
-                createdAt: "2024-01-12T14:30:00",
-                attemptCount: 2,
-            },
-            {
-                id: 3,
-                examId: 103,
-                examCode: "EXAM003",
-                examTitle: "Thi cuối kỳ Hóa học",
-                minutes: 90,
-                createdAt: "2024-01-08T09:15:00",
-                attemptCount: 1,
-            },
-            {
-                id: 4,
-                examId: 104,
-                examCode: "EXAM004",
-                examTitle: "Kiểm tra tiếng Anh",
-                minutes: 50,
-                createdAt: "2024-01-15T16:45:00",
-                attemptCount: 5,
-            },
-            {
-                id: 5,
-                examId: 105,
-                examCode: "EXAM005",
-                examTitle: "Bài thi Lịch sử",
-                minutes: 40,
-                createdAt: "2024-01-11T11:20:00",
-                attemptCount: 2,
-            },
-            {
-                id: 6,
-                examId: 106,
-                examCode: "EXAM006",
-                examTitle: "Kiểm tra Địa lý",
-                minutes: 35,
-                createdAt: "2024-01-13T13:10:00",
-                attemptCount: 4,
-            },
-        ];
+        try {
+            const sessions = await getStudentSessions();
+            const sessionsData = Array.isArray(sessions) ? sessions : [];
 
-        setTimeout(() => {
-            setRecentExams(mockRecentExams);
+            // Nhóm sessions theo exam_id và lấy exam mới nhất
+            const examMap = new Map();
+            
+            sessionsData.forEach((session) => {
+                if (!session.exam) return;
+                
+                const examId = session.exam.id;
+                
+                if (!examMap.has(examId)) {
+                    examMap.set(examId, {
+                        examId: examId,
+                        examTitle: session.exam.title,
+                        minutes: session.exam.minutes || 0,
+                        createdAt: session.exam.created_at || session.start_time,
+                        lastAccessTime: session.start_time,
+                        attemptCount: 1,
+                        sessionCode: session.code,
+                        status: session.status,
+                    });
+                } else {
+                    const existing = examMap.get(examId);
+                    existing.attemptCount += 1;
+                    // Cập nhật thời gian truy cập mới nhất
+                    if (new Date(session.start_time) > new Date(existing.lastAccessTime)) {
+                        existing.lastAccessTime = session.start_time;
+                        existing.sessionCode = session.code;
+                        existing.status = session.status;
+                    }
+                }
+            });
+
+            // Chuyển map thành array và sắp xếp theo thời gian truy cập mới nhất
+            const recentExamsList = Array.from(examMap.values())
+                .sort((a, b) => new Date(b.lastAccessTime) - new Date(a.lastAccessTime))
+                .slice(0, 12); // Giới hạn 12 bài thi gần đây nhất
+
+            setRecentExams(recentExamsList);
+        } catch (error) {
+            console.error("Error loading recent exams:", error);
+            toast.error("Không thể tải danh sách bài thi truy cập gần đây");
+            setRecentExams([]);
+        } finally {
             setLoading(false);
-        }, 500);
+        }
     };
 
     const formatDate = (dateString) => {
@@ -95,7 +84,12 @@ export default function RecentExams() {
         });
     };
 
-    const handleStartExam = (examId) => {
+    const handleExamClick = (examId) => {
+        navigate(`/dashboard/student/exams/${examId}`);
+    };
+
+    const handleStartExam = (examId, e) => {
+        e.stopPropagation();
         navigate(`/student/exams/${examId}/take`);
     };
 
@@ -132,13 +126,14 @@ export default function RecentExams() {
                     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                         {recentExams.map((exam) => (
                             <div
-                                key={exam.id}
-                                className="group rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all hover:border-indigo-200 hover:shadow-lg"
+                                key={exam.examId}
+                                onClick={() => handleExamClick(exam.examId)}
+                                className="group cursor-pointer rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition-all hover:border-indigo-200 hover:shadow-lg"
                             >
                                 <div className="mb-4">
                                     <div className="mb-3">
                                         <span className="inline-block rounded-full bg-indigo-100 px-2.5 py-1 text-xs font-bold text-indigo-700">
-                                            {exam.examCode}
+                                            {exam.sessionCode || `EXAM${exam.examId}`}
                                         </span>
                                     </div>
                                     <h3 className="text-lg font-bold text-slate-900 line-clamp-2">
@@ -153,21 +148,46 @@ export default function RecentExams() {
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <Calendar className="h-4 w-4 text-slate-400" />
-                                        <span>Ngày tạo: {formatDate(exam.createdAt)}</span>
+                                        <span>Truy cập: {formatDate(exam.lastAccessTime)}</span>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <RotateCcw className="h-4 w-4 text-slate-400" />
-                                        <span>Tổng số lượt thi: {exam.attemptCount} lần</span>
+                                        <span>Đã làm: {exam.attemptCount} lần</span>
                                     </div>
+                                    {exam.status && (
+                                        <div className="flex items-center gap-2">
+                                            <BookOpen className="h-4 w-4 text-slate-400" />
+                                            <span className={`${
+                                                exam.status === 'submitted' ? 'text-green-600' :
+                                                exam.status === 'in_progress' ? 'text-blue-600' :
+                                                'text-slate-600'
+                                            }`}>
+                                                {exam.status === 'submitted' ? 'Đã nộp' :
+                                                 exam.status === 'in_progress' ? 'Đang làm' :
+                                                 exam.status}
+                                            </span>
+                                        </div>
+                                    )}
                                 </div>
 
-                                <button
-                                    onClick={() => handleStartExam(exam.examId)}
-                                    className="w-full flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow transition hover:bg-indigo-700"
-                                >
-                                    <Play className="h-4 w-4" />
-                                    Bắt đầu làm bài
-                                </button>
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={(e) => handleStartExam(exam.examId, e)}
+                                        className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white shadow transition hover:bg-indigo-700"
+                                    >
+                                        <Play className="h-4 w-4" />
+                                        Làm bài
+                                    </button>
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleExamClick(exam.examId);
+                                        }}
+                                        className="flex items-center justify-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                                    >
+                                        <BookOpen className="h-4 w-4" />
+                                    </button>
+                                </div>
                             </div>
                         ))}
                     </div>

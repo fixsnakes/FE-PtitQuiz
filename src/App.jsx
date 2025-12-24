@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate } from "react-router-dom";
+import { ThemeProvider } from "./contexts/ThemeContext";
 import Login from "./pages/auth/Login";
 import SignUp from "./pages/auth/SignUp";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -42,9 +43,11 @@ import NotificationManagement from "./pages/dashboard/admin/NotificationManageme
 import ContentModeration from "./pages/dashboard/admin/ContentModeration";
 
 import "react-toastify/dist/ReactToastify.css";
+
 function App() {
   return (
-    <Routes>
+    <ThemeProvider>
+      <Routes>
       {/* Auth routes */}
       <Route path="/auth/login" element={<Login />} />
       <Route path="/auth/register" element={<SignUp />} />
@@ -323,7 +326,8 @@ function App() {
       />
 
 
-    </Routes>
+      </Routes>
+    </ThemeProvider>
   );
 }
 

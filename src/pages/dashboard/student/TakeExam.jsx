@@ -237,6 +237,7 @@ export default function TakeExam() {
   const [remainingTime, setRemainingTime] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isActive, setIsActive] = useState(false);
+  const [isAutoSubmitted, setIsAutoSubmitted] = useState(false);
   
   // Ref để đảm bảo chỉ khởi tạo session 1 lần (tránh React Strict Mode chạy 2 lần)
   const isInitializingRef = useRef(false);
@@ -272,6 +273,28 @@ export default function TakeExam() {
           const sessionData = await getCurrentSession(examId);
           currentSession = sessionData;
         } catch (error) {
+          // Xử lý khi session expired
+          if (error.status === 400) {
+            const errorMessage = error.body?.message || error.message || "";
+            if (errorMessage.includes("expired") || errorMessage.includes("hết hạn")) {
+              // Session đã hết hạn, hiển thị thông báo và ở lại trang
+              toast.warning("Phiên làm bài đã hết hạn. Bài thi đã được tự động nộp. Bạn có thể xem kết quả bằng cách nhấn nút 'Xem kết quả'.", {
+                autoClose: 7000
+              });
+              // Đánh dấu đã tự động nộp để hiển thị nút xem kết quả
+              if (error.body?.result) {
+                setIsAutoSubmitted(true);
+                setIsActive(false);
+                // Lưu session_id từ result để có thể navigate khi click nút
+                if (error.body.result.session_id) {
+                  setSession({ id: error.body.result.session_id, exam_id: examId });
+                }
+              }
+              setLoading(false);
+              return;
+            }
+          }
+          
           // Nếu chưa có session, tạo mới
           if (error.status === 404) {
             try {
@@ -291,9 +314,23 @@ export default function TakeExam() {
                   });
                   navigate("/dashboard/student/payment");
                   return;
+                } else if (errorMessage.includes("ended") || errorMessage.includes("kết thúc")) {
+                  // Bài thi đã kết thúc, hiển thị thông báo và ở lại trang
+                  toast.warning("Bài thi đã kết thúc. Bạn không thể làm bài thi này nữa.", {
+                    autoClose: 5000
+                  });
+                  setLoading(false);
+                  return;
+                } else if (errorMessage.includes("not started") || errorMessage.includes("chưa bắt đầu")) {
+                  // Bài thi chưa bắt đầu
+                  toast.info("Bài thi chưa bắt đầu. Vui lòng đợi đến thời gian quy định.", {
+                    autoClose: 5000
+                  });
+                  setLoading(false);
+                  return;
                 } else {
                   toast.error(errorMessage);
-                  navigate("/dashboard/student");
+                  setLoading(false);
                   return;
                 }
               }
@@ -307,21 +344,54 @@ export default function TakeExam() {
         setSession(currentSession);
 
         // Lấy câu hỏi
-        const questionsData = await getSessionQuestions(currentSession.id);
-        setExam(questionsData.exam);
-        setQuestions(questionsData.questions || []);
-        setRemainingTime(questionsData.session.remaining_time_ms || 0);
-        setIsActive(true);
+        try {
+          const questionsData = await getSessionQuestions(currentSession.id);
+          setExam(questionsData.exam);
+          setQuestions(questionsData.questions || []);
+          setRemainingTime(questionsData.session.remaining_time_ms || 0);
+          setIsActive(true);
 
-        // Load câu trả lời đã lưu
-        loadSavedAnswers(currentSession.id);
-        
-        // Đánh dấu đã khởi tạo thành công
-        hasInitializedRef.current = true;
+          // Load câu trả lời đã lưu
+          loadSavedAnswers(currentSession.id);
+          
+          // Đánh dấu đã khởi tạo thành công
+          hasInitializedRef.current = true;
+        } catch (questionsError) {
+          // Xử lý khi session expired khi lấy câu hỏi
+          if (questionsError.status === 400) {
+            const errorMessage = questionsError.body?.message || questionsError.message || "";
+            if (errorMessage.includes("expired") || errorMessage.includes("hết hạn")) {
+              toast.warning("Phiên làm bài đã hết hạn. Bài thi đã được tự động nộp. Bạn có thể xem kết quả bằng cách nhấn nút 'Xem kết quả'.", {
+                autoClose: 7000
+              });
+              // Đánh dấu đã tự động nộp để hiển thị nút xem kết quả
+              if (questionsError.body?.result) {
+                setIsAutoSubmitted(true);
+                setIsActive(false);
+                // Lưu session_id từ result để có thể navigate khi click nút
+                if (questionsError.body.result.session_id) {
+                  setSession({ id: questionsError.body.result.session_id, exam_id: examId });
+                }
+              }
+              setLoading(false);
+              return;
+            }
+          }
+          throw questionsError;
+        }
       } catch (error) {
         console.error("Error initializing session:", error);
-        toast.error(error.message || "Không thể khởi tạo bài thi");
-        navigate("/dashboard/student");
+        // Chỉ navigate về trang chủ nếu không phải lỗi expired hoặc exam ended
+        const errorMessage = error.body?.message || error.message || "";
+        if (!errorMessage.includes("expired") && !errorMessage.includes("hết hạn") && 
+            !errorMessage.includes("ended") && !errorMessage.includes("kết thúc") &&
+            !errorMessage.includes("not started") && !errorMessage.includes("chưa bắt đầu")) {
+          toast.error(errorMessage || "Không thể khởi tạo bài thi");
+          // Chỉ navigate nếu là lỗi nghiêm trọng, không phải do exam ended/not started
+          if (error.status !== 400) {
+            navigate("/dashboard/student");
+          }
+        }
       } finally {
         setLoading(false);
         isInitializingRef.current = false;
@@ -407,7 +477,18 @@ export default function TakeExam() {
         error?.body?.message || 
         error?.message || 
         (error?.status === 404 ? "Không tìm thấy session hoặc câu hỏi" : "Không thể lưu câu trả lời");
-      toast.error(errorMessage, { autoClose: 3000 });
+      
+      // Xử lý khi session expired
+      if (error.status === 400 && (errorMessage.includes("expired") || errorMessage.includes("hết hạn") || 
+          errorMessage.includes("đã được nộp") || errorMessage.includes("đã hết hạn"))) {
+        toast.warning("Phiên làm bài đã hết hạn. Bạn không thể tiếp tục trả lời câu hỏi.", {
+          autoClose: 5000
+        });
+        setIsActive(false);
+        // Không navigate, ở lại trang
+      } else {
+        toast.error(errorMessage, { autoClose: 3000 });
+      }
     }
   };
 
@@ -445,11 +526,19 @@ export default function TakeExam() {
 
     try {
       await submitExam(session.id);
-      toast.info("Đã hết thời gian! Bài thi đã được tự động nộp.");
-      navigate(`/student/exams/${examId}/result/${session.id}`);
+      setIsAutoSubmitted(true);
+      toast.success("Đã hết thời gian! Bài thi đã được tự động nộp. Bạn có thể xem kết quả bằng cách nhấn nút 'Xem kết quả' bên dưới.", {
+        autoClose: 7000
+      });
+      // Không navigate tự động, ở lại trang hiện tại
+      // Người dùng có thể click nút để xem kết quả
     } catch (error) {
       console.error("Error auto-submitting exam:", error);
-      toast.error("Đã hết thời gian nhưng không thể nộp bài tự động");
+      toast.error("Đã hết thời gian nhưng không thể nộp bài tự động. Vui lòng thử lại.", {
+        autoClose: 5000
+      });
+      setIsSubmitting(false);
+      setIsActive(true);
     }
   };
 
@@ -640,20 +729,37 @@ export default function TakeExam() {
             </div>
 
             {/* Submit button in sidebar */}
-            <button
-              onClick={handleSubmit}
-              disabled={isSubmitting || !isActive}
-              className="mt-6 w-full rounded-xl bg-gradient-to-r from-emerald-500 to-green-600 px-6 py-3 font-bold text-white shadow-lg transition-all hover:from-emerald-600 hover:to-green-700 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:shadow-lg"
-            >
-              {isSubmitting ? (
-                <span className="flex items-center justify-center gap-2">
-                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
-                  Đang nộp bài...
-                </span>
-              ) : (
-                "Nộp bài"
-              )}
-            </button>
+            {isAutoSubmitted ? (
+              <div className="mt-6 space-y-3">
+                <div className="rounded-xl border-2 border-emerald-500 bg-emerald-50 p-4 text-center">
+                  <CheckCircle2 className="mx-auto mb-2 h-8 w-8 text-emerald-600" />
+                  <p className="text-sm font-semibold text-emerald-700">
+                    Bài thi đã được tự động nộp
+                  </p>
+                </div>
+                <button
+                  onClick={() => navigate(`/student/exams/${examId}/result/${session.id}`)}
+                  className="w-full rounded-xl bg-gradient-to-r from-indigo-500 to-blue-600 px-6 py-3 font-bold text-white shadow-lg transition-all hover:from-indigo-600 hover:to-blue-700 hover:shadow-xl"
+                >
+                  Xem kết quả
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={handleSubmit}
+                disabled={isSubmitting || !isActive}
+                className="mt-6 w-full rounded-xl bg-gradient-to-r from-emerald-500 to-green-600 px-6 py-3 font-bold text-white shadow-lg transition-all hover:from-emerald-600 hover:to-green-700 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:shadow-lg"
+              >
+                {isSubmitting ? (
+                  <span className="flex items-center justify-center gap-2">
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                    Đang nộp bài...
+                  </span>
+                ) : (
+                  "Nộp bài"
+                )}
+              </button>
+            )}
           </div>
         </aside>
 
