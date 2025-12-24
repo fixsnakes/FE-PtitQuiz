@@ -28,6 +28,7 @@ import ExamResult from "./pages/dashboard/student/ExamResult";
 import RecentExams from "./pages/dashboard/student/RecentExams";
 import FavoriteExams from "./pages/dashboard/student/FavoriteExams";
 import StudentPayment from "./pages/dashboard/student/StudentPayment";
+import StudentNotifications from "./pages/dashboard/student/Notifications";
 import TransactionHistory from "./pages/dashboard/common/TransactionHistory";
 // Admin imports
 import AdminLayout from "./layouts/AdminLayout";
@@ -279,6 +280,14 @@ function App() {
         element={
           <ProtectedRoute allowedRoles={["student"]}>
             <FavoriteExams />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dashboard/student/notifications"
+        element={
+          <ProtectedRoute allowedRoles={["student"]}>
+            <StudentNotifications />
           </ProtectedRoute>
         }
       />

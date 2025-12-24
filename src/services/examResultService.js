@@ -96,11 +96,24 @@ export function getSessionResult(sessionId) {
   return apiClient.get(`/api/sessions/${sessionId}/result`);
 }
 
+/**
+ * Lấy thông tin so sánh kết quả của student với lớp và tất cả mọi người
+ * @param {number|string} examId - ID của exam
+ */
+export function getStudentComparison(examId) {
+  if (!examId) {
+    throw new Error("examId là bắt buộc.");
+  }
+
+  return apiClient.get(`/api/exams/${examId}/my-comparison`);
+}
+
 export default {
   getExamResults,
   updateExamResultFeedback,
   exportExamResults,
   getStudentResults,
   getSessionResult,
+  getStudentComparison,
 };
 

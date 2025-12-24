@@ -1,10 +1,12 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useEffectOnce } from "../../../hooks/useEffectOnce";
 import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import DashboardLayout from "../../../layouts/DashboardLayout";
 import { getStudentExamDetail, getSimilarExams } from "../../../services/studentExamService";
 import { addFavorite, removeFavorite, checkFavorite } from "../../../services/examFavoriteService";
+import { getExamRatings } from "../../../services/examRatingService";
+import { getStudentResults, getStudentComparison } from "../../../services/examResultService";
 import {
   Clock,
   Eye,
@@ -17,6 +19,12 @@ import {
   ArrowLeft,
   Play,
   BookOpen,
+  GraduationCap,
+  MessageSquare,
+  Trophy,
+  BarChart3,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 
 export default function ExamDetail() {
@@ -26,6 +34,24 @@ export default function ExamDetail() {
   const [exam, setExam] = useState(null);
   const [similarExams, setSimilarExams] = useState([]);
   const [isFavorited, setIsFavorited] = useState(false);
+  
+  // Tabs state
+  const [activeTab, setActiveTab] = useState("info"); // info, ratings, results, ranking
+  
+  // Ratings state
+  const [ratings, setRatings] = useState([]);
+  const [ratingsLoading, setRatingsLoading] = useState(false);
+  const [ratingsPage, setRatingsPage] = useState(1);
+  const [ratingsTotal, setRatingsTotal] = useState(0);
+  const ratingsLimit = 10;
+  
+  // Results state
+  const [results, setResults] = useState([]);
+  const [resultsLoading, setResultsLoading] = useState(false);
+  
+  // Ranking state
+  const [comparison, setComparison] = useState(null);
+  const [comparisonLoading, setComparisonLoading] = useState(false);
 
   useEffectOnce(() => {
     loadExamDetail();
@@ -127,6 +153,208 @@ export default function ExamDetail() {
 
   const handleStartExam = () => {
     navigate(`/student/exams/${examId}/take`);
+  };
+
+  // Load ratings
+  const loadRatings = async (page = 1) => {
+    if (!examId) return;
+    try {
+      setRatingsLoading(true);
+      const response = await getExamRatings(examId, { page, limit: ratingsLimit });
+      setRatings(response.ratings || []);
+      setRatingsTotal(response.total || 0);
+      setRatingsPage(page);
+    } catch (error) {
+      console.error("Error loading ratings:", error);
+      toast.error("Không thể tải đánh giá");
+    } finally {
+      setRatingsLoading(false);
+    }
+  };
+
+  // Load results
+  const loadResults = async () => {
+    if (!examId) return;
+    try {
+      setResultsLoading(true);
+      const response = await getStudentResults({ exam_id: examId });
+      setResults(Array.isArray(response) ? response : []);
+    } catch (error) {
+      console.error("Error loading results:", error);
+      toast.error("Không thể tải kết quả thi");
+    } finally {
+      setResultsLoading(false);
+    }
+  };
+
+  // Load comparison
+  const loadComparison = async () => {
+    if (!examId) return;
+    try {
+      setComparisonLoading(true);
+      const response = await getStudentComparison(examId);
+      setComparison(response);
+    } catch (error) {
+      console.error("Error loading comparison:", error);
+      // Không hiển thị lỗi nếu chưa có kết quả
+      if (error.status !== 404) {
+        toast.error("Không thể tải thông tin xếp hạng");
+      }
+    } finally {
+      setComparisonLoading(false);
+    }
+  };
+
+  // Load data when tab changes
+  useEffect(() => {
+    if (!examId) return;
+    
+    if (activeTab === "ratings") {
+      loadRatings(1);
+    } else if (activeTab === "results") {
+      loadResults();
+    } else if (activeTab === "ranking") {
+      loadComparison();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, examId]);
+
+  const renderSimilarExamCard = (similarExam) => {
+    return (
+      <div
+        key={similarExam.id}
+        onClick={() => {
+          navigate(`/dashboard/student/exams/${similarExam.id}`);
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
+        className="group flex flex-col rounded-2xl border border-slate-200 bg-white shadow-sm transition cursor-pointer hover:-translate-y-1 hover:border-indigo-200 hover:shadow-lg"
+      >
+        <div className="relative overflow-hidden rounded-t-2xl">
+          {/* Exam Image or Default Gradient */}
+          {similarExam.image_url ? (
+            <div className="relative h-48 w-full overflow-hidden">
+              <img
+                src={similarExam.image_url.startsWith('http') ? similarExam.image_url : `${import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, "") || "http://localhost:3000"}${similarExam.image_url}`}
+                alt={similarExam.title}
+                className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                onError={(e) => {
+                  // Fallback to default gradient if image fails to load
+                  e.target.style.display = 'none';
+                  e.target.nextElementSibling.style.display = 'block';
+                }}
+              />
+              <div className="hidden h-full w-full bg-gradient-to-br from-indigo-50 via-white to-amber-50 p-4">
+                <div className="flex items-center justify-between">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-indigo-100 px-3 py-1 text-xs font-semibold text-indigo-700">
+                    <GraduationCap className="h-3.5 w-3.5" />
+                    {similarExam.class?.className || "Public"}
+                  </span>
+                  <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    {formatDate(similarExam.created_at)}
+                  </span>
+                </div>
+                <h3 className="mt-3 line-clamp-2 text-lg font-bold text-slate-900">
+                  {similarExam.title}
+                </h3>
+                <p className="mt-2 text-sm font-medium text-indigo-600">
+                  {similarExam.des || similarExam.class?.className || "Không có mô tả"}
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-gradient-to-br from-indigo-50 via-white to-amber-50 p-4">
+              <div className="flex items-center justify-between">
+                <span className="inline-flex items-center gap-1 rounded-full bg-indigo-100 px-3 py-1 text-xs font-semibold text-indigo-700">
+                  <GraduationCap className="h-3.5 w-3.5" />
+                  {similarExam.class?.className || "Public"}
+                </span>
+                <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  {formatDate(similarExam.created_at)}
+                </span>
+              </div>
+              <h3 className="mt-3 line-clamp-2 text-lg font-bold text-slate-900">
+                {similarExam.title}
+              </h3>
+              <p className="mt-2 text-sm font-medium text-indigo-600">
+                {similarExam.des || similarExam.class?.className || "Không có mô tả"}
+              </p>
+            </div>
+          )}
+          
+          {/* Overlay info on image */}
+          {similarExam.image_url && (
+            <div className="absolute inset-0 z-[5] flex flex-col justify-between bg-gradient-to-t from-black/60 via-transparent to-transparent p-4">
+              <div className="flex items-center justify-between">
+                <span className="inline-flex items-center gap-1 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-indigo-700">
+                  <GraduationCap className="h-3.5 w-3.5" />
+                  {similarExam.class?.className || "Public"}
+                </span>
+                <span className="text-xs font-semibold uppercase tracking-wide text-white">
+                  {formatDate(similarExam.created_at)}
+                </span>
+              </div>
+              <div>
+                <h3 className="line-clamp-2 text-lg font-bold text-white">
+                  {similarExam.title}
+                </h3>
+                <p className="mt-1 line-clamp-1 text-sm text-white/90">
+                  {similarExam.des || similarExam.class?.className || "Không có mô tả"}
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="flex flex-1 flex-col gap-3 p-4">
+          <div className="flex flex-wrap gap-3 text-sm text-slate-600">
+            <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1">
+              <Clock className="h-4 w-4 text-slate-400" />
+              {similarExam.minutes} phút
+            </span>
+            <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1">
+              <BookOpen className="h-4 w-4 text-slate-400" />
+              {similarExam.question_count || 0} câu
+            </span>
+            {similarExam.status && (
+              <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 ${
+                similarExam.status === 'ongoing' ? 'bg-green-100 text-green-700' :
+                similarExam.status === 'upcoming' ? 'bg-blue-100 text-blue-700' :
+                similarExam.status === 'ended' ? 'bg-red-100 text-red-700' :
+                'bg-gray-100 text-gray-700'
+              }`}>
+                {similarExam.status === 'ongoing' ? 'Đang diễn ra' :
+                 similarExam.status === 'upcoming' ? 'Sắp tới' :
+                 similarExam.status === 'ended' ? 'Đã kết thúc' :
+                 'Không giới hạn'}
+              </span>
+            )}
+          </div>
+
+          {similarExam.class && (
+            <div className="space-y-1 text-sm text-slate-600">
+              <p className="font-semibold text-slate-800">{similarExam.class.className}</p>
+              {similarExam.class.classCode && (
+                <p className="text-slate-500 line-clamp-1">Mã lớp: {similarExam.class.classCode}</p>
+              )}
+            </div>
+          )}
+
+          <div className="mt-auto">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                navigate(`/dashboard/student/exams/${similarExam.id}`);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              className="flex w-full items-center justify-center gap-2 rounded-xl bg-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700"
+            >
+              <Play className="h-4 w-4" />
+              Vào ôn thi
+            </button>
+          </div>
+        </div>
+      </div>
+    );
   };
 
   if (loading) {
@@ -265,18 +493,21 @@ export default function ExamDetail() {
               {/* Metrics */}
               <div className="mb-4 flex flex-wrap gap-6 text-sm">
                 <div className="flex items-center gap-2 text-slate-600">
-                  <span className="text-lg font-semibold">?</span>
-                  <span>{exam.question_count || 0}</span>
+                  <BookOpen className="h-4 w-4" />
+                  <span>{exam.question_count || 0} câu hỏi</span>
                 </div>
                 <div className="flex items-center gap-2 text-slate-600">
                   <Eye className="h-4 w-4" />
-                  <span>{exam.count || 0}</span>
+                  <span>{exam.count || 0} lượt làm</span>
                 </div>
               </div>
 
               {/* Rating */}
               {exam.average_rating !== undefined && (
-                <div className="mb-4 flex items-center gap-3">
+                <button
+                  onClick={() => setActiveTab("ratings")}
+                  className="mb-4 flex items-center gap-3 rounded-lg p-2 transition hover:bg-slate-50"
+                >
                   <span className="text-sm font-semibold text-slate-700">
                     Đánh giá ({exam.average_rating > 0 ? exam.average_rating.toFixed(1) : 'Chưa có'})
                   </span>
@@ -297,7 +528,7 @@ export default function ExamDetail() {
                       ({exam.total_ratings} đánh giá)
                     </span>
                   )}
-                </div>
+                </button>
               )}
 
               {/* Favorite button */}
@@ -381,60 +612,376 @@ export default function ExamDetail() {
           </div>
         </div>
 
+        {/* Tabs Section */}
+        <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+          {/* Tabs Header */}
+          <div className="border-b border-slate-200">
+            <div className="flex gap-1 p-2">
+              <button
+                onClick={() => setActiveTab("info")}
+                className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition ${
+                  activeTab === "info"
+                    ? "bg-indigo-100 text-indigo-700"
+                    : "text-slate-600 hover:bg-slate-100"
+                }`}
+              >
+                <BookOpen className="h-4 w-4" />
+                Thông tin
+              </button>
+              <button
+                onClick={() => setActiveTab("ratings")}
+                className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition ${
+                  activeTab === "ratings"
+                    ? "bg-indigo-100 text-indigo-700"
+                    : "text-slate-600 hover:bg-slate-100"
+                }`}
+              >
+                <MessageSquare className="h-4 w-4" />
+                Đánh giá {exam?.total_ratings > 0 && `(${exam.total_ratings})`}
+              </button>
+              <button
+                onClick={() => setActiveTab("results")}
+                className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition ${
+                  activeTab === "results"
+                    ? "bg-indigo-100 text-indigo-700"
+                    : "text-slate-600 hover:bg-slate-100"
+                }`}
+              >
+                <Trophy className="h-4 w-4" />
+                Kết quả thi
+              </button>
+              <button
+                onClick={() => setActiveTab("ranking")}
+                className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition ${
+                  activeTab === "ranking"
+                    ? "bg-indigo-100 text-indigo-700"
+                    : "text-slate-600 hover:bg-slate-100"
+                }`}
+              >
+                <BarChart3 className="h-4 w-4" />
+                Xếp hạng
+              </button>
+            </div>
+          </div>
+
+          {/* Tab Content */}
+          <div className="p-6">
+            {activeTab === "info" && (
+              <div className="space-y-4">
+                <div>
+                  <h3 className="mb-2 text-lg font-semibold text-slate-900">Mô tả</h3>
+                  <p className="text-slate-600">
+                    {exam.des || "Không có mô tả"}
+                  </p>
+                </div>
+                <div>
+                  <h3 className="mb-2 text-lg font-semibold text-slate-900">Thông tin đề thi</h3>
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <div className="flex items-center gap-2 text-slate-600">
+                      <Clock className="h-4 w-4" />
+                      <span>Thời lượng: {exam.minutes} phút</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-slate-600">
+                      <BookOpen className="h-4 w-4" />
+                      <span>Số câu hỏi: {exam.question_count || 0}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-slate-600">
+                      <Trophy className="h-4 w-4" />
+                      <span>Tổng điểm: {exam.total_score}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-slate-600">
+                      <Eye className="h-4 w-4" />
+                      <span>Lượt làm: {exam.count || 0}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeTab === "ratings" && (
+              <div className="space-y-4">
+                {ratingsLoading ? (
+                  <div className="flex items-center justify-center py-10">
+                    <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-600 border-r-transparent"></div>
+                  </div>
+                ) : ratings.length === 0 ? (
+                  <div className="py-10 text-center text-slate-500">
+                    <MessageSquare className="mx-auto mb-2 h-12 w-12 text-slate-300" />
+                    <p>Chưa có đánh giá nào</p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="space-y-4">
+                      {ratings.map((rating) => (
+                        <div
+                          key={rating.id}
+                          className="rounded-lg border border-slate-200 bg-slate-50 p-4"
+                        >
+                          <div className="mb-2 flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-100 text-indigo-700">
+                                <span className="text-xs font-bold">
+                                  {rating.user?.fullName?.charAt(0)?.toUpperCase() || "U"}
+                                </span>
+                              </div>
+                              <span className="font-medium text-slate-900">
+                                {rating.user?.fullName || "Người dùng"}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              {[1, 2, 3, 4, 5].map((star) => (
+                                <Star
+                                  key={star}
+                                  className={`h-4 w-4 ${
+                                    star <= rating.rating
+                                      ? "fill-amber-400 text-amber-400"
+                                      : "text-slate-300"
+                                  }`}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                          {rating.comment && (
+                            <p className="text-sm text-slate-600">{rating.comment}</p>
+                          )}
+                          <p className="mt-2 text-xs text-slate-400">
+                            {new Date(rating.created_at).toLocaleDateString("vi-VN", {
+                              day: "2-digit",
+                              month: "2-digit",
+                              year: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Pagination */}
+                    {ratingsTotal > ratingsLimit && (
+                      <div className="flex items-center justify-between border-t border-slate-200 pt-4">
+                        <div className="text-sm text-slate-600">
+                          Hiển thị {(ratingsPage - 1) * ratingsLimit + 1} - {Math.min(ratingsPage * ratingsLimit, ratingsTotal)} trong {ratingsTotal} đánh giá
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => loadRatings(ratingsPage - 1)}
+                            disabled={ratingsPage === 1}
+                            className="rounded-lg border border-slate-200 px-3 py-1 text-sm disabled:opacity-50"
+                          >
+                            <ChevronLeft className="h-4 w-4" />
+                          </button>
+                          <span className="text-sm text-slate-600">
+                            Trang {ratingsPage} / {Math.ceil(ratingsTotal / ratingsLimit)}
+                          </span>
+                          <button
+                            onClick={() => loadRatings(ratingsPage + 1)}
+                            disabled={ratingsPage >= Math.ceil(ratingsTotal / ratingsLimit)}
+                            className="rounded-lg border border-slate-200 px-3 py-1 text-sm disabled:opacity-50"
+                          >
+                            <ChevronRight className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+
+            {activeTab === "results" && (
+              <div className="space-y-4">
+                {resultsLoading ? (
+                  <div className="flex items-center justify-center py-10">
+                    <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-600 border-r-transparent"></div>
+                  </div>
+                ) : results.length === 0 ? (
+                  <div className="py-10 text-center text-slate-500">
+                    <Trophy className="mx-auto mb-2 h-12 w-12 text-slate-300" />
+                    <p>Bạn chưa có kết quả thi nào cho đề thi này</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {results.map((result) => (
+                      <div
+                        key={result.id}
+                        onClick={() => navigate(`/student/exams/${examId}/result/${result.session_id}`)}
+                        className="cursor-pointer rounded-lg border border-slate-200 bg-white p-4 transition hover:border-indigo-300 hover:shadow-md"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <div className="mb-1 flex items-center gap-2">
+                              <span className="text-lg font-bold text-indigo-600">
+                                {parseFloat(result.total_score || 0).toFixed(1)} / {exam.total_score}
+                              </span>
+                              <span className="text-sm text-slate-500">
+                                ({parseFloat(result.percentage || 0).toFixed(1)}%)
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-4 text-sm text-slate-600">
+                              <span>Đúng: {result.correct_count || 0}</span>
+                              <span>Sai: {result.wrong_count || 0}</span>
+                            </div>
+                          </div>
+                          <div className="text-right text-sm text-slate-500">
+                            <p>
+                              {new Date(result.submitted_at || result.session?.submitted_at).toLocaleDateString("vi-VN", {
+                                day: "2-digit",
+                                month: "2-digit",
+                                year: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              })}
+                            </p>
+                            <p className="text-xs">Mã phiên: {result.session?.code || "N/A"}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === "ranking" && (
+              <div className="space-y-4">
+                {comparisonLoading ? (
+                  <div className="flex items-center justify-center py-10">
+                    <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-600 border-r-transparent"></div>
+                  </div>
+                ) : !comparison ? (
+                  <div className="py-10 text-center text-slate-500">
+                    <BarChart3 className="mx-auto mb-2 h-12 w-12 text-slate-300" />
+                    <p>Bạn chưa có kết quả thi để so sánh</p>
+                    <p className="mt-1 text-sm">Hãy làm bài thi trước để xem xếp hạng</p>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    {/* Student Score */}
+                    <div className="rounded-lg border-2 border-indigo-200 bg-indigo-50 p-4">
+                      <h3 className="mb-2 text-lg font-semibold text-indigo-900">Điểm của bạn</h3>
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-3xl font-bold text-indigo-600">
+                          {parseFloat(comparison.student?.score || 0).toFixed(1)}
+                        </span>
+                        <span className="text-slate-600">/ {comparison.exam?.total_score}</span>
+                      </div>
+                      <div className="mt-2 flex items-center gap-4 text-sm text-slate-600">
+                        <span>Đúng: {comparison.student?.correct_count || 0}</span>
+                        <span>Sai: {comparison.student?.wrong_count || 0}</span>
+                      </div>
+                    </div>
+
+                    {/* Global Comparison */}
+                    <div className="rounded-lg border border-slate-200 bg-white p-4">
+                      <h3 className="mb-3 text-lg font-semibold text-slate-900">So sánh với tất cả</h3>
+                      <div className="grid gap-4 md:grid-cols-2">
+                        <div className="rounded-lg bg-slate-50 p-3">
+                          <p className="text-sm text-slate-600">Xếp hạng</p>
+                          <p className="text-2xl font-bold text-slate-900">
+                            #{comparison.comparison?.global?.rank || "N/A"}
+                          </p>
+                          <p className="text-xs text-slate-500">
+                            / {comparison.comparison?.global?.total || 0} người
+                          </p>
+                        </div>
+                        <div className="rounded-lg bg-slate-50 p-3">
+                          <p className="text-sm text-slate-600">Phần trăm</p>
+                          <p className="text-2xl font-bold text-slate-900">
+                            {comparison.comparison?.global?.percentile || 0}%
+                          </p>
+                          <p className="text-xs text-slate-500">tốt hơn</p>
+                        </div>
+                        <div className="rounded-lg bg-slate-50 p-3">
+                          <p className="text-sm text-slate-600">Điểm trung bình</p>
+                          <p className="text-2xl font-bold text-slate-900">
+                            {parseFloat(comparison.comparison?.global?.average_score || 0).toFixed(1)}
+                          </p>
+                        </div>
+                        <div className="rounded-lg bg-slate-50 p-3">
+                          <p className="text-sm text-slate-600">So với trung bình</p>
+                          <p className={`text-2xl font-bold ${
+                            parseFloat(comparison.student?.score || 0) >= parseFloat(comparison.comparison?.global?.average_score || 0)
+                              ? "text-green-600"
+                              : "text-red-600"
+                          }`}>
+                            {parseFloat(comparison.student?.score || 0) >= parseFloat(comparison.comparison?.global?.average_score || 0) ? "+" : ""}
+                            {(parseFloat(comparison.student?.score || 0) - parseFloat(comparison.comparison?.global?.average_score || 0)).toFixed(1)}
+                          </p>
+                          <p className="text-xs text-slate-500">
+                            {parseFloat(comparison.student?.score || 0) >= parseFloat(comparison.comparison?.global?.average_score || 0)
+                              ? "điểm trên trung bình"
+                              : "điểm dưới trung bình"}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Class Comparison */}
+                    {comparison.comparison?.class?.available ? (
+                      <div className="rounded-lg border border-green-200 bg-green-50 p-4">
+                        <h3 className="mb-3 text-lg font-semibold text-green-900">So sánh trong lớp</h3>
+                        <div className="grid gap-4 md:grid-cols-2">
+                          <div className="rounded-lg bg-white p-3">
+                            <p className="text-sm text-slate-600">Xếp hạng trong lớp</p>
+                            <p className="text-2xl font-bold text-green-700">
+                              #{comparison.comparison?.class?.rank || "N/A"}
+                            </p>
+                            <p className="text-xs text-slate-500">
+                              / {comparison.comparison?.class?.total || 0} học sinh
+                            </p>
+                          </div>
+                          <div className="rounded-lg bg-white p-3">
+                            <p className="text-sm text-slate-600">Phần trăm trong lớp</p>
+                            <p className="text-2xl font-bold text-green-700">
+                              {comparison.comparison?.class?.percentile || 0}%
+                            </p>
+                            <p className="text-xs text-slate-500">tốt hơn</p>
+                          </div>
+                          <div className="rounded-lg bg-white p-3">
+                            <p className="text-sm text-slate-600">Điểm trung bình lớp</p>
+                            <p className="text-2xl font-bold text-green-700">
+                              {parseFloat(comparison.comparison?.class?.average_score || 0).toFixed(1)}
+                            </p>
+                          </div>
+                          <div className="rounded-lg bg-white p-3">
+                            <p className="text-sm text-slate-600">So với trung bình lớp</p>
+                            <p className={`text-2xl font-bold ${
+                              parseFloat(comparison.student?.score || 0) >= parseFloat(comparison.comparison?.class?.average_score || 0)
+                                ? "text-green-600"
+                                : "text-red-600"
+                            }`}>
+                              {parseFloat(comparison.student?.score || 0) >= parseFloat(comparison.comparison?.class?.average_score || 0) ? "+" : ""}
+                              {(parseFloat(comparison.student?.score || 0) - parseFloat(comparison.comparison?.class?.average_score || 0)).toFixed(1)}
+                            </p>
+                            <p className="text-xs text-slate-500">
+                              {parseFloat(comparison.student?.score || 0) >= parseFloat(comparison.comparison?.class?.average_score || 0)
+                                ? "điểm trên trung bình lớp"
+                                : "điểm dưới trung bình lớp"}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                        <p className="text-sm text-slate-600">
+                          {comparison.comparison?.class?.reason || "Không có thông tin so sánh trong lớp"}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
         {/* Similar Exams Section */}
         {similarExams.length > 0 && (
           <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
             <h2 className="mb-6 text-2xl font-bold text-slate-900">Đề thi tương tự</h2>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {similarExams.map((similarExam) => (
-                <div
-                  key={similarExam.id}
-                  onClick={() => {
-                    navigate(`/dashboard/student/exams/${similarExam.id}`);
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                  }}
-                  className="group cursor-pointer rounded-xl border border-slate-200 bg-white p-5 transition-all hover:border-indigo-300 hover:shadow-lg hover:-translate-y-1"
-                >
-                  <div className="mb-3 flex items-start justify-between">
-                    <div className="flex-1">
-                      <h3 className="mb-2 font-semibold text-slate-900 line-clamp-2 group-hover:text-indigo-600">
-                        {similarExam.title}
-                      </h3>
-                      {similarExam.class && (
-                        <p className="mb-2 text-xs text-slate-500">
-                          {similarExam.class.className}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3 text-sm text-slate-600">
-                    <div className="flex items-center gap-1">
-                      <Clock className="h-4 w-4" />
-                      <span>{similarExam.minutes} phút</span>
-                    </div>
-                    <span>•</span>
-                    <div className="flex items-center gap-1">
-                      <BookOpen className="h-4 w-4" />
-                      <span>{similarExam.question_count || 0} câu</span>
-                    </div>
-                  </div>
-                  {similarExam.status && (
-                    <div className="mt-3">
-                      <span className={`inline-block rounded-full px-2 py-1 text-xs font-semibold ${
-                        similarExam.status === 'ongoing' ? 'bg-green-100 text-green-700' :
-                        similarExam.status === 'upcoming' ? 'bg-blue-100 text-blue-700' :
-                        similarExam.status === 'ended' ? 'bg-red-100 text-red-700' :
-                        'bg-gray-100 text-gray-700'
-                      }`}>
-                        {similarExam.status === 'ongoing' ? 'Đang diễn ra' :
-                         similarExam.status === 'upcoming' ? 'Sắp tới' :
-                         similarExam.status === 'ended' ? 'Đã kết thúc' :
-                         'Không giới hạn'}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              ))}
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {similarExams.map(renderSimilarExamCard)}
             </div>
           </div>
         )}

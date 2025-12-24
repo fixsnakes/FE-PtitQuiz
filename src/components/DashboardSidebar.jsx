@@ -36,7 +36,7 @@ const SIDEBAR_ITEMS = {
     // { label: "Truy cập gần đây", path: "/dashboard/student/recent", icon: FiClock },
     // { label: "Kết quả thi", path: "/dashboard/student/results", icon: FiBarChart2 },
     { label: "Lớp học", path: "/dashboard/student/classes", icon: FiUsers },
-    { label: "Thông báo", path: "/dashboard/notifications", icon: FiBell },
+    { label: "Thông báo", path: "/dashboard/student/notifications", icon: FiBell },
     { label: "Ví của tôi", path: "/dashboard/student/payment", icon: MdPayment },
     { label: "Lịch sử giao dịch", path: "/dashboard/student/transactions", icon: FiClock },
     { label: "Tài Khoản", path: "/dashboard/profile", icon: CiUser },
