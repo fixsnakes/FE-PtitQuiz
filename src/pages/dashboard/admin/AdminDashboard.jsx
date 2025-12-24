@@ -45,11 +45,10 @@ export default function AdminDashboard() {
   const loadChartData = async () => {
     try {
       setChartData((prev) => ({ ...prev, loading: true }));
-      
-      console.log('🔄 Đang gọi API: /api/admin/dashboard/stats-30-days');
+
       const response = await adminService.getDashboardStats30Days();
       
-      console.log('✅ API Response:', response);
+      console.log('API Response:', response);
       
       if (response.success && response.data) {
         const stats = response.data;
@@ -57,15 +56,15 @@ export default function AdminDashboard() {
         // Format dữ liệu cho biểu đồ
         const series = [
           {
-            name: 'Tổng người dùng',
+            name: 'Tổng người dùng mới',
             data: stats['new-users'] || [],
           },
           {
-            name: 'Tổng lớp học',
+            name: 'Tổng lớp học mới',
             data: stats['new-classes'] || [],
           },
           {
-            name: 'Tổng đề thi',
+            name: 'Tổng đề thi mới',
             data: stats['new-exams'] || [],
           },
         ];
@@ -76,23 +75,20 @@ export default function AdminDashboard() {
           loading: false,
         });
         
-        console.log('📊 Chart data loaded successfully');
+        console.log('Chart data loaded successfully');
       } else {
         throw new Error('Invalid response format');
       }
     } catch (error) {
-      console.error("❌ Error loading chart data:", error);
+      console.error("Error loading chart data:", error);
       console.error("Error details:", {
         message: error.message,
         status: error.status,
         body: error.body
       });
       
-      // Nếu là lỗi 404 hoặc Route not found, hiển thị thông báo và dùng fallback
       if (error.status === 404 || error.message.includes('Route not found')) {
-        console.warn("⚠️ API endpoint chưa sẵn sàng. Backend cần kiểm tra route: GET /api/admin/dashboard/stats-30-days");
-        
-        // Tạo dữ liệu mẫu dựa trên dashboard data hiện tại
+
         const mockDates = [];
         const mockUsers = [];
         const mockClasses = [];
@@ -108,9 +104,8 @@ export default function AdminDashboard() {
           date.setDate(date.getDate() - i);
           mockDates.push(date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' }));
           
-          // Tạo dữ liệu tăng dần tự nhiên
           const progress = (30 - i) / 30;
-          const variance = Math.random() * 0.05 - 0.025; // +/- 2.5%
+          const variance = Math.random() * 0.05 - 0.025;
           
           mockUsers.push(Math.floor(baseUsers * (0.7 + progress * 0.3 + variance)));
           mockClasses.push(Math.floor(baseClasses * (0.6 + progress * 0.4 + variance)));
@@ -119,9 +114,9 @@ export default function AdminDashboard() {
         
         setChartData({
           series: [
-            { name: 'Tổng người dùng', data: mockUsers },
-            { name: 'Tổng lớp học', data: mockClasses },
-            { name: 'Tổng đề thi', data: mockExams },
+            { name: 'Tổng người dùng mới', data: mockUsers },
+            { name: 'Tổng lớp học mới', data: mockClasses },
+            { name: 'Tổng đề thi mới', data: mockExams },
           ],
           categories: mockDates,
           loading: false,
@@ -131,7 +126,6 @@ export default function AdminDashboard() {
           autoClose: 5000,
         });
       } else {
-        // Lỗi khác
         toast.error("Không thể tải dữ liệu biểu đồ: " + error.message);
         setChartData({
           series: [],
