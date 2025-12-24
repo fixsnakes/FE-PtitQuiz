@@ -7,6 +7,10 @@ export const getDashboardOverview = () => {
   return apiClient.get(`${ADMIN_BASE}/dashboard`);
 };
 
+export const getDashboardStats30Days = () => {
+  return apiClient.get(`${ADMIN_BASE}/dashboard/stats-30-days`);
+};
+
 // ========== USER MANAGEMENT ==========
 export const getAllUsers = (params = {}) => {
   const query = new URLSearchParams(params).toString();
@@ -162,6 +166,7 @@ export const deleteComment = (id) => {
 export default {
   // Dashboard
   getDashboardOverview,
+  getDashboardStats30Days,
   
   // Users
   getAllUsers,
