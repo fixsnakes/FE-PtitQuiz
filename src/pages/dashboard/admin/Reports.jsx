@@ -3,6 +3,7 @@ import { toast } from "react-toastify";
 import { FiTrendingUp, FiUsers, FiFileText } from "react-icons/fi";
 import adminService from "../../../services/adminService";
 import formatCurrency from "../../../utils/format_currentcy";
+import BarChart from "../../../components/charts/BarChart";
 
 export default function Reports() {
   const [activeTab, setActiveTab] = useState("revenue");
@@ -188,6 +189,37 @@ export default function Reports() {
                     </tbody>
                   </table>
                 </div>
+              </div>
+
+              {/* Monthly Revenue Chart */}
+              <div className="bg-white rounded-xl border border-slate-200 p-6">
+                {(() => {
+                  const monthlyData = Array(12).fill(0);
+                  const revenueByPeriod = revenueReport.revenueByPeriod || [];
+                  revenueByPeriod.forEach(item => {
+                    if (item.period) {
+                      const periodParts = item.period.split('-');
+                      if (periodParts.length === 2) {
+                        const month = parseInt(periodParts[1]);
+                        const monthIndex = month - 1;
+                        
+                        if (monthIndex >= 0 && monthIndex < 12) {
+                          monthlyData[monthIndex] = parseFloat(item.revenue) || 0;
+                        }
+                      }
+                    }
+                  });
+                    
+                  return (
+                    <BarChart
+                      data={monthlyData}
+                      categories={["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]}
+                      color="#465fff"
+                      title="Báo cáo doanh thu theo tháng"
+                      height={240}
+                    />
+                  );
+                })()}
               </div>
             </div>
           )}
