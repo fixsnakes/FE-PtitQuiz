@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import DashboardLayout from "../../../layouts/DashboardLayout";
 import {
@@ -9,7 +9,11 @@ import {
     Search,
     Calendar,
     RotateCcw,
+    BookOpen,
 } from "lucide-react";
+import { getFavoriteExams, removeFavorite } from "../../../services/examFavoriteService";
+import { toast } from "react-toastify";
+import { useEffectOnce } from "../../../hooks/useEffectOnce";
 
 export default function FavoriteExams() {
     const navigate = useNavigate();
@@ -17,98 +21,61 @@ export default function FavoriteExams() {
     const [favoriteExams, setFavoriteExams] = useState([]);
     const [searchTerm, setSearchTerm] = useState("");
 
-    useEffect(() => {
+    useEffectOnce(() => {
         loadFavoriteExams();
     }, []);
 
-    const loadFavoriteExams = () => {
+    const loadFavoriteExams = async () => {
         setLoading(true);
-        // Mock data - giả lập danh sách bài thi yêu thích
-        const mockFavoriteExams = [
-            {
-                id: 1,
-                examId: 101,
-                examCode: "EXAM001",
-                examTitle: "Kiểm tra giữa kỳ môn Toán",
-                minutes: 60,
-                createdAt: "2024-01-10T10:00:00",
-                attemptCount: 3,
-            },
-            {
-                id: 2,
-                examId: 102,
-                examCode: "EXAM002",
-                examTitle: "Bài kiểm tra Vật lý",
-                minutes: 45,
-                createdAt: "2024-01-12T14:30:00",
-                attemptCount: 2,
-            },
-            {
-                id: 3,
-                examId: 103,
-                examCode: "EXAM003",
-                examTitle: "Thi cuối kỳ Hóa học",
-                minutes: 90,
-                createdAt: "2024-01-08T09:15:00",
-                attemptCount: 1,
-            },
-            {
-                id: 4,
-                examId: 104,
-                examCode: "EXAM004",
-                examTitle: "Kiểm tra tiếng Anh",
-                minutes: 50,
-                createdAt: "2024-01-15T16:20:00",
-                attemptCount: 5,
-            },
-            {
-                id: 5,
-                examId: 105,
-                examCode: "EXAM005",
-                examTitle: "Bài thi Lịch sử",
-                minutes: 40,
-                createdAt: "2024-01-11T11:45:00",
-                attemptCount: 2,
-            },
-            {
-                id: 6,
-                examId: 106,
-                examCode: "EXAM006",
-                examTitle: "Kiểm tra Địa lý",
-                minutes: 35,
-                createdAt: "2024-01-13T13:10:00",
-                attemptCount: 4,
-            },
-            {
-                id: 7,
-                examId: 107,
-                examCode: "EXAM007",
-                examTitle: "Thi thử Toán nâng cao",
-                minutes: 75,
-                createdAt: "2024-01-09T10:30:00",
-                attemptCount: 6,
-            },
-            {
-                id: 8,
-                examId: 108,
-                examCode: "EXAM008",
-                examTitle: "Bài kiểm tra Sinh học",
-                minutes: 55,
-                createdAt: "2024-01-14T15:00:00",
-                attemptCount: 3,
-            },
-        ];
-
-        setTimeout(() => {
-            setFavoriteExams(mockFavoriteExams);
+        try {
+            const response = await getFavoriteExams();
+            console.log("Favorite Exams API Response:", response); // Debug log
+            
+            // apiClient trả về data trực tiếp, không phải response.data
+            const favorites = Array.isArray(response) ? response : (response?.data || []);
+            
+            if (Array.isArray(favorites) && favorites.length > 0) {
+                // Map data từ API response
+                const mappedExams = favorites.map((favorite) => {
+                    const exam = favorite.exam || {};
+                    return {
+                        id: favorite.id,
+                        examId: exam.id,
+                        examCode: `EXAM${exam.id}`,
+                        examTitle: exam.title || "Không có tiêu đề",
+                        minutes: exam.minutes || 0,
+                        createdAt: exam.created_at,
+                        attemptCount: exam.count || 0,
+                        questionCount: exam.question_count || 0,
+                        class: exam.class,
+                    };
+                });
+                console.log("Mapped favorite exams:", mappedExams); // Debug log
+                setFavoriteExams(mappedExams);
+            } else {
+                console.log("No favorite exams found");
+                setFavoriteExams([]);
+            }
+        } catch (error) {
+            console.error("Error loading favorite exams:", error);
+            toast.error("Không thể tải danh sách bài thi yêu thích");
+            setFavoriteExams([]);
+        } finally {
             setLoading(false);
-        }, 500);
+        }
     };
 
-    const handleToggleFavorite = (examId) => {
-        setFavoriteExams((prev) =>
-            prev.filter((exam) => exam.examId !== examId)
-        );
+    const handleToggleFavorite = async (examId) => {
+        try {
+            await removeFavorite(examId);
+            setFavoriteExams((prev) =>
+                prev.filter((exam) => exam.examId !== examId)
+            );
+            toast.success("Đã xóa khỏi danh sách yêu thích");
+        } catch (error) {
+            console.error("Error removing favorite:", error);
+            toast.error("Không thể xóa khỏi danh sách yêu thích");
+        }
     };
 
     const handleStartExam = (examId) => {
@@ -191,6 +158,11 @@ export default function FavoriteExams() {
                                         <span className="inline-block rounded-full bg-indigo-100 px-2.5 py-1 text-xs font-bold text-indigo-700">
                                             {exam.examCode}
                                         </span>
+                                        {exam.class && (
+                                            <span className="ml-2 inline-block rounded-full bg-purple-100 px-2.5 py-1 text-xs font-semibold text-purple-700">
+                                                {exam.class.className}
+                                            </span>
+                                        )}
                                     </div>
                                     <h3 className="text-lg font-bold text-slate-900 line-clamp-2">
                                         {exam.examTitle}
@@ -201,6 +173,10 @@ export default function FavoriteExams() {
                                     <div className="flex items-center gap-2">
                                         <Clock className="h-4 w-4 text-slate-400" />
                                         <span>Thời lượng: {exam.minutes} phút</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <BookOpen className="h-4 w-4 text-slate-400" />
+                                        <span>Số câu hỏi: {exam.questionCount || 0} câu</span>
                                     </div>
                                     <div className="flex items-center gap-2">
                                         <Calendar className="h-4 w-4 text-slate-400" />

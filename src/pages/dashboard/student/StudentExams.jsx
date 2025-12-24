@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from "react";
+import { useEffectOnce } from "../../../hooks/useEffectOnce";
 import { useNavigate } from "react-router-dom";
 import DashboardLayout from "../../../layouts/DashboardLayout";
 import {
@@ -8,6 +9,8 @@ import {
   ChevronRight,
   Search,
 } from "lucide-react";
+import { getStudentResults } from "../../../services/examResultService";
+import { toast } from "react-toastify";
 
 export default function StudentExams() {
   const navigate = useNavigate();
@@ -19,198 +22,53 @@ export default function StudentExams() {
   const [searchTerm, setSearchTerm] = useState("");
   const itemsPerPage = 10;
 
-  // Giả lập data bài thi đã làm
-  useEffect(() => {
-    setLoadingCompleted(true);
-    // Mock data - giả lập danh sách bài thi đã làm
-    const mockCompletedExams = [
-      {
-        id: 1,
-        examId: 101,
-        examCode: "EXAM001",
-        examTitle: "Kiểm tra giữa kỳ môn Toán",
-        score: 8.5,
-        correctCount: 17,
-        wrongCount: 3,
-        completedAt: "2024-01-15T10:30:00",
-        endTime: "2024-01-15T11:30:00",
-        sessionId: "session-001",
-      },
-      {
-        id: 2,
-        examId: 102,
-        examCode: "EXAM002",
-        examTitle: "Bài kiểm tra Vật lý",
-        score: 7.0,
-        correctCount: 14,
-        wrongCount: 6,
-        completedAt: "2024-01-14T14:20:00",
-        endTime: "2024-01-14T15:05:00",
-        sessionId: "session-002",
-      },
-      {
-        id: 3,
-        examId: 103,
-        examCode: "EXAM003",
-        examTitle: "Thi cuối kỳ Hóa học",
-        score: 9.0,
-        correctCount: 18,
-        wrongCount: 2,
-        completedAt: "2024-01-13T09:15:00",
-        endTime: "2024-01-13T10:45:00",
-        sessionId: "session-003",
-      },
-      {
-        id: 4,
-        examId: 104,
-        examCode: "EXAM004",
-        examTitle: "Kiểm tra tiếng Anh",
-        score: 8.0,
-        correctCount: 16,
-        wrongCount: 4,
-        completedAt: "2024-01-12T16:45:00",
-        endTime: "2024-01-12T17:35:00",
-        sessionId: "session-004",
-      },
-      {
-        id: 5,
-        examId: 105,
-        examCode: "EXAM005",
-        examTitle: "Bài thi Lịch sử",
-        score: 6.5,
-        correctCount: 13,
-        wrongCount: 7,
-        completedAt: "2024-01-11T11:00:00",
-        endTime: "2024-01-11T11:40:00",
-        sessionId: "session-005",
-      },
-      {
-        id: 6,
-        examId: 106,
-        examCode: "EXAM006",
-        examTitle: "Kiểm tra Địa lý",
-        score: 7.5,
-        correctCount: 15,
-        wrongCount: 5,
-        completedAt: "2024-01-10T13:30:00",
-        endTime: "2024-01-10T14:05:00",
-        sessionId: "session-006",
-      },
-      {
-        id: 7,
-        examId: 107,
-        examCode: "EXAM007",
-        examTitle: "Thi thử Toán nâng cao",
-        score: 9.5,
-        correctCount: 19,
-        wrongCount: 1,
-        completedAt: "2024-01-09T15:20:00",
-        endTime: "2024-01-09T16:35:00",
-        sessionId: "session-007",
-      },
-      {
-        id: 8,
-        examId: 108,
-        examCode: "EXAM008",
-        examTitle: "Bài kiểm tra Sinh học",
-        score: 8.0,
-        correctCount: 16,
-        wrongCount: 4,
-        completedAt: "2024-01-08T10:00:00",
-        endTime: "2024-01-08T10:55:00",
-        sessionId: "session-008",
-      },
-      {
-        id: 9,
-        examId: 109,
-        examCode: "EXAM009",
-        examTitle: "Kiểm tra Văn học",
-        score: 7.0,
-        correctCount: 14,
-        wrongCount: 6,
-        completedAt: "2024-01-07T14:15:00",
-        endTime: "2024-01-07T14:55:00",
-        sessionId: "session-009",
-      },
-      {
-        id: 10,
-        examId: 110,
-        examCode: "EXAM010",
-        examTitle: "Thi thử Tin học",
-        score: 8.5,
-        correctCount: 17,
-        wrongCount: 3,
-        completedAt: "2024-01-06T09:30:00",
-        endTime: "2024-01-06T10:20:00",
-        sessionId: "session-010",
-      },
-      {
-        id: 11,
-        examId: 111,
-        examCode: "EXAM011",
-        examTitle: "Bài kiểm tra GDCD",
-        score: 9.0,
-        correctCount: 18,
-        wrongCount: 2,
-        completedAt: "2024-01-05T11:45:00",
-        endTime: "2024-01-05T12:35:00",
-        sessionId: "session-011",
-      },
-      {
-        id: 12,
-        examId: 112,
-        examCode: "EXAM012",
-        examTitle: "Kiểm tra Công nghệ",
-        score: 7.5,
-        correctCount: 15,
-        wrongCount: 5,
-        completedAt: "2024-01-04T13:00:00",
-        endTime: "2024-01-04T13:35:00",
-        sessionId: "session-012",
-      },
-      {
-        id: 13,
-        examId: 113,
-        examCode: "EXAM013",
-        examTitle: "Kiểm tra Vật lý nâng cao",
-        score: 8.5,
-        correctCount: 17,
-        wrongCount: 3,
-        completedAt: "2024-01-03T10:00:00",
-        endTime: "2024-01-03T10:45:00",
-        sessionId: "session-013",
-      },
-      {
-        id: 14,
-        examId: 114,
-        examCode: "EXAM014",
-        examTitle: "Thi thử Hóa học",
-        score: 9.0,
-        correctCount: 18,
-        wrongCount: 2,
-        completedAt: "2024-01-02T14:30:00",
-        endTime: "2024-01-02T16:00:00",
-        sessionId: "session-014",
-      },
-      {
-        id: 15,
-        examId: 115,
-        examCode: "EXAM015",
-        examTitle: "Bài kiểm tra Toán cơ bản",
-        score: 7.5,
-        correctCount: 15,
-        wrongCount: 5,
-        completedAt: "2024-01-01T09:00:00",
-        endTime: "2024-01-01T09:40:00",
-        sessionId: "session-015",
-      },
-    ];
-
-    setTimeout(() => {
-      setAllCompletedExams(mockCompletedExams);
-      setLoadingCompleted(false);
-    }, 500);
+  // Load data từ API
+  useEffectOnce(() => {
+    loadCompletedExams();
   }, []);
+
+  const loadCompletedExams = async () => {
+    setLoadingCompleted(true);
+    try {
+      const response = await getStudentResults();
+      console.log("API Response:", response); // Debug log
+      
+      // apiClient trả về data trực tiếp, không phải response.data
+      const results = Array.isArray(response) ? response : (response?.data || []);
+      
+      if (Array.isArray(results) && results.length > 0) {
+        // Map data từ API response
+        const mappedExams = results.map((result) => {
+          const exam = result.exam || {};
+          const session = result.session || {};
+          return {
+            id: result.id,
+            examId: exam.id,
+            examCode: `EXAM${exam.id}`,
+            examTitle: exam.title || "Không có tiêu đề",
+            score: parseFloat(result.total_score) || 0,
+            correctCount: result.correct_count || 0,
+            wrongCount: result.wrong_count || 0,
+            completedAt: result.submitted_at || session.submitted_at,
+            endTime: session.end_time,
+            sessionId: session.id || result.session_id,
+          };
+        });
+        console.log("Mapped exams:", mappedExams); // Debug log
+        setAllCompletedExams(mappedExams);
+      } else {
+        console.log("No results found");
+        setAllCompletedExams([]);
+      }
+    } catch (error) {
+      console.error("Error loading completed exams:", error);
+      toast.error("Không thể tải lịch sử làm bài");
+      setAllCompletedExams([]);
+    } finally {
+      setLoadingCompleted(false);
+    }
+  };
+
 
   // Filter exams theo search term
   const filteredExams = useMemo(() => {

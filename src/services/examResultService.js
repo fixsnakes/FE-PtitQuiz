@@ -72,9 +72,35 @@ export async function exportExamResults(examId, format = 'csv') {
   }
 }
 
+/**
+ * Lấy tất cả kết quả thi của student hiện tại
+ * @param {Object} params - { exam_id } - Optional: filter by exam_id
+ */
+export function getStudentResults(params = {}) {
+  const queryParams = new URLSearchParams();
+  if (params.exam_id) queryParams.set("exam_id", params.exam_id);
+
+  const query = queryParams.toString();
+  return apiClient.get(`/api/exam-results/my-results${query ? `?${query}` : ""}`);
+}
+
+/**
+ * Lấy kết quả thi của một session cụ thể
+ * @param {number|string} sessionId - ID của session
+ */
+export function getSessionResult(sessionId) {
+  if (!sessionId) {
+    throw new Error("sessionId là bắt buộc.");
+  }
+
+  return apiClient.get(`/api/sessions/${sessionId}/result`);
+}
+
 export default {
   getExamResults,
   updateExamResultFeedback,
   exportExamResults,
+  getStudentResults,
+  getSessionResult,
 };
 

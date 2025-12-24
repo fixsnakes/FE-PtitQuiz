@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
+import { useEffectOnce } from "../../../hooks/useEffectOnce";
 import { useNavigate } from "react-router-dom";
 import { FiLoader, FiFileText, FiUsers, FiCheckCircle, FiClock, FiTrendingUp } from "react-icons/fi";
 import DashboardLayout from "../../../layouts/DashboardLayout";
@@ -11,7 +12,7 @@ export default function TeacherDashboard() {
   const [stats, setStats] = useState(null);
   const [error, setError] = useState("");
 
-  useEffect(() => {
+  useEffectOnce(() => {
     loadDashboardStats();
   }, []);
 

@@ -75,7 +75,7 @@ function useCheatingDetection(sessionId, isActive) {
           "tab_switch",
           "Student switched to another tab",
           "medium",
-          { window_count: window.length }
+          {} // Không gửi window_count vì không có ý nghĩa khi đã chuyển tab
         );
       }
     };
@@ -237,12 +237,32 @@ export default function TakeExam() {
   const [remainingTime, setRemainingTime] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isActive, setIsActive] = useState(false);
+  
+  // Ref để đảm bảo chỉ khởi tạo session 1 lần (tránh React Strict Mode chạy 2 lần)
+  const isInitializingRef = useRef(false);
+  const hasInitializedRef = useRef(false);
+  const initializedExamIdRef = useRef(null);
 
   const { cheatingCount } = useCheatingDetection(session?.id, isActive);
 
   // Khởi tạo session
   useEffect(() => {
+    // Nếu examId thay đổi, reset refs
+    if (initializedExamIdRef.current !== examId) {
+      hasInitializedRef.current = false;
+      isInitializingRef.current = false;
+      initializedExamIdRef.current = examId;
+    }
+    
+    // Nếu đã khởi tạo hoặc đang khởi tạo cho examId này, bỏ qua
+    if (hasInitializedRef.current || isInitializingRef.current || !examId) {
+      return;
+    }
+
     const initializeSession = async () => {
+      // Đánh dấu đang khởi tạo
+      isInitializingRef.current = true;
+      
       try {
         setLoading(true);
         let currentSession = null;
@@ -295,18 +315,20 @@ export default function TakeExam() {
 
         // Load câu trả lời đã lưu
         loadSavedAnswers(currentSession.id);
+        
+        // Đánh dấu đã khởi tạo thành công
+        hasInitializedRef.current = true;
       } catch (error) {
         console.error("Error initializing session:", error);
         toast.error(error.message || "Không thể khởi tạo bài thi");
         navigate("/dashboard/student");
       } finally {
         setLoading(false);
+        isInitializingRef.current = false;
       }
     };
 
-    if (examId) {
-      initializeSession();
-    }
+    initializeSession();
   }, [examId, navigate]);
 
   // Load câu trả lời đã lưu

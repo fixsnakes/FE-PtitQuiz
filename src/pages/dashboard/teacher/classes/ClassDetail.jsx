@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useEffectOnce } from "../../../../hooks/useEffectOnce";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   FiAlertTriangle,
@@ -65,9 +66,19 @@ function normalizeClassDetail(payload) {
       id: student.id ?? student.student_id ?? student._id,
       fullName: student.fullName ?? student.name ?? "Chưa cập nhật",
       email: student.email ?? "—",
-      joinedAt: student.joinedAt ?? student.joined_at ?? student.createdAt,
+      joinedAt: 
+        student.Class_student?.joined_at ?? 
+        student.ClassStudent?.joined_at ??
+        student.joinedAt ?? 
+        student.joined_at ?? 
+        student.createdAt,
       isBanned:
-        student.is_banned ?? student.isBanned ?? student.isBan ?? false,
+        student.Class_student?.is_ban ??
+        student.ClassStudent?.is_ban ??
+        student.is_banned ?? 
+        student.isBanned ?? 
+        student.isBan ?? 
+        false,
     })),
   };
 }
@@ -147,7 +158,7 @@ export default function ClassDetail() {
     }
   };
 
-  useEffect(() => {
+  useEffectOnce(() => {
     // Get user role and id from localStorage
     try {
       const storedUser = localStorage.getItem("currentUser");

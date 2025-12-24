@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useEffectOnce } from "../../../hooks/useEffectOnce";
 import { useNavigate } from "react-router-dom";
+import { toast } from "react-toastify";
 import DashboardLayout from "../../../layouts/DashboardLayout";
 import {
   Search,
@@ -10,6 +12,7 @@ import {
   Star,
   GraduationCap,
 } from "lucide-react";
+import { getStudentExams } from "../../../services/studentExamService";
 
 export default function StudentDashboard() {
   const navigate = useNavigate();
@@ -19,328 +22,24 @@ export default function StudentDashboard() {
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 12;
 
-  useEffect(() => {
-    // Giả lập gọi API lấy danh sách đề thi
-    setLoading(true);
-    const mockExams = [
-      {
-        id: 1,
-        title: "Kinh tế chính trị cuối kì 1",
-        subject: "Kinh tế chính trị",
-        date: "2025-12-24",
-        duration: 45,
-        questions: 50,
-        attempts: 65,
-        liked: 0,
-        author: "Bạc Thầy Trắc Nghiệm",
-        organization: "ĐH Khoa học Xã hội và Nhân văn",
-        level: "Đại học",
-      },
-      {
-        id: 2,
-        title: "Lịch sử đảng cuối kì 1",
-        subject: "Lịch sử Đảng",
-        date: "2025-12-24",
-        duration: 60,
-        questions: 60,
-        attempts: 85,
-        liked: 0,
-        author: "Bạc Thầy Trắc Nghiệm",
-        organization: "Khoa Luật (ĐHQG Hà Nội)",
-        level: "Đại học",
-      },
-      {
-        id: 3,
-        title: "ĐỀ CƯƠNG GDKTPL ÔN TẬP CUỐI KÌ I KHỐI 12",
-        subject: "GD Kinh tế & Pháp luật",
-        date: "2025-12-24",
-        duration: 50,
-        questions: 45,
-        attempts: 99,
-        liked: 0,
-        author: "nguyen hoang hai linh",
-        organization: "Trường THPT Nhơn Trạch",
-        level: "THPT",
-      },
-      {
-        id: 4,
-        title: "Kinh tế mác",
-        subject: "Kinh tế",
-        date: "2025-12-24",
-        duration: 40,
-        questions: 40,
-        attempts: 130,
-        liked: 0,
-        author: "Đào tung lâm",
-        organization: "Đại học Kinh doanh và Công nghệ",
-        level: "Đại học",
-      },
-      {
-        id: 5,
-        title: "Mmb6736",
-        subject: "Tiếng Anh",
-        date: "2025-12-24",
-        duration: 30,
-        questions: 30,
-        attempts: 63,
-        liked: 0,
-        author: "Nguyễn Anh Khoa",
-        organization: "Trường THPT Thái Phiên",
-        level: "THPT",
-      },
-      {
-        id: 6,
-        title: "Địa lý 12 - Ôn tập học kì",
-        subject: "Địa lý",
-        date: "2025-12-22",
-        duration: 45,
-        questions: 55,
-        attempts: 72,
-        liked: 14,
-        author: "Nguyễn Thu Thảo",
-        organization: "THPT Kim Liên",
-        level: "THPT",
-      },
-      {
-        id: 7,
-        title: "Ngữ văn 12 - Ôn thi THPT QG",
-        subject: "Ngữ văn",
-        date: "2025-12-20",
-        duration: 90,
-        questions: 5,
-        attempts: 112,
-        liked: 24,
-        author: "Trần Văn Tùng",
-        organization: "THPT Lê Quý Đôn",
-        level: "THPT",
-      },
-      {
-        id: 8,
-        title: "Toán 12 - Trắc nghiệm tổng hợp",
-        subject: "Toán học",
-        date: "2025-12-18",
-        duration: 60,
-        questions: 50,
-        attempts: 205,
-        liked: 36,
-        author: "Phạm Đức Anh",
-        organization: "THPT Chuyên Hà Nội",
-        level: "THPT",
-      },
-      {
-        id: 9,
-        title: "Hóa học 12 - Ôn cuối kỳ",
-        subject: "Hóa học",
-        date: "2025-12-15",
-        duration: 50,
-        questions: 45,
-        attempts: 98,
-        liked: 11,
-        author: "Bùi Hồng Nhung",
-        organization: "THPT Yên Hòa",
-        level: "THPT",
-      },
-      {
-        id: 10,
-        title: "Sinh học 12 - Tế bào & Di truyền",
-        subject: "Sinh học",
-        date: "2025-12-12",
-        duration: 60,
-        questions: 60,
-        attempts: 76,
-        liked: 9,
-        author: "Đặng Hồng Quân",
-        organization: "THPT Phan Đình Phùng",
-        level: "THPT",
-      },
-      {
-        id: 11,
-        title: "Vật lý 12 - Điện xoay chiều",
-        subject: "Vật lý",
-        date: "2025-12-10",
-        duration: 55,
-        questions: 50,
-        attempts: 88,
-        liked: 17,
-        author: "Lê Minh Tuấn",
-        organization: "THPT Nguyễn Huệ",
-        level: "THPT",
-      },
-      {
-        id: 12,
-        title: "Tiếng Anh 12 - Practice Test",
-        subject: "Tiếng Anh",
-        date: "2025-12-08",
-        duration: 60,
-        questions: 60,
-        attempts: 140,
-        liked: 32,
-        author: "Hoàng Quỳnh Trang",
-        organization: "THPT Cầu Giấy",
-        level: "THPT",
-      },
-      {
-        id: 1,
-        title: "Kinh tế chính trị cuối kì 1",
-        subject: "Kinh tế chính trị",
-        date: "2025-12-24",
-        duration: 45,
-        questions: 50,
-        attempts: 65,
-        liked: 0,
-        author: "Bạc Thầy Trắc Nghiệm",
-        organization: "ĐH Khoa học Xã hội và Nhân văn",
-        level: "Đại học",
-      },
-      {
-        id: 2,
-        title: "Lịch sử đảng cuối kì 1",
-        subject: "Lịch sử Đảng",
-        date: "2025-12-24",
-        duration: 60,
-        questions: 60,
-        attempts: 85,
-        liked: 0,
-        author: "Bạc Thầy Trắc Nghiệm",
-        organization: "Khoa Luật (ĐHQG Hà Nội)",
-        level: "Đại học",
-      },
-      {
-        id: 3,
-        title: "ĐỀ CƯƠNG GDKTPL ÔN TẬP CUỐI KÌ I KHỐI 12",
-        subject: "GD Kinh tế & Pháp luật",
-        date: "2025-12-24",
-        duration: 50,
-        questions: 45,
-        attempts: 99,
-        liked: 0,
-        author: "nguyen hoang hai linh",
-        organization: "Trường THPT Nhơn Trạch",
-        level: "THPT",
-      },
-      {
-        id: 4,
-        title: "Kinh tế mác",
-        subject: "Kinh tế",
-        date: "2025-12-24",
-        duration: 40,
-        questions: 40,
-        attempts: 130,
-        liked: 0,
-        author: "Đào tung lâm",
-        organization: "Đại học Kinh doanh và Công nghệ",
-        level: "Đại học",
-      },
-      {
-        id: 5,
-        title: "Mmb6736",
-        subject: "Tiếng Anh",
-        date: "2025-12-24",
-        duration: 30,
-        questions: 30,
-        attempts: 63,
-        liked: 0,
-        author: "Nguyễn Anh Khoa",
-        organization: "Trường THPT Thái Phiên",
-        level: "THPT",
-      },
-      {
-        id: 6,
-        title: "Địa lý 12 - Ôn tập học kì",
-        subject: "Địa lý",
-        date: "2025-12-22",
-        duration: 45,
-        questions: 55,
-        attempts: 72,
-        liked: 14,
-        author: "Nguyễn Thu Thảo",
-        organization: "THPT Kim Liên",
-        level: "THPT",
-      },
-      {
-        id: 7,
-        title: "Ngữ văn 12 - Ôn thi THPT QG",
-        subject: "Ngữ văn",
-        date: "2025-12-20",
-        duration: 90,
-        questions: 5,
-        attempts: 112,
-        liked: 24,
-        author: "Trần Văn Tùng",
-        organization: "THPT Lê Quý Đôn",
-        level: "THPT",
-      },
-      {
-        id: 8,
-        title: "Toán 12 - Trắc nghiệm tổng hợp",
-        subject: "Toán học",
-        date: "2025-12-18",
-        duration: 60,
-        questions: 50,
-        attempts: 205,
-        liked: 36,
-        author: "Phạm Đức Anh",
-        organization: "THPT Chuyên Hà Nội",
-        level: "THPT",
-      },
-      {
-        id: 9,
-        title: "Hóa học 12 - Ôn cuối kỳ",
-        subject: "Hóa học",
-        date: "2025-12-15",
-        duration: 50,
-        questions: 45,
-        attempts: 98,
-        liked: 11,
-        author: "Bùi Hồng Nhung",
-        organization: "THPT Yên Hòa",
-        level: "THPT",
-      },
-      {
-        id: 10,
-        title: "Sinh học 12 - Tế bào & Di truyền",
-        subject: "Sinh học",
-        date: "2025-12-12",
-        duration: 60,
-        questions: 60,
-        attempts: 76,
-        liked: 9,
-        author: "Đặng Hồng Quân",
-        organization: "THPT Phan Đình Phùng",
-        level: "THPT",
-      },
-      {
-        id: 11,
-        title: "Vật lý 12 - Điện xoay chiều",
-        subject: "Vật lý",
-        date: "2025-12-10",
-        duration: 55,
-        questions: 50,
-        attempts: 88,
-        liked: 17,
-        author: "Lê Minh Tuấn",
-        organization: "THPT Nguyễn Huệ",
-        level: "THPT",
-      },
-      {
-        id: 12,
-        title: "Tiếng Anh 12 - Practice Test",
-        subject: "Tiếng Anh",
-        date: "2025-12-08",
-        duration: 60,
-        questions: 60,
-        attempts: 140,
-        liked: 32,
-        author: "Hoàng Quỳnh Trang",
-        organization: "THPT Cầu Giấy",
-        level: "THPT",
-      },
-    ];
+  useEffectOnce(() => {
+    const loadExams = async () => {
+      try {
+        setLoading(true);
+        const response = await getStudentExams();
+        // API trả về mảng exams trực tiếp hoặc trong data
+        const examsData = Array.isArray(response) ? response : (response?.data || []);
+        setExams(examsData);
+      } catch (error) {
+        console.error("Error loading exams:", error);
+        toast.error(error.message || "Không thể tải danh sách đề thi");
+        setExams([]);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    setTimeout(() => {
-      setExams(mockExams);
-      setLoading(false);
-    }, 300);
+    loadExams();
   }, []);
 
   const filteredExams = useMemo(() => {
@@ -348,9 +47,9 @@ export default function StudentDashboard() {
     const term = searchTerm.toLowerCase().trim();
     return exams.filter(
       (exam) =>
-        exam.title.toLowerCase().includes(term) ||
-        exam.subject.toLowerCase().includes(term) ||
-        exam.author.toLowerCase().includes(term)
+        exam.title?.toLowerCase().includes(term) ||
+        exam.des?.toLowerCase().includes(term) ||
+        exam.class?.className?.toLowerCase().includes(term)
     );
   }, [exams, searchTerm]);
 
@@ -367,52 +66,131 @@ export default function StudentDashboard() {
     navigate(`/dashboard/student/exams/${examId}`);
   };
 
+  const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    const date = new Date(dateString);
+    return date.toLocaleDateString("vi-VN", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+  };
+
   const renderCard = (exam) => {
     return (
       <div
         key={exam.id}
         className="group flex flex-col rounded-2xl border border-slate-200 bg-white shadow-sm transition hover:-translate-y-1 hover:border-indigo-200 hover:shadow-lg"
       >
-        <div className="relative overflow-hidden rounded-t-2xl bg-gradient-to-br from-indigo-50 via-white to-amber-50 p-4">
-          <div className="flex items-center justify-between">
-            <span className="inline-flex items-center gap-1 rounded-full bg-indigo-100 px-3 py-1 text-xs font-semibold text-indigo-700">
-              <GraduationCap className="h-3.5 w-3.5" />
-              {exam.level}
-            </span>
-            <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-              {exam.date}
-            </span>
-          </div>
-          <h3 className="mt-3 line-clamp-2 text-lg font-bold text-slate-900">
-            {exam.title}
-          </h3>
-          <p className="mt-2 text-sm font-medium text-indigo-600">{exam.subject}</p>
+        <div className="relative overflow-hidden rounded-t-2xl">
+          {/* Exam Image or Default Gradient */}
+          {exam.image_url ? (
+            <div className="relative h-48 w-full overflow-hidden">
+              <img
+                src={exam.image_url.startsWith('http') ? exam.image_url : `${import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, "") || "http://localhost:3000"}${exam.image_url}`}
+                alt={exam.title}
+                className="h-full w-full object-cover transition-transform group-hover:scale-105"
+                onError={(e) => {
+                  // Fallback to default gradient if image fails to load
+                  e.target.style.display = 'none';
+                  e.target.nextElementSibling.style.display = 'block';
+                }}
+              />
+              <div className="hidden h-full w-full bg-gradient-to-br from-indigo-50 via-white to-amber-50 p-4">
+                <div className="flex items-center justify-between">
+                  <span className="inline-flex items-center gap-1 rounded-full bg-indigo-100 px-3 py-1 text-xs font-semibold text-indigo-700">
+                    <GraduationCap className="h-3.5 w-3.5" />
+                    {exam.class?.className || "Public"}
+                  </span>
+                  <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    {formatDate(exam.created_at)}
+                  </span>
+                </div>
+                <h3 className="mt-3 line-clamp-2 text-lg font-bold text-slate-900">
+                  {exam.title}
+                </h3>
+                <p className="mt-2 text-sm font-medium text-indigo-600">
+                  {exam.des || exam.class?.className || "Không có mô tả"}
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-gradient-to-br from-indigo-50 via-white to-amber-50 p-4">
+              <div className="flex items-center justify-between">
+                <span className="inline-flex items-center gap-1 rounded-full bg-indigo-100 px-3 py-1 text-xs font-semibold text-indigo-700">
+                  <GraduationCap className="h-3.5 w-3.5" />
+                  {exam.class?.className || "Public"}
+                </span>
+                <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  {formatDate(exam.created_at)}
+                </span>
+              </div>
+              <h3 className="mt-3 line-clamp-2 text-lg font-bold text-slate-900">
+                {exam.title}
+              </h3>
+              <p className="mt-2 text-sm font-medium text-indigo-600">
+                {exam.des || exam.class?.className || "Không có mô tả"}
+              </p>
+            </div>
+          )}
+          
+          {/* Overlay info on image */}
+          {exam.image_url && (
+            <div className="absolute inset-0 flex flex-col justify-between bg-gradient-to-t from-black/60 via-transparent to-transparent p-4">
+              <div className="flex items-center justify-between">
+                <span className="inline-flex items-center gap-1 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-indigo-700">
+                  <GraduationCap className="h-3.5 w-3.5" />
+                  {exam.class?.className || "Public"}
+                </span>
+                <span className="text-xs font-semibold uppercase tracking-wide text-white">
+                  {formatDate(exam.created_at)}
+                </span>
+              </div>
+              <div>
+                <h3 className="line-clamp-2 text-lg font-bold text-white">
+                  {exam.title}
+                </h3>
+                <p className="mt-1 line-clamp-1 text-sm text-white/90">
+                  {exam.des || exam.class?.className || "Không có mô tả"}
+                </p>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="flex flex-1 flex-col gap-3 p-4">
           <div className="flex flex-wrap gap-3 text-sm text-slate-600">
             <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1">
               <Clock className="h-4 w-4 text-slate-400" />
-              {exam.duration} phút
+              {exam.minutes} phút
             </span>
             <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1">
               <BookOpen className="h-4 w-4 text-slate-400" />
-              {exam.questions} câu
+              {exam.question_count || 0} câu
             </span>
-            <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1">
-              <Users className="h-4 w-4 text-slate-400" />
-              {exam.attempts} lượt
-            </span>
-            <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1">
-              <Star className="h-4 w-4 text-amber-500" />
-              {exam.liked}
-            </span>
+            {exam.status && (
+              <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 ${
+                exam.status === 'ongoing' ? 'bg-green-100 text-green-700' :
+                exam.status === 'upcoming' ? 'bg-blue-100 text-blue-700' :
+                exam.status === 'ended' ? 'bg-red-100 text-red-700' :
+                'bg-gray-100 text-gray-700'
+              }`}>
+                {exam.status === 'ongoing' ? 'Đang diễn ra' :
+                 exam.status === 'upcoming' ? 'Sắp tới' :
+                 exam.status === 'ended' ? 'Đã kết thúc' :
+                 'Không giới hạn'}
+              </span>
+            )}
           </div>
 
-          <div className="space-y-1 text-sm text-slate-600">
-            <p className="font-semibold text-slate-800">{exam.author}</p>
-            <p className="text-slate-500 line-clamp-1">{exam.organization}</p>
-          </div>
+          {exam.class && (
+            <div className="space-y-1 text-sm text-slate-600">
+              <p className="font-semibold text-slate-800">{exam.class.className}</p>
+              {exam.class.classCode && (
+                <p className="text-slate-500 line-clamp-1">Mã lớp: {exam.class.classCode}</p>
+              )}
+            </div>
+          )}
 
           <div className="mt-auto">
             <button

@@ -1,4 +1,5 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
+import { useEffectOnce } from "../../../hooks/useEffectOnce";
 import DashboardLayout from "../../../layouts/DashboardLayout";
 import {
   FiUser,
@@ -56,7 +57,7 @@ export default function Profile() {
   const [showConfirmPass, setShowConfirmPass] = useState(false);
 
 
-  useEffect(() => {
+  useEffectOnce(() => {
     // Lấy role từ localStorage trước để tránh flash sang student layout
     try {
       const storedUser = localStorage.getItem("currentUser");

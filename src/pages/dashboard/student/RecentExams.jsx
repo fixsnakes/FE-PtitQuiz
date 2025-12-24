@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
+import { useEffectOnce } from "../../../hooks/useEffectOnce";
 import { useNavigate } from "react-router-dom";
 import DashboardLayout from "../../../layouts/DashboardLayout";
 import {
@@ -14,7 +15,7 @@ export default function RecentExams() {
     const [loading, setLoading] = useState(false);
     const [recentExams, setRecentExams] = useState([]);
 
-    useEffect(() => {
+    useEffectOnce(() => {
         loadRecentExams();
     }, []);
 

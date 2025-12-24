@@ -22,6 +22,7 @@ import TeacherExamPurchases from "./pages/dashboard/teacher/ExamPurchases";
 import StudentClasses from "./pages/dashboard/student/StudentClasses";
 import StudentClassDetail from "./pages/dashboard/student/StudentClassDetail";
 import StudentExams from "./pages/dashboard/student/StudentExams";
+import ExamDetail from "./pages/dashboard/student/ExamDetail";
 import TakeExam from "./pages/dashboard/student/TakeExam";
 import ExamResult from "./pages/dashboard/student/ExamResult";
 import RecentExams from "./pages/dashboard/student/RecentExams";
@@ -238,6 +239,14 @@ function App() {
         element={
           <ProtectedRoute allowedRoles={["student"]}>
             <StudentExams />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dashboard/student/exams/:examId"
+        element={
+          <ProtectedRoute allowedRoles={["student"]}>
+            <ExamDetail />
           </ProtectedRoute>
         }
       />
