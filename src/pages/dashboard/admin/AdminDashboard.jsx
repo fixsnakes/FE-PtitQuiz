@@ -12,13 +12,20 @@ import {
 } from "react-icons/fi";
 import adminService from "../../../services/adminService";
 import formatCurrency from "../../../utils/format_currentcy";
+import LineChart from "../../../components/charts/LineChart";
 
 export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [dashboardData, setDashboardData] = useState(null);
+  const [chartData, setChartData] = useState({
+    series: [],
+    categories: [],
+    loading: true,
+  });
 
   useEffectOnce(() => {
     loadDashboardData();
+    loadChartData();
   }, []);
 
   const loadDashboardData = async () => {
@@ -33,6 +40,100 @@ export default function AdminDashboard() {
       toast.error("Không thể tải dữ liệu dashboard");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadChartData = async () => {
+    try {
+      setChartData((prev) => ({ ...prev, loading: true }));
+
+      const response = await adminService.getDashboardStats30Days();
+      
+      console.log('API Response:', response);
+      
+      if (response.success && response.data) {
+        const stats = response.data;
+        
+        // Format dữ liệu cho biểu đồ
+        const series = [
+          {
+            name: 'Tổng người dùng mới',
+            data: stats['new-users'] || [],
+          },
+          {
+            name: 'Tổng lớp học mới',
+            data: stats['new-classes'] || [],
+          },
+          {
+            name: 'Tổng đề thi mới',
+            data: stats['new-exams'] || [],
+          },
+        ];
+        
+        setChartData({
+          series: series,
+          categories: stats.dates || [],
+          loading: false,
+        });
+        
+        console.log('Chart data loaded successfully');
+      } else {
+        throw new Error('Invalid response format');
+      }
+    } catch (error) {
+      console.error("Error loading chart data:", error);
+      console.error("Error details:", {
+        message: error.message,
+        status: error.status,
+        body: error.body
+      });
+      
+      if (error.status === 404 || error.message.includes('Route not found')) {
+
+        const mockDates = [];
+        const mockUsers = [];
+        const mockClasses = [];
+        const mockExams = [];
+        
+        const currentSummary = dashboardData?.summary || {};
+        const baseUsers = currentSummary.totalUsers || 120;
+        const baseClasses = currentSummary.totalClasses || 45;
+        const baseExams = currentSummary.totalExams || 75;
+        
+        for (let i = 29; i >= 0; i--) {
+          const date = new Date();
+          date.setDate(date.getDate() - i);
+          mockDates.push(date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' }));
+          
+          const progress = (30 - i) / 30;
+          const variance = Math.random() * 0.05 - 0.025;
+          
+          mockUsers.push(Math.floor(baseUsers * (0.7 + progress * 0.3 + variance)));
+          mockClasses.push(Math.floor(baseClasses * (0.6 + progress * 0.4 + variance)));
+          mockExams.push(Math.floor(baseExams * (0.65 + progress * 0.35 + variance)));
+        }
+        
+        setChartData({
+          series: [
+            { name: 'Tổng người dùng mới', data: mockUsers },
+            { name: 'Tổng lớp học mới', data: mockClasses },
+            { name: 'Tổng đề thi mới', data: mockExams },
+          ],
+          categories: mockDates,
+          loading: false,
+        });
+        
+        toast.info("Đang sử dụng dữ liệu mẫu. Backend cần kiểm tra endpoint.", {
+          autoClose: 5000,
+        });
+      } else {
+        toast.error("Không thể tải dữ liệu biểu đồ: " + error.message);
+        setChartData({
+          series: [],
+          categories: [],
+          loading: false,
+        });
+      }
     }
   };
 
@@ -144,6 +245,23 @@ export default function AdminDashboard() {
             </Link>
           );
         })}
+      </div>
+
+      {/* Chart: 30 Days Statistics */}
+      <div className="bg-white rounded-xl border border-slate-200 p-6">
+        <div className="mb-6">
+          <h2 className="text-lg font-bold text-slate-800">
+            Thống kê 30 ngày gần nhất
+          </h2>
+          <p className="text-sm text-slate-600 mt-1">
+            Biểu đồ theo dõi tổng số người dùng, lớp học và đề thi
+          </p>
+        </div>
+        <LineChart
+          data={chartData.series}
+          categories={chartData.categories}
+          loading={chartData.loading}
+        />
       </div>
 
       {/* Popular Exams */}
