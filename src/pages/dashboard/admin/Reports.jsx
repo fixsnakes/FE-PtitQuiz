@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { toast } from "react-toastify";
-import { FiTrendingUp, FiUsers, FiFileText, FiArrowUp, FiArrowDown } from "react-icons/fi";
+import { FiTrendingUp, FiUsers, FiFileText, FiArrowUp, FiArrowDown, FiChevronDown } from "react-icons/fi";
 import adminService from "../../../services/adminService";
 import formatCurrency from "../../../utils/format_currentcy";
 import BarChart from "../../../components/charts/BarChart";
@@ -30,9 +30,41 @@ export default function Reports() {
   const [activeTab, setActiveTab] = useState("revenue");
   const [loading, setLoading] = useState(false);
   const [period, setPeriod] = useState("30days");
+  const [yearFilter, setYearFilter] = useState(2025);
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [searchYear, setSearchYear] = useState("");
   const [revenueReport, setRevenueReport] = useState(null);
   const [userActivityReport, setUserActivityReport] = useState(null);
+  const dropdownRef = useRef(null);
+  const selectedItemRef = useRef(null);
   const [examStatsReport, setExamStatsReport] = useState(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setDropdownOpen(false);
+      }
+    };
+
+    if (dropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [dropdownOpen]);
+
+  // Scroll to selected year when dropdown opens
+  useEffect(() => {
+    if (dropdownOpen && selectedItemRef.current) {
+      selectedItemRef.current.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+    if (dropdownOpen) {
+      setSearchYear("");
+    }
+  }, [dropdownOpen]);
 
   useEffect(() => {
     if (activeTab === "revenue") {
@@ -192,12 +224,67 @@ export default function Reports() {
 
               {/* Monthly Revenue Bar Chart */}
               <div className="bg-white rounded-xl border border-slate-200 p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-base font-semibold text-slate-900">
+                    Biến động doanh thu theo tháng ({yearFilter})
+                  </h3>
+                  <div className="flex items-center gap-2">
+                    <label className="text-sm text-slate-600">Năm:</label>
+                    <div className="relative" ref={dropdownRef}>
+                      <button
+                        type="button"
+                        onClick={() => setDropdownOpen(!dropdownOpen)}
+                        className="flex items-center justify-between gap-2 px-3 py-1.5 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white hover:bg-slate-50 transition-colors min-w-[80px]"
+                      >
+                        <span>{yearFilter}</span>
+                        <FiChevronDown className={`h-4 w-4 transition-transform ${dropdownOpen ? 'rotate-180' : ''}`} />
+                      </button>
+                      {dropdownOpen && (
+                        <div className="absolute right-0 mt-1 bg-white border border-slate-300 rounded-lg shadow-lg overflow-hidden z-50 w-[200px]">
+                          <div className="p-2 border-b border-slate-200">
+                            <input
+                              type="text"
+                              value={searchYear}
+                              onChange={(e) => setSearchYear(e.target.value)}
+                              placeholder="Tìm năm..."
+                              className="w-full px-3 py-1.5 text-sm border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                              autoFocus
+                            />
+                          </div>
+                          <div className="overflow-y-auto" style={{ maxHeight: '140px' }}>
+                            {Array.from({ length: 2100 - 1990 + 1 }, (_, i) => 1990 + i)
+                              .filter(year => searchYear === "" || year.toString().includes(searchYear))
+                              .map(year => (
+                              <button
+                                key={year}
+                                type="button"
+                                ref={year === yearFilter ? selectedItemRef : null}
+                                onClick={() => {
+                                  setYearFilter(year);
+                                  setDropdownOpen(false);
+                                  setSearchYear("");
+                                }}
+                                className={`w-full text-left px-3 py-2 text-sm hover:bg-red-50 transition-colors ${
+                                  year === yearFilter ? 'bg-red-100 text-red-600 font-medium' : 'text-slate-700'
+                                }`}
+                              >
+                                {year}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
                 <BarChart
                   data={revenueReport.monthly.map(m => m.revenue)}
                   categories={["T1", "T2", "T3", "T4", "T5", "T6", "T7", "T8", "T9", "T10", "T11", "T12"]}
                   color="#3b82f6"
-                  title="Biến động doanh thu theo tháng (2025)"
+                  title=""
                   height={450}
+                  showTrend={true}
+                  trendColor="#ef4444"
                 />
               </div>
 

@@ -6,6 +6,8 @@ const BarChart = ({
     color = "#465fff",
     title = "Bar Chart",
     height = 240,
+    showTrend = false,
+    trendColor = "#ef4444",
     }) => {
     const Y_AXIS_STEPS = 5;
     const CHART_HEIGHT = height - 40;
@@ -44,6 +46,26 @@ const BarChart = ({
     };
 
     const yAxisValues = generateYAxisValues();
+
+    // Calculate trend line points for segmented visualization
+    const calculateTrendPoints = () => {
+        if (!showTrend || numericData.length < 2) return [];
+        
+        const points = [];
+        const barSpacing = 100 / numericData.length; // percentage width per bar
+        
+        numericData.forEach((value, index) => {
+            const percentage = roundedMax > 0 ? (value / roundedMax) * 100 : 0;
+            const x = (index + 0.5) * barSpacing; // center of each bar
+            const y = 100 - percentage; // invert for SVG coordinates
+            
+            points.push({ x, y, value });
+        });
+        
+        return points;
+    };
+
+    const trendPoints = calculateTrendPoints();
 
     return (
         <div className="w-full bg-white rounded-lg p-4">
@@ -101,6 +123,58 @@ const BarChart = ({
                         );
                     })}
                 </div>
+
+                {/* Trend Line Overlay - Segmented lines with dots */}
+                {showTrend && trendPoints.length > 0 && (
+                    <>
+                        {/* SVG for lines only */}
+                        <svg
+                            className="absolute left-12 right-0 top-0 pointer-events-none"
+                            style={{ height: `${CHART_HEIGHT}px`, width: 'calc(100% - 48px)' }}
+                            preserveAspectRatio="none"
+                            viewBox="0 0 100 100"
+                        >
+                            {/* Draw segmented lines between adjacent bars */}
+                            {trendPoints.map((point, i) => {
+                                if (i === trendPoints.length - 1) return null;
+                                const nextPoint = trendPoints[i + 1];
+                                
+                                return (
+                                    <line
+                                        key={`line-${i}`}
+                                        x1={point.x}
+                                        y1={point.y}
+                                        x2={nextPoint.x}
+                                        y2={nextPoint.y}
+                                        stroke={trendColor}
+                                        strokeWidth="0.8"
+                                        strokeLinecap="round"
+                                    />
+                                );
+                            })}
+                        </svg>
+                        
+                        {/* Perfect circular dots with absolute positioning */}
+                        <div className="absolute left-12 right-0 top-0 pointer-events-none" style={{ height: `${CHART_HEIGHT}px` }}>
+                            {trendPoints.map((point, i) => (
+                                <div
+                                    key={`dot-${i}`}
+                                    className="absolute rounded-full"
+                                    style={{
+                                        left: `${point.x}%`,
+                                        top: `${point.y}%`,
+                                        width: '6px',
+                                        height: '6px',
+                                        backgroundColor: trendColor,
+                                        border: '1.5px solid white',
+                                        transform: 'translate(-50%, -50%)',
+                                        boxShadow: '0 0 0 1px rgba(0,0,0,0.1)'
+                                    }}
+                                />
+                            ))}
+                        </div>
+                    </>
+                )}
 
                 <div 
                     className="absolute left-12 right-0 flex gap-2" 
