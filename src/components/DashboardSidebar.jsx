@@ -25,6 +25,7 @@ const SIDEBAR_ITEMS = {
     { label: "Lớp học", path: "/dashboard/teacher/classes", icon: FiUsers },
     { label: "Thông báo", path: "/dashboard/teacher/notifications", icon: FiBell },
     { label: "Thống kê mua đề thi", path: "/dashboard/teacher/exam-purchases", icon: FiDollarSign },
+    { label: "Lịch sử giao dịch", path: "/dashboard/teacher/transactions", icon: FiClock },
     { label: "Ví của tôi", path: "/dashboard/wallet", icon: MdPayment },
     { label: "Tài Khoản", path: "/dashboard/profile", icon: CiUser },
   ],
@@ -32,11 +33,11 @@ const SIDEBAR_ITEMS = {
     { label: "Trang chủ", path: "/dashboard/student", icon: FiHome },
     { label: "Bài thi", path: "/dashboard/student/exams", icon: FiFileText },
     { label: "Bài thi yêu thích", path: "/dashboard/student/favorite", icon: FiHeart },
-    // { label: "Truy cập gần đây", path: "/dashboard/student/recent", icon: FiClock },
-    // { label: "Kết quả thi", path: "/dashboard/student/results", icon: FiBarChart2 },
+    { label: "Truy cập gần đây", path: "/dashboard/student/recent", icon: FiClock },
     { label: "Lớp học", path: "/dashboard/student/classes", icon: FiUsers },
-    { label: "Thông báo", path: "/dashboard/notifications", icon: FiBell },
+    { label: "Thông báo", path: "/dashboard/student/notifications", icon: FiBell },
     { label: "Ví của tôi", path: "/dashboard/student/payment", icon: MdPayment },
+    { label: "Lịch sử giao dịch", path: "/dashboard/student/transactions", icon: FiDollarSign },
     { label: "Tài Khoản", path: "/dashboard/profile", icon: CiUser },
   ],
 };
@@ -46,15 +47,15 @@ export default function DashboardSidebar({ role = "student" }) {
   const location = useLocation();
 
   return (
-    <aside className="hidden w-64 flex-col border-r border-slate-200 bg-white p-6 md:flex">
+    <aside className="hidden w-64 flex-col border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-6 md:flex">
       <div className="mb-8 flex items-center gap-3">
         {/* Logo icon nhỏ trang trí (tùy chọn) */}
         <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 text-white font-bold">
           P
         </div>
         <div>
-          <h1 className="text-xl font-bold text-indigo-600 leading-none">PTIT QUIZ</h1>
-          <p className="text-xs text-slate-500 mt-1">
+          <h1 className="text-xl font-bold text-indigo-600 dark:text-indigo-400 leading-none">PTIT QUIZ</h1>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
             {role === "teacher" ? "Giáo viên" : "Học sinh"}
           </p>
         </div>
@@ -74,8 +75,8 @@ export default function DashboardSidebar({ role = "student" }) {
               // 2. Thêm flex, items-center, gap-3 để căn chỉnh icon và text
               className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition 
                 ${isActive
-                  ? "bg-indigo-50 text-indigo-600"
-                  : "text-slate-600 hover:bg-indigo-50 hover:text-indigo-600"
+                  ? "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400"
+                  : "text-slate-600 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 hover:text-indigo-600 dark:hover:text-indigo-400"
                 }
               `}
             >

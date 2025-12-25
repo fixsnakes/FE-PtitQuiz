@@ -5,6 +5,7 @@ import { toast } from "react-toastify";
 import DashboardLayout from "../../../../layouts/DashboardLayout";
 import { getTeacherClasses } from "../../../../services/classService";
 import { getExamDetail, updateExam, deleteExam } from "../../../../services/examService";
+import { uploadExamImage } from "../../../../services/uploadService";
 
 function normalizeClasses(payload) {
   if (!payload) return [];
@@ -49,6 +50,7 @@ function normalizeExam(exam) {
     isPublic: exam.is_public ?? exam.isPublic ?? true,
     isPaid: exam.is_paid ?? exam.isPaid ?? false,
     fee: exam.fee ?? "",
+    imageUrl: exam.image_url ?? exam.imageUrl ?? "",
   };
 }
 
@@ -98,6 +100,9 @@ function EditExamPage() {
     message: "",
   });
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [uploadingImage, setUploadingImage] = useState(false);
 
   useEffect(() => {
     async function loadData() {
@@ -117,6 +122,16 @@ function EditExamPage() {
 
         setConfig(normalizedExam);
         setClasses(normalizeClasses(classesResponse));
+        
+        // Set image preview if exam has image
+        if (normalizedExam.imageUrl) {
+          // Convert relative URL to full URL for preview
+          const API_BASE_URL = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, "") || "http://localhost:3000";
+          const fullImageUrl = normalizedExam.imageUrl.startsWith('http') 
+            ? normalizedExam.imageUrl 
+            : `${API_BASE_URL}${normalizedExam.imageUrl}`;
+          setImagePreview(fullImageUrl);
+        }
       } catch (error) {
         toast.error(error?.body?.message || error?.message || "Không thể tải dữ liệu.");
         navigate("/dashboard/teacher/exams");
@@ -194,6 +209,66 @@ function EditExamPage() {
     return true;
   };
 
+  const handleImageChange = async (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error("Chỉ cho phép upload file ảnh (jpeg, jpg, png, gif, webp)");
+      return;
+    }
+
+    // Validate file size (5MB)
+    const maxSize = 5 * 1024 * 1024; // 5MB
+    if (file.size > maxSize) {
+      toast.error("Kích thước file không được vượt quá 5MB");
+      return;
+    }
+
+    setSelectedImage(file);
+    
+    // Create preview
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setImagePreview(reader.result);
+    };
+    reader.readAsDataURL(file);
+
+    // Upload image immediately
+    try {
+      setUploadingImage(true);
+      const response = await uploadExamImage(file);
+      const imageUrl = response.image_url || response.data?.image_url;
+      
+      if (imageUrl) {
+        // Convert relative URL to full URL for preview
+        const API_BASE_URL = import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, "") || "http://localhost:3000";
+        const fullImageUrl = imageUrl.startsWith('http') ? imageUrl : `${API_BASE_URL}${imageUrl}`;
+        
+        // Lưu relative URL vào config (backend sẽ xử lý)
+        setConfig(prev => ({ ...prev, imageUrl: imageUrl }));
+        // Set preview với full URL
+        setImagePreview(fullImageUrl);
+        toast.success("Upload ảnh thành công!");
+      }
+    } catch (error) {
+      console.error("Error uploading image:", error);
+      toast.error(error.message || "Không thể upload ảnh");
+      setSelectedImage(null);
+      setImagePreview(null);
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setSelectedImage(null);
+    setImagePreview(null);
+    setConfig(prev => ({ ...prev, imageUrl: "" }));
+  };
+
   const handleSubmit = async () => {
     if (!validateForm()) return;
 
@@ -210,6 +285,7 @@ function EditExamPage() {
       is_public: config.isPublic,
       is_paid: config.isPaid,
       fee: config.isPaid ? Number(config.fee) : null,
+      image_url: config.imageUrl.trim() || null,
     };
 
     // Đảm bảo fee là số hợp lệ khi is_paid = true
@@ -443,6 +519,60 @@ function EditExamPage() {
                 className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200 resize-none"
                 placeholder="Thông tin mô tả đề thi, hướng dẫn, ghi chú..."
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Ảnh đề thi (tùy chọn)
+              </label>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <label className="flex cursor-pointer items-center justify-center rounded-lg border-2 border-dashed border-slate-300 bg-slate-50 px-4 py-3 text-sm font-medium text-slate-700 transition hover:border-indigo-400 hover:bg-indigo-50">
+                    {uploadingImage ? (
+                      <>
+                        <FiLoader className="mr-2 animate-spin" />
+                        Đang upload...
+                      </>
+                    ) : (
+                      <>
+                        <svg className="mr-2 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                        </svg>
+                        Chọn ảnh
+                      </>
+                    )}
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/jpg,image/png,image/gif,image/webp"
+                      onChange={handleImageChange}
+                      className="hidden"
+                      disabled={uploadingImage}
+                    />
+                  </label>
+                  {imagePreview && (
+                    <button
+                      type="button"
+                      onClick={handleRemoveImage}
+                      className="rounded-lg border border-red-300 bg-red-50 px-3 py-2 text-sm font-medium text-red-700 transition hover:bg-red-100"
+                    >
+                      Xóa ảnh
+                    </button>
+                  )}
+                </div>
+                <p className="text-xs text-slate-500">
+                  Chọn ảnh từ máy tính (tối đa 5MB). Để trống sẽ sử dụng ảnh mặc định.
+                </p>
+                {imagePreview && (
+                  <div className="mt-3">
+                    <p className="mb-2 text-xs font-medium text-slate-700">Xem trước:</p>
+                    <img
+                      src={imagePreview}
+                      alt="Preview"
+                      className="h-48 w-full rounded-lg border border-slate-200 object-cover"
+                    />
+                  </div>
+                )}
+              </div>
             </div>
           </FormSection>
 

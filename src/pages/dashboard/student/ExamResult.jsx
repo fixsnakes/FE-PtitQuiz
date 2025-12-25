@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { getSessionResult } from "../../../services/examSessionService";
+import { createOrUpdateRating, getUserRating } from "../../../services/examRatingService";
 import DashboardLayout from "../../../layouts/DashboardLayout";
 import {
   CheckCircle2,
@@ -9,6 +10,8 @@ import {
   Clock,
   Award,
   ArrowLeft,
+  Star,
+  BookOpen,
 } from "lucide-react";
 
 export default function ExamResult() {
@@ -18,6 +21,10 @@ export default function ExamResult() {
   const [loading, setLoading] = useState(true);
   const [result, setResult] = useState(null);
   const [answers, setAnswers] = useState([]);
+  const [rating, setRating] = useState(0);
+  const [comment, setComment] = useState("");
+  const [userRating, setUserRating] = useState(null);
+  const [submittingRating, setSubmittingRating] = useState(false);
 
   useEffect(() => {
     const loadResult = async () => {
@@ -26,6 +33,21 @@ export default function ExamResult() {
         const data = await getSessionResult(sessionId);
         setResult(data.result);
         setAnswers(data.answers || []);
+        
+        // Load user rating nếu có
+        if (data.result?.exam_id) {
+          try {
+            const ratingData = await getUserRating(data.result.exam_id);
+            if (ratingData) {
+              setUserRating(ratingData);
+              setRating(ratingData.rating || 0);
+              setComment(ratingData.comment || "");
+            }
+          } catch (error) {
+            console.error("Error loading user rating:", error);
+            // Không hiển thị lỗi nếu chưa có rating
+          }
+        }
       } catch (error) {
         console.error("Error loading result:", error);
         toast.error(error.message || "Không thể tải kết quả");
@@ -39,6 +61,40 @@ export default function ExamResult() {
       loadResult();
     }
   }, [sessionId, navigate]);
+
+  const handleSubmitRating = async () => {
+    if (!rating || rating < 1 || rating > 5) {
+      toast.error("Vui lòng chọn số sao từ 1 đến 5");
+      return;
+    }
+
+    if (!result?.exam_id) {
+      toast.error("Không tìm thấy thông tin đề thi");
+      return;
+    }
+
+    try {
+      setSubmittingRating(true);
+      await createOrUpdateRating({
+        exam_id: result.exam_id,
+        rating: rating,
+        comment: comment.trim() || null,
+        result_id: result.id
+      });
+      toast.success("Đánh giá đã được lưu thành công!");
+      
+      // Reload user rating
+      const ratingData = await getUserRating(result.exam_id);
+      if (ratingData) {
+        setUserRating(ratingData);
+      }
+    } catch (error) {
+      console.error("Error submitting rating:", error);
+      toast.error(error.message || "Không thể lưu đánh giá");
+    } finally {
+      setSubmittingRating(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -75,13 +131,24 @@ export default function ExamResult() {
     <DashboardLayout role="student">
       <div className="space-y-6">
         <header className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-          <button
-            onClick={() => navigate("/dashboard/student")}
-            className="mb-4 flex items-center gap-2 text-slate-600 transition hover:text-slate-900"
-          >
-            <ArrowLeft className="h-5 w-5" />
-            <span>Quay lại</span>
-          </button>
+          <div className="mb-4 flex items-center gap-3">
+            <button
+              onClick={() => navigate("/dashboard/student")}
+              className="flex items-center gap-2 text-slate-600 transition hover:text-slate-900"
+            >
+              <ArrowLeft className="h-5 w-5" />
+              <span>Quay lại</span>
+            </button>
+            {examId && (
+              <button
+                onClick={() => navigate(`/dashboard/student/exams/${examId}`)}
+                className="flex items-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-medium text-indigo-700 transition hover:bg-indigo-100"
+              >
+                <BookOpen className="h-4 w-4" />
+                <span>Quay lại đề thi</span>
+              </button>
+            )}
+          </div>
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-indigo-500">
             Kết quả thi
           </p>
@@ -152,6 +219,82 @@ export default function ExamResult() {
               <p className="text-indigo-800">{result.feedback}</p>
             </div>
           )}
+        </section>
+
+        {/* Rating Section */}
+        <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+          <h2 className="mb-4 text-xl font-semibold text-slate-900">
+            Đánh giá đề thi
+          </h2>
+          <p className="mb-6 text-sm text-slate-600">
+            Hãy chia sẻ đánh giá của bạn về đề thi này để giúp cải thiện chất lượng
+          </p>
+
+          <div className="space-y-4">
+            {/* Star Rating */}
+            <div>
+              <label className="mb-2 block text-sm font-medium text-slate-700">
+                Số sao đánh giá *
+              </label>
+              <div className="flex gap-2">
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <button
+                    key={star}
+                    type="button"
+                    onClick={() => setRating(star)}
+                    className="transition-transform hover:scale-110"
+                  >
+                    <Star
+                      className={`h-8 w-8 ${
+                        star <= rating
+                          ? "fill-amber-400 text-amber-400"
+                          : "text-slate-300"
+                      }`}
+                    />
+                  </button>
+                ))}
+              </div>
+              {rating > 0 && (
+                <p className="mt-2 text-sm text-slate-600">
+                  Bạn đã chọn {rating} {rating === 1 ? "sao" : "sao"}
+                </p>
+              )}
+            </div>
+
+            {/* Comment */}
+            <div>
+              <label
+                htmlFor="rating-comment"
+                className="mb-2 block text-sm font-medium text-slate-700"
+              >
+                Nhận xét (tùy chọn)
+              </label>
+              <textarea
+                id="rating-comment"
+                value={comment}
+                onChange={(e) => setComment(e.target.value)}
+                placeholder="Chia sẻ suy nghĩ của bạn về đề thi này..."
+                rows={4}
+                className="w-full rounded-lg border border-slate-200 px-4 py-3 text-sm text-slate-900 placeholder-slate-400 focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+              />
+            </div>
+
+            {/* Submit Button */}
+            <button
+              onClick={handleSubmitRating}
+              disabled={submittingRating || !rating}
+              className="w-full rounded-lg bg-indigo-600 px-6 py-3 font-semibold text-white transition hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {submittingRating ? "Đang lưu..." : userRating ? "Cập nhật đánh giá" : "Gửi đánh giá"}
+            </button>
+
+            {userRating && (
+              <p className="text-center text-xs text-slate-500">
+                Bạn đã đánh giá đề thi này vào{" "}
+                {new Date(userRating.created_at).toLocaleDateString("vi-VN")}
+              </p>
+            )}
+          </div>
         </section>
 
         {/* Answers Review */}
@@ -278,6 +421,15 @@ export default function ExamResult() {
 
         {/* Action buttons */}
         <div className="flex justify-center gap-4">
+          {examId && (
+            <button
+              onClick={() => navigate(`/dashboard/student/exams/${examId}`)}
+              className="flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-6 py-3 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100"
+            >
+              <BookOpen className="h-4 w-4" />
+              Quay lại đề thi
+            </button>
+          )}
           <button
             onClick={() => navigate("/dashboard/student")}
             className="rounded-full border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"

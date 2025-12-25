@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate } from "react-router-dom";
+import { ThemeProvider } from "./contexts/ThemeContext";
 import Login from "./pages/auth/Login";
 import SignUp from "./pages/auth/SignUp";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -22,11 +23,14 @@ import TeacherExamPurchases from "./pages/dashboard/teacher/ExamPurchases";
 import StudentClasses from "./pages/dashboard/student/StudentClasses";
 import StudentClassDetail from "./pages/dashboard/student/StudentClassDetail";
 import StudentExams from "./pages/dashboard/student/StudentExams";
+import ExamDetail from "./pages/dashboard/student/ExamDetail";
 import TakeExam from "./pages/dashboard/student/TakeExam";
 import ExamResult from "./pages/dashboard/student/ExamResult";
 import RecentExams from "./pages/dashboard/student/RecentExams";
 import FavoriteExams from "./pages/dashboard/student/FavoriteExams";
 import StudentPayment from "./pages/dashboard/student/StudentPayment";
+import StudentNotifications from "./pages/dashboard/student/Notifications";
+import TransactionHistory from "./pages/dashboard/common/TransactionHistory";
 // Admin imports
 import AdminLayout from "./layouts/AdminLayout";
 import AdminDashboard from "./pages/dashboard/admin/AdminDashboard";
@@ -39,9 +43,11 @@ import NotificationManagement from "./pages/dashboard/admin/NotificationManageme
 import ContentModeration from "./pages/dashboard/admin/ContentModeration";
 
 import "react-toastify/dist/ReactToastify.css";
+
 function App() {
   return (
-    <Routes>
+    <ThemeProvider>
+      <Routes>
       {/* Auth routes */}
       <Route path="/auth/login" element={<Login />} />
       <Route path="/auth/register" element={<SignUp />} />
@@ -176,6 +182,14 @@ function App() {
         }
       />
       <Route
+        path="/dashboard/teacher/transactions"
+        element={
+          <ProtectedRoute allowedRoles={["teacher"]}>
+            <TransactionHistory role="teacher" />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/dashboard/student"
         element={
           <ProtectedRoute allowedRoles={["student"]}>
@@ -217,10 +231,26 @@ function App() {
         }
       />
       <Route
+        path="/dashboard/student/transactions"
+        element={
+          <ProtectedRoute allowedRoles={["student"]}>
+            <TransactionHistory role="student" />
+          </ProtectedRoute>
+        }
+      />
+      <Route
         path="/dashboard/student/exams"
         element={
           <ProtectedRoute allowedRoles={["student"]}>
             <StudentExams />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/dashboard/student/exams/:examId"
+        element={
+          <ProtectedRoute allowedRoles={["student"]}>
+            <ExamDetail />
           </ProtectedRoute>
         }
       />
@@ -256,6 +286,14 @@ function App() {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/dashboard/student/notifications"
+        element={
+          <ProtectedRoute allowedRoles={["student"]}>
+            <StudentNotifications />
+          </ProtectedRoute>
+        }
+      />
 
       {/* Admin routes */}
       <Route
@@ -288,7 +326,8 @@ function App() {
       />
 
 
-    </Routes>
+      </Routes>
+    </ThemeProvider>
   );
 }
 

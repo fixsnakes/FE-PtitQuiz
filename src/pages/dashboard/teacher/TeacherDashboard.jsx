@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
+import { useEffectOnce } from "../../../hooks/useEffectOnce";
 import { useNavigate } from "react-router-dom";
 import { FiLoader, FiFileText, FiUsers, FiCheckCircle, FiClock, FiTrendingUp } from "react-icons/fi";
 import DashboardLayout from "../../../layouts/DashboardLayout";
@@ -11,7 +12,7 @@ export default function TeacherDashboard() {
   const [stats, setStats] = useState(null);
   const [error, setError] = useState("");
 
-  useEffect(() => {
+  useEffectOnce(() => {
     loadDashboardStats();
   }, []);
 
@@ -66,17 +67,7 @@ export default function TeacherDashboard() {
   return (
     <DashboardLayout role="teacher">
       <div className="space-y-6">
-        <section className="relative overflow-hidden rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50 via-white to-purple-50 p-8 shadow-sm">
-          <div className="relative z-10">
-            <h1 className="text-3xl font-bold text-slate-900">
-              Chào mừng trở lại, cô/thầy! 👋
-            </h1>
-            <p className="mt-2 text-base text-slate-600">
-              Đây là khu vực quản trị dành cho giáo viên. Quản lý kỳ thi, câu hỏi và lớp học của bạn.
-            </p>
-          </div>
-          <div className="absolute right-0 top-0 h-32 w-32 rounded-full bg-indigo-200 opacity-20 blur-3xl"></div>
-        </section>
+      
 
         <section className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
           <article className="group relative overflow-hidden rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition-all hover:border-indigo-300 hover:shadow-md">
@@ -238,34 +229,7 @@ export default function TeacherDashboard() {
           </div>
         </section>
 
-        <section className="rounded-xl border border-slate-200 bg-gradient-to-br from-slate-50 to-white p-6 shadow-sm">
-          <h2 className="mb-4 text-lg font-bold text-slate-900">
-            Gợi ý thao tác nhanh
-          </h2>
-          <div className="flex flex-wrap gap-3">
-            <button
-              onClick={() => navigate("/dashboard/teacher/exams/create")}
-              className="group inline-flex items-center gap-2 rounded-lg border border-indigo-200 bg-white px-5 py-2.5 text-sm font-semibold text-indigo-600 shadow-sm transition-all hover:border-indigo-300 hover:bg-indigo-50 hover:shadow-md"
-            >
-              <FiFileText className="text-base" />
-              Tạo kỳ thi mới
-            </button>
-            <button
-              onClick={() => navigate("/teacher/classes/create")}
-              className="group inline-flex items-center gap-2 rounded-lg border border-emerald-200 bg-white px-5 py-2.5 text-sm font-semibold text-emerald-600 shadow-sm transition-all hover:border-emerald-300 hover:bg-emerald-50 hover:shadow-md"
-            >
-              <FiUsers className="text-base" />
-              Tạo lớp học mới
-            </button>
-            <button
-              onClick={() => navigate("/teacher/classes")}
-              className="group inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 shadow-sm transition-all hover:border-slate-300 hover:bg-slate-50 hover:shadow-md"
-            >
-              <FiTrendingUp className="text-base" />
-              Xem tất cả lớp học
-            </button>
-          </div>
-        </section>
+        
       </div>
     </DashboardLayout>
   );

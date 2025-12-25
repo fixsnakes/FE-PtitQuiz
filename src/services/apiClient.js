@@ -6,6 +6,8 @@ const defaultHeaders = {
   "Content-Type": "application/json",
 };
 
+console.log(API_BASE_URL)
+
 function getAuthHeaders() {
   try {
     const token = localStorage.getItem("accessToken");

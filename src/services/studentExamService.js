@@ -9,7 +9,7 @@ export function getStudentExams(params = {}) {
   if (params.class_id) queryParams.set("class_id", params.class_id);
 
   const query = queryParams.toString();
-  return apiClient.get(`/api/student/exams${query ? `?${query}` : ""}`);
+  return apiClient.get(`/api/exams${query ? `?${query}` : ""}`);
 }
 
 /**
@@ -21,7 +21,7 @@ export function getStudentExamDetail(examId) {
     throw new Error("examId là bắt buộc.");
   }
 
-  return apiClient.get(`/api/student/exams/${examId}`);
+  return apiClient.get(`/api/exams/${examId}`);
 }
 
 /**
@@ -55,11 +55,29 @@ export function getStudentExamStatus(examId) {
   return apiClient.get(`/api/student/exams/${examId}/status`);
 }
 
+/**
+ * Lấy danh sách bài thi tương tự
+ * @param {number|string} examId - ID của bài thi hiện tại
+ * @param {Object} params - { limit } - Số lượng bài thi tương tự muốn lấy
+ */
+export function getSimilarExams(examId, params = {}) {
+  if (!examId) {
+    throw new Error("examId là bắt buộc.");
+  }
+
+  const queryParams = new URLSearchParams();
+  if (params.limit) queryParams.set("limit", params.limit);
+
+  const query = queryParams.toString();
+  return apiClient.get(`/api/exams/${examId}/similar${query ? `?${query}` : ""}`);
+}
+
 export default {
   getStudentExams,
   getStudentExamDetail,
   getStudentExamsWithStatus,
   getStudentExamsByStatus,
   getStudentExamStatus,
+  getSimilarExams,
 };
 

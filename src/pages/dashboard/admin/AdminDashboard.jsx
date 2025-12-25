@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
+import { useEffectOnce } from "../../../hooks/useEffectOnce";
 import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
 import {
@@ -22,7 +23,7 @@ export default function AdminDashboard() {
     loading: true,
   });
 
-  useEffect(() => {
+  useEffectOnce(() => {
     loadDashboardData();
     loadChartData();
   }, []);
