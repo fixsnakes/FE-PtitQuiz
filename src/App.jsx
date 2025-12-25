@@ -38,6 +38,7 @@ import UserManagement from "./pages/dashboard/admin/UserManagement";
 import ExamManagement from "./pages/dashboard/admin/ExamManagement";
 import ClassManagement from "./pages/dashboard/admin/ClassManagement";
 import PurchaseManagement from "./pages/dashboard/admin/PurchaseManagement";
+import WithdrawalManagement from "./pages/dashboard/admin/WithdrawalManagement";
 import Reports from "./pages/dashboard/admin/Reports";
 import NotificationManagement from "./pages/dashboard/admin/NotificationManagement";
 import ContentModeration from "./pages/dashboard/admin/ContentModeration";
@@ -309,6 +310,7 @@ function App() {
         <Route path="exams" element={<ExamManagement />} />
         <Route path="classes" element={<ClassManagement />} />
         <Route path="purchases" element={<PurchaseManagement />} />
+        <Route path="withdrawals" element={<WithdrawalManagement />} />
         <Route path="reports" element={<Reports />} />
         <Route path="notifications" element={<NotificationManagement />} />
         <Route path="moderation" element={<ContentModeration />} />

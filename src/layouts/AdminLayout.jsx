@@ -12,6 +12,7 @@ import {
   FiLogOut,
   FiMenu,
   FiX,
+  FiCreditCard,
 } from "react-icons/fi";
 
 const ADMIN_NAV_ITEMS = [
@@ -20,6 +21,7 @@ const ADMIN_NAV_ITEMS = [
   { label: "Quản lý đề thi", path: "/dashboard/admin/exams", icon: FiFileText, superAdminOnly: false },
   { label: "Quản lý lớp học", path: "/dashboard/admin/classes", icon: FiBookOpen, superAdminOnly: false },
   { label: "Quản lý giao dịch", path: "/dashboard/admin/purchases", icon: FiDollarSign, superAdminOnly: false },
+  { label: "Quản lý rút tiền", path: "/dashboard/admin/withdrawals", icon: FiCreditCard, superAdminOnly: false },
   { label: "Báo cáo thống kê", path: "/dashboard/admin/reports", icon: FiBarChart2, superAdminOnly: false },
   { label: "Thông báo", path: "/dashboard/admin/notifications", icon: FiBell, superAdminOnly: false },
   { label: "Kiểm duyệt nội dung", path: "/dashboard/admin/moderation", icon: FiMessageSquare, superAdminOnly: false },
