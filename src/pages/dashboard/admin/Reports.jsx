@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { toast } from "react-toastify";
-import { FiTrendingUp, FiUsers, FiFileText, FiArrowUp, FiArrowDown, FiChevronDown } from "react-icons/fi";
+import { FiTrendingUp, FiFileText, FiArrowUp, FiArrowDown, FiChevronDown, FiChevronLeft, FiChevronRight, FiSearch } from "react-icons/fi";
 import adminService from "../../../services/adminService";
 import formatCurrency from "../../../utils/format_currentcy";
 import BarChart from "../../../components/charts/BarChart";
@@ -25,6 +25,18 @@ const getColorClass = (color) => COLOR_MAP[color] || "text-slate-600";
 
 // Mock data
 import { MOCK_REVENUE_DATA } from "./mockData/revenueData";
+import { MOCK_TRANSACTIONS } from "./mockData/transactionData";
+
+// Transaction type constants
+const TRANSACTION_TYPES = {
+  DEPOSIT: "deposit",
+  WITHDRAW: "withdraw",
+};
+
+const TRANSACTION_TYPE_META = {
+  [TRANSACTION_TYPES.DEPOSIT]: { label: "Nạp Tiền", badge: "bg-green-50 text-green-600" },
+  [TRANSACTION_TYPES.WITHDRAW]: { label: "Rút Tiền", badge: "bg-red-50 text-red-600" },
+};
 
 export default function Reports() {
   const [activeTab, setActiveTab] = useState("revenue");
@@ -34,10 +46,18 @@ export default function Reports() {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [searchYear, setSearchYear] = useState("");
   const [revenueReport, setRevenueReport] = useState(null);
-  const [userActivityReport, setUserActivityReport] = useState(null);
+  const [transactionHistory, setTransactionHistory] = useState(null);
+  const [transactionLoading, setTransactionLoading] = useState(false);
+  const [transactionFilters, setTransactionFilters] = useState({
+    searchAccount: "",
+    typeFilter: "all",
+    dateFrom: "",
+    dateTo: "",
+    page: 1,
+    limit: 10
+  });
   const dropdownRef = useRef(null);
   const selectedItemRef = useRef(null);
-  const [examStatsReport, setExamStatsReport] = useState(null);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -69,12 +89,17 @@ export default function Reports() {
   useEffect(() => {
     if (activeTab === "revenue") {
       loadRevenueReport();
-    } else if (activeTab === "users") {
-      loadUserActivityReport();
-    } else if (activeTab === "exams") {
-      loadExamStatsReport();
+    } else if (activeTab === "transactions") {
+      loadTransactionHistory();
     }
   }, [activeTab]);
+
+  // Reload transactions when filters change
+  useEffect(() => {
+    if (activeTab === "transactions") {
+      loadTransactionHistory();
+    }
+  }, [transactionFilters]);
 
   const loadRevenueReport = async () => {
     try {
@@ -94,40 +119,62 @@ export default function Reports() {
     }
   };
 
-  const loadUserActivityReport = async () => {
+  const loadTransactionHistory = async () => {
     try {
-      setLoading(true);
-      const response = await adminService.getUserActivityReport();
-      if (response.success) {
-        setUserActivityReport(response.data);
+      setTransactionLoading(true);
+      // TODO: Implement API call
+      // const response = await adminService.getTransactionHistory(transactionFilters);
+      // if (response.success) { setTransactionHistory(response.data); }
+      
+      // MOCK DATA with filtering
+      await new Promise(resolve => setTimeout(resolve, 300));
+      
+      let filteredTransactions = [...MOCK_TRANSACTIONS.transactions];
+      
+      // Filter by search account (name or email)
+      if (transactionFilters.searchAccount) {
+        const searchLower = transactionFilters.searchAccount.toLowerCase();
+        filteredTransactions = filteredTransactions.filter(t => 
+          t.user?.fullName.toLowerCase().includes(searchLower) ||
+          t.user?.email.toLowerCase().includes(searchLower)
+        );
       }
-    } catch (error) {
-      console.error("Error loading user activity report:", error);
-      toast.error("Không thể tải báo cáo hoạt động người dùng");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadExamStatsReport = async () => {
-    try {
-      setLoading(true);
-      const response = await adminService.getExamStatsReport();
-      if (response.success) {
-        setExamStatsReport(response.data);
+      
+      // Filter by type
+      if (transactionFilters.typeFilter !== "all") {
+        filteredTransactions = filteredTransactions.filter(t => t.transactionType === transactionFilters.typeFilter);
       }
+      
+      // Filter by date range
+      if (transactionFilters.dateFrom) {
+        filteredTransactions = filteredTransactions.filter(t => new Date(t.created_at) >= new Date(transactionFilters.dateFrom));
+      }
+      if (transactionFilters.dateTo) {
+        const endDate = new Date(transactionFilters.dateTo);
+        endDate.setHours(23, 59, 59, 999);
+        filteredTransactions = filteredTransactions.filter(t => new Date(t.created_at) <= endDate);
+      }
+      
+      setTransactionHistory({
+        transactions: filteredTransactions,
+        pagination: {
+          total: filteredTransactions.length,
+          page: transactionFilters.page,
+          limit: transactionFilters.limit,
+          totalPages: Math.ceil(filteredTransactions.length / transactionFilters.limit)
+        }
+      });
     } catch (error) {
-      console.error("Error loading exam stats report:", error);
-      toast.error("Không thể tải báo cáo thống kê đề thi");
+      console.error("Error loading transaction history:", error);
+      toast.error("Không thể tải lịch sử giao dịch");
     } finally {
-      setLoading(false);
+      setTransactionLoading(false);
     }
   };
 
   const tabs = [
     { id: "revenue", label: "Báo cáo doanh thu", icon: FiTrendingUp },
-    { id: "users", label: "Hoạt động người dùng", icon: FiUsers },
-    { id: "exams", label: "Thống kê đề thi", icon: FiFileText },
+    { id: "transactions", label: "Lịch sử giao dịch", icon: FiFileText },
   ];
 
   return (
@@ -305,112 +352,229 @@ export default function Reports() {
             </div>
           )}
 
-          {/* User Activity Report */}
-          {activeTab === "users" && userActivityReport && (
+          {/* Transaction History */}
+          {activeTab === "transactions" && transactionHistory && (
             <div className="space-y-6">
-              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                <div className="bg-white rounded-xl border border-slate-200 p-6">
-                  <p className="text-sm font-medium text-slate-600">
-                    Tổng người dùng
-                  </p>
-                  <p className="text-2xl font-bold text-blue-600 mt-2">
-                    {userActivityReport.summary?.totalUsers}
-                  </p>
-                </div>
-                <div className="bg-white rounded-xl border border-slate-200 p-6">
-                  <p className="text-sm font-medium text-slate-600">
-                    Trung bình mỗi ngày
-                  </p>
-                  <p className="text-2xl font-bold text-green-600 mt-2">
-                    {userActivityReport.summary?.averageUsersPerDay}
-                  </p>
+              {/* Filters */}
+              <div className="bg-white rounded-xl border border-slate-200 p-4">
+                <div className="space-y-4">
+                  {/* First Row - 40% + 20% + 20% + 20% */}
+                  <div className="flex flex-col md:flex-row gap-4">
+                    {/* Search Account - 40% */}
+                    <div className="md:w-[40%]">
+                      <label className="block text-sm font-medium text-slate-700 mb-2">
+                        Tài khoản giao dịch
+                      </label>
+                      <div className="relative">
+                        <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" />
+                        <input
+                          type="text"
+                          value={transactionFilters.searchAccount}
+                          onChange={(e) => setTransactionFilters({ ...transactionFilters, searchAccount: e.target.value })}
+                          placeholder="Tìm kiếm theo tên hoặc email..."
+                          className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Type Filter - 20% */}
+                    <div className="md:w-[20%]">
+                      <label className="block text-sm font-medium text-slate-700 mb-2">
+                        Loại giao dịch
+                      </label>
+                      <select
+                        value={transactionFilters.typeFilter}
+                        onChange={(e) => setTransactionFilters({ ...transactionFilters, typeFilter: e.target.value })}
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                      >
+                        <option value="all">Tất cả</option>
+                        <option value={TRANSACTION_TYPES.DEPOSIT}>Nạp tiền</option>
+                        <option value={TRANSACTION_TYPES.WITHDRAW}>Rút tiền</option>
+                      </select>
+                    </div>
+
+                    {/* Date From - 20% */}
+                    <div className="md:w-[20%]">
+                      <label className="block text-sm font-medium text-slate-700 mb-2">
+                        Từ ngày
+                      </label>
+                      <input
+                        type="date"
+                        value={transactionFilters.dateFrom}
+                        onChange={(e) => {
+                          const newDateFrom = e.target.value;
+                          const updates = { dateFrom: newDateFrom };
+                          if (transactionFilters.dateTo && newDateFrom > transactionFilters.dateTo) {
+                            updates.dateTo = "";
+                            toast.warning("Ngày bắt đầu không thể lớn hơn ngày kết thúc");
+                          }
+                          setTransactionFilters({ ...transactionFilters, ...updates });
+                        }}
+                        max={transactionFilters.dateTo || undefined}
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                      />
+                    </div>
+
+                    {/* Date To - 20% */}
+                    <div className="md:w-[20%]">
+                      <label className="block text-sm font-medium text-slate-700 mb-2">
+                        Đến ngày
+                      </label>
+                      <input
+                        type="date"
+                        value={transactionFilters.dateTo}
+                        onChange={(e) => {
+                          const newDateTo = e.target.value;
+                          if (transactionFilters.dateFrom && newDateTo < transactionFilters.dateFrom) {
+                            toast.error("Ngày kết thúc không thể nhỏ hơn ngày bắt đầu");
+                            return;
+                          }
+                          setTransactionFilters({ ...transactionFilters, dateTo: newDateTo });
+                        }}
+                        min={transactionFilters.dateFrom || undefined}
+                        className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Second Row - Action Buttons */}
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => {
+                        setTransactionFilters({ ...transactionFilters, page: 1 });
+                        loadTransactionHistory();
+                      }}
+                      className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition font-medium"
+                    >
+                      Tìm kiếm
+                    </button>
+                    <button
+                      onClick={() => setTransactionFilters({ searchAccount: "", typeFilter: "all", dateFrom: "", dateTo: "", page: 1, limit: 10 })}
+                      className="bg-slate-100 text-slate-700 px-6 py-2 rounded-lg hover:bg-slate-200 transition font-medium"
+                    >
+                      Đặt lại
+                    </button>
+                  </div>
                 </div>
               </div>
 
-              <div className="bg-white rounded-xl border border-slate-200 p-6">
-                <h3 className="font-semibold text-slate-800 mb-4">
-                  Người dùng hoạt động nhiều nhất
-                </h3>
+              {/* Transaction Table */}
+              <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full">
-                    <thead className="bg-slate-50 border-b">
+                    <thead className="bg-slate-50 border-b border-slate-200">
                       <tr>
                         <th className="text-left py-3 px-4 text-sm font-semibold text-slate-600">
-                          Học sinh
+                          Người dùng
+                        </th>
+                        <th className="text-left py-3 px-4 text-sm font-semibold text-slate-600">
+                          Số tài khoản
+                        </th>
+                        <th className="text-left py-3 px-4 text-sm font-semibold text-slate-600">
+                          Tên tài khoản
+                        </th>
+                        <th className="text-left py-3 px-4 text-sm font-semibold text-slate-600">
+                          Ngân hàng
+                        </th>
+                        <th className="text-left py-3 px-4 text-sm font-semibold text-slate-600">
+                          Loại GD
                         </th>
                         <th className="text-right py-3 px-4 text-sm font-semibold text-slate-600">
-                          Số bài đã nộp
+                          Số tiền
                         </th>
-                        <th className="text-right py-3 px-4 text-sm font-semibold text-slate-600">
-                          Điểm TB
+                        <th className="text-left py-3 px-4 text-sm font-semibold text-slate-600">
+                          Thời gian
                         </th>
                       </tr>
                     </thead>
                     <tbody>
-                      {userActivityReport.mostActiveUsers?.map((user) => (
-                        <tr
-                          key={user.student_id}
-                          className="border-b border-slate-100"
-                        >
-                          <td className="py-3 px-4">
-                            <p className="font-medium">
-                              {user.student?.fullName}
-                            </p>
-                            <p className="text-xs text-slate-500">
-                              {user.student?.email}
-                            </p>
-                          </td>
-                          <td className="py-3 px-4 text-right font-semibold">
-                            {user.submission_count}
-                          </td>
-                          <td className="py-3 px-4 text-right font-semibold text-green-600">
-                            {user.avg_score}
+                      {transactionLoading ? (
+                        <tr>
+                          <td colSpan="7" className="text-center py-12">
+                            <div className="flex items-center justify-center">
+                              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
+                            </div>
                           </td>
                         </tr>
-                      ))}
+                      ) : transactionHistory.transactions.length === 0 ? (
+                        <tr>
+                          <td colSpan="7" className="text-center py-12 text-slate-500">
+                            Không có giao dịch nào
+                          </td>
+                        </tr>
+                      ) : (
+                        transactionHistory.transactions
+                          .slice((transactionFilters.page - 1) * transactionFilters.limit, transactionFilters.page * transactionFilters.limit)
+                          .map((transaction) => {
+                            const typeMeta = TRANSACTION_TYPE_META[transaction.transactionType] || { label: transaction.transactionType, badge: "bg-slate-50 text-slate-600" };
+                            
+                            return (
+                              <tr key={transaction.id} className="border-b border-slate-100 hover:bg-slate-50">
+                                <td className="py-3 px-4">
+                                  <p className="font-medium text-slate-900">{transaction.user?.fullName}</p>
+                                  <p className="text-xs text-slate-500">{transaction.user?.email}</p>
+                                </td>
+                                <td className="py-3 px-4">
+                                  <span className="text-sm text-slate-700 font-mono">{transaction.user?.bankAccount}</span>
+                                </td>
+                                <td className="py-3 px-4">
+                                  <span className="text-sm text-slate-700">{transaction.user?.bankAccountName}</span>
+                                </td>
+                                <td className="py-3 px-4">
+                                  <span className="text-sm text-slate-700">{transaction.user?.bankName}</span>
+                                </td>
+                                <td className="py-3 px-4">
+                                  <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${typeMeta.badge}`}>
+                                    {typeMeta.label}
+                                  </span>
+                                </td>
+                                <td className={`py-3 px-4 text-right font-semibold ${transaction.transferType === 'in' ? 'text-green-600' : 'text-red-600'}`}>
+                                  {transaction.transferType === 'in' ? '+' : '-'}{formatCurrency(transaction.amount)}
+                                </td>
+                                <td className="py-3 px-4 text-sm text-slate-600">
+                                  {new Date(transaction.created_at).toLocaleString("vi-VN", {
+                                    day: "2-digit",
+                                    month: "2-digit",
+                                    year: "numeric",
+                                    hour: "2-digit",
+                                    minute: "2-digit"
+                                  })}
+                                </td>
+                              </tr>
+                            );
+                          })
+                      )}
                     </tbody>
                   </table>
                 </div>
-              </div>
-            </div>
-          )}
 
-          {/* Exam Stats Report */}
-          {activeTab === "exams" && examStatsReport && (
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 gap-6 sm:grid-cols-4">
-                <div className="bg-white rounded-xl border border-slate-200 p-6">
-                  <p className="text-sm font-medium text-slate-600">
-                    Tổng đề thi
-                  </p>
-                  <p className="text-2xl font-bold text-blue-600 mt-2">
-                    {examStatsReport.summary?.totalExams}
-                  </p>
-                </div>
-                <div className="bg-white rounded-xl border border-slate-200 p-6">
-                  <p className="text-sm font-medium text-slate-600">
-                    Tổng lượt nộp
-                  </p>
-                  <p className="text-2xl font-bold text-green-600 mt-2">
-                    {examStatsReport.summary?.totalSubmissions}
-                  </p>
-                </div>
-                <div className="bg-white rounded-xl border border-slate-200 p-6">
-                  <p className="text-sm font-medium text-slate-600">
-                    Điểm TB
-                  </p>
-                  <p className="text-2xl font-bold text-purple-600 mt-2">
-                    {examStatsReport.summary?.avgScoreOverall}
-                  </p>
-                </div>
-                <div className="bg-white rounded-xl border border-slate-200 p-6">
-                  <p className="text-sm font-medium text-slate-600">
-                    Tỷ lệ đạt
-                  </p>
-                  <p className="text-2xl font-bold text-yellow-600 mt-2">
-                    {examStatsReport.summary?.passRate}%
-                  </p>
-                </div>
+                {/* Pagination */}
+                {transactionHistory.pagination.totalPages > 1 && (
+                  <div className="flex items-center justify-between px-4 py-3 border-t border-slate-200">
+                    <div className="text-sm text-slate-600">
+                      Hiển thị {((transactionFilters.page - 1) * transactionFilters.limit) + 1} - {Math.min(transactionFilters.page * transactionFilters.limit, transactionHistory.pagination.total)} trong tổng số {transactionHistory.pagination.total} giao dịch
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setTransactionFilters({ ...transactionFilters, page: transactionFilters.page - 1 })}
+                        disabled={transactionFilters.page === 1}
+                        className="p-2 rounded-lg border border-slate-300 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <FiChevronLeft className="h-4 w-4" />
+                      </button>
+                      <span className="text-sm text-slate-600">
+                        Trang {transactionFilters.page} / {transactionHistory.pagination.totalPages}
+                      </span>
+                      <button
+                        onClick={() => setTransactionFilters({ ...transactionFilters, page: transactionFilters.page + 1 })}
+                        disabled={transactionFilters.page === transactionHistory.pagination.totalPages}
+                        className="p-2 rounded-lg border border-slate-300 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <FiChevronRight className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
