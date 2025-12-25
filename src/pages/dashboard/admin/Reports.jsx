@@ -1,13 +1,35 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "react-toastify";
-import { FiTrendingUp, FiUsers, FiFileText } from "react-icons/fi";
+import { FiTrendingUp, FiUsers, FiFileText, FiArrowUp, FiArrowDown } from "react-icons/fi";
 import adminService from "../../../services/adminService";
 import formatCurrency from "../../../utils/format_currentcy";
 import BarChart from "../../../components/charts/BarChart";
+import LineChart from "../../../components/charts/LineChart";
+
+// Constants
+const PERIOD_OPTIONS = [
+  { value: "today", label: "Hôm nay" },
+  { value: "7days", label: "7 ngày qua" },
+  { value: "30days", label: "30 ngày qua" }
+];
+
+const COLOR_MAP = {
+  green: "text-green-600",
+  red: "text-red-600",
+  purple: "text-purple-600",
+  blue: "text-blue-600"
+};
+
+// Helper function
+const getColorClass = (color) => COLOR_MAP[color] || "text-slate-600";
+
+// Mock data
+import { MOCK_REVENUE_DATA } from "./mockData/revenueData";
 
 export default function Reports() {
   const [activeTab, setActiveTab] = useState("revenue");
   const [loading, setLoading] = useState(false);
+  const [period, setPeriod] = useState("30days");
   const [revenueReport, setRevenueReport] = useState(null);
   const [userActivityReport, setUserActivityReport] = useState(null);
   const [examStatsReport, setExamStatsReport] = useState(null);
@@ -25,12 +47,13 @@ export default function Reports() {
   const loadRevenueReport = async () => {
     try {
       setLoading(true);
-      const response = await adminService.getRevenueReport({
-        group_by: "month",
-      });
-      if (response.success) {
-        setRevenueReport(response.data);
-      }
+      // TODO: Uncomment để dùng API thật
+      // const response = await adminService.getRevenueReport({ group_by: "month" });
+      // if (response.success) { setRevenueReport(response.data); }
+      
+      // MOCK DATA
+      await new Promise(resolve => setTimeout(resolve, 300));
+      setRevenueReport(MOCK_REVENUE_DATA);
     } catch (error) {
       console.error("Error loading revenue report:", error);
       toast.error("Không thể tải báo cáo doanh thu");
@@ -116,110 +139,81 @@ export default function Reports() {
           {/* Revenue Report */}
           {activeTab === "revenue" && revenueReport && (
             <div className="space-y-6">
-              <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
-                <div className="bg-white rounded-xl border border-slate-200 p-6">
-                  <p className="text-sm font-medium text-slate-600">
-                    Tổng doanh thu
-                  </p>
-                  <p className="text-2xl font-bold text-green-600 mt-2">
-                    {formatCurrency(revenueReport.summary?.totalRevenue)}
-                  </p>
-                </div>
-                <div className="bg-white rounded-xl border border-slate-200 p-6">
-                  <p className="text-sm font-medium text-slate-600">
-                    Tổng giao dịch
-                  </p>
-                  <p className="text-2xl font-bold text-blue-600 mt-2">
-                    {revenueReport.summary?.totalPurchases}
-                  </p>
-                </div>
-                <div className="bg-white rounded-xl border border-slate-200 p-6">
-                  <p className="text-sm font-medium text-slate-600">
-                    Giá trị TB
-                  </p>
-                  <p className="text-2xl font-bold text-purple-600 mt-2">
-                    {formatCurrency(revenueReport.summary?.avgPurchaseValue)}
-                  </p>
+              {/* Period Filter */}
+              <div className="bg-white rounded-xl border border-slate-200 p-4">
+                <div className="flex items-center gap-6">
+                  <span className="text-sm font-medium text-slate-700">Khoảng thời gian:</span>
+                  <div className="flex gap-4">
+                    {PERIOD_OPTIONS.map(opt => (
+                      <label key={opt.value} className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="period"
+                          value={opt.value}
+                          checked={period === opt.value}
+                          onChange={(e) => setPeriod(e.target.value)}
+                          className="w-4 h-4 text-red-600 border-slate-300 focus:ring-red-500"
+                        />
+                        <span className="text-sm text-slate-700">{opt.label}</span>
+                      </label>
+                    ))}
+                  </div>
                 </div>
               </div>
 
-              {/* Top Earning Exams */}
+              {/* Summary Cards */}
+              {(() => {
+                const summary = revenueReport.summary[period];
+                return (
+                  <div className="grid grid-cols-1 gap-6 sm:grid-cols-4">
+                    {[
+                      { label: "Tổng tiền nạp", value: summary.current.deposit, color: "green", percent: summary.percentChange.deposit },
+                      { label: "Tổng tiền rút", value: summary.current.withdrawal, color: "red", percent: summary.percentChange.withdrawal },
+                      { label: "Tiền mua đề", value: summary.current.purchase, color: "purple", percent: summary.percentChange.purchase },
+                      { label: "Doanh thu", value: summary.current.revenue, color: "blue", percent: summary.percentChange.revenue }
+                    ].map((item, idx) => (
+                      <div key={idx} className="bg-white rounded-xl border border-slate-200 p-6">
+                        <p className="text-sm font-medium text-slate-600">{item.label}</p>
+                        <p className={`text-2xl font-bold mt-2 ${getColorClass(item.color)}`}>
+                          {formatCurrency(item.value)}
+                        </p>
+                        <div className={`flex items-center gap-1 mt-2 text-sm font-medium ${
+                          item.percent >= 0 ? "text-green-600" : "text-red-600"
+                        }`}>
+                          {item.percent >= 0 ? <FiArrowUp className="h-4 w-4" /> : <FiArrowDown className="h-4 w-4" />}
+                          <span>{Math.abs(item.percent).toFixed(1)}%</span>
+                          <span className="text-slate-500 font-normal ml-1">so với cùng kỳ</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+
+              {/* Monthly Revenue Bar Chart */}
               <div className="bg-white rounded-xl border border-slate-200 p-6">
-                <h3 className="font-semibold text-slate-800 mb-4">
-                  Đề thi thu nhập cao nhất
+                <BarChart
+                  data={revenueReport.monthly.map(m => m.revenue)}
+                  categories={["T1", "T2", "T3", "T4", "T5", "T6", "T7", "T8", "T9", "T10", "T11", "T12"]}
+                  color="#3b82f6"
+                  title="Biến động doanh thu theo tháng (2025)"
+                  height={300}
+                />
+              </div>
+
+              {/* Daily Trend Line Chart */}
+              <div className="bg-white rounded-xl border border-slate-200 p-6">
+                <h3 className="text-base font-semibold text-slate-900 mb-6">
+                  Biến động 30 ngày gần nhất
                 </h3>
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-slate-50 border-b">
-                      <tr>
-                        <th className="text-left py-3 px-4 text-sm font-semibold text-slate-600">
-                          Đề thi
-                        </th>
-                        <th className="text-left py-3 px-4 text-sm font-semibold text-slate-600">
-                          Giáo viên
-                        </th>
-                        <th className="text-right py-3 px-4 text-sm font-semibold text-slate-600">
-                          Lượt mua
-                        </th>
-                        <th className="text-right py-3 px-4 text-sm font-semibold text-slate-600">
-                          Doanh thu
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {revenueReport.topEarningExams?.map((item) => (
-                        <tr
-                          key={item.exam_id}
-                          className="border-b border-slate-100"
-                        >
-                          <td className="py-3 px-4 font-medium">
-                            {item.exam?.title}
-                          </td>
-                          <td className="py-3 px-4 text-sm text-slate-600">
-                            {item.exam?.creator?.fullName}
-                          </td>
-                          <td className="py-3 px-4 text-right font-semibold">
-                            {item.purchase_count}
-                          </td>
-                          <td className="py-3 px-4 text-right font-semibold text-green-600">
-                            {formatCurrency(item.total_revenue)}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              {/* Monthly Revenue Chart */}
-              <div className="bg-white rounded-xl border border-slate-200 p-6">
-                {(() => {
-                  const monthlyData = Array(12).fill(0);
-                  const revenueByPeriod = revenueReport.revenueByPeriod || [];
-                  revenueByPeriod.forEach(item => {
-                    if (item.period) {
-                      const periodParts = item.period.split('-');
-                      if (periodParts.length === 2) {
-                        const month = parseInt(periodParts[1]);
-                        const monthIndex = month - 1;
-                        
-                        if (monthIndex >= 0 && monthIndex < 12) {
-                          monthlyData[monthIndex] = parseFloat(item.revenue) || 0;
-                        }
-                      }
-                    }
-                  });
-                    
-                  return (
-                    <BarChart
-                      data={monthlyData}
-                      categories={["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]}
-                      color="#465fff"
-                      title="Báo cáo doanh thu theo tháng"
-                      height={240}
-                    />
-                  );
-                })()}
+                <LineChart
+                  data={[
+                    { name: "Tiền nạp", data: revenueReport.daily.map(d => d.deposit) },
+                    { name: "Tiền rút", data: revenueReport.daily.map(d => d.withdrawal) },
+                    { name: "Tiền mua đề", data: revenueReport.daily.map(d => d.purchase) }
+                  ]}
+                  categories={revenueReport.daily.map((d, i) => `${i + 1}/12`)}
+                />
               </div>
             </div>
           )}
