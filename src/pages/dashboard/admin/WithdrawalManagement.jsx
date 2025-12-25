@@ -185,8 +185,6 @@ export default function WithdrawalManagement() {
         // const response = await adminService.getWithdrawals(params);
         
         // MOCK DATA - Xóa phần này khi API backend đã sẵn sàng
-        await new Promise(resolve => setTimeout(resolve, 500));
-        
         let filteredData = [...MOCK_WITHDRAWALS];
         
         // Filter by status
@@ -306,8 +304,6 @@ export default function WithdrawalManagement() {
             // }
             
             // MOCK DATA - Xóa phần này khi API backend đã sẵn sàng
-            await new Promise(resolve => setTimeout(resolve, 500));
-            
             // Cập nhật mock data gốc
             const withdrawalIndex = MOCK_WITHDRAWALS.findIndex(w => w.id === selectedWithdrawal.id);
             if (withdrawalIndex !== -1) {
@@ -368,7 +364,6 @@ export default function WithdrawalManagement() {
         // const response = await adminService.getWithdrawalById(withdrawal.id);
         
         // MOCK DATA - Xóa phần này khi API backend đã sẵn sàng
-        await new Promise(resolve => setTimeout(resolve, 300));
         const response = {
             success: true,
             data: withdrawal
@@ -392,7 +387,7 @@ export default function WithdrawalManagement() {
         setSortBy("created_at");
         setOrder("DESC");
         setPagination({ ...pagination, page: 1 });
-        setTimeout(loadWithdrawals, 100);
+        loadWithdrawals();
     };
 
     const getStatusConfig = (status) => {
@@ -905,12 +900,6 @@ export default function WithdrawalManagement() {
                         <p className="text-sm text-slate-600">Email</p>
                         <p className="font-medium text-slate-800">
                         {withdrawalDetail.user?.email}
-                        </p>
-                    </div>
-                    <div>
-                        <p className="text-sm text-slate-600">Số dư hiện tại</p>
-                        <p className="text-2xl font-bold text-green-600">
-                        {formatCurrency(withdrawalDetail.user?.balance || 0)}
                         </p>
                     </div>
                     </div>
