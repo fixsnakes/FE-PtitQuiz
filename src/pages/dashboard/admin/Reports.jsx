@@ -197,7 +197,7 @@ export default function Reports() {
                   categories={["T1", "T2", "T3", "T4", "T5", "T6", "T7", "T8", "T9", "T10", "T11", "T12"]}
                   color="#3b82f6"
                   title="Biến động doanh thu theo tháng (2025)"
-                  height={300}
+                  height={450}
                 />
               </div>
 

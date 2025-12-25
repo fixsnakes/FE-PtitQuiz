@@ -9,7 +9,7 @@ const BarChart = ({
     }) => {
     const Y_AXIS_STEPS = 5;
     const CHART_HEIGHT = height - 40;
-    const BAR_WIDTH = 'min(24px, 80%)';
+    const BAR_WIDTH = 'min(36px, 90%)';
     const BAR_MIN_HEIGHT = '4px';
 
     const numericData = data.map(val => Number(val) || 0);

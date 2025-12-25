@@ -168,7 +168,7 @@ const LineChart = ({ data = [], categories = [], loading = false }) => {
             <div className="min-w-[600px]">
                 <ReactApexChart
                     type="area"
-                    height={310}
+                    height={450}
                     options={chartOptions}
                     series={series}
                 />
