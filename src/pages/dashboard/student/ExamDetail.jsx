@@ -530,7 +530,7 @@ export default function ExamDetail() {
                 <div className="flex items-center gap-2 text-sm">
                   <span className="text-green-600">🏫</span>
                   <span className="font-semibold text-green-700">
-                    Trường học: {exam.class.className}
+                    Lớp học: {exam.class.className}
                   </span>
                 </div>
               </div>

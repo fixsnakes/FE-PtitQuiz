@@ -7,7 +7,12 @@ import { getTransactionHistory } from "../../../services/transactionService";
 
 // Helper function to generate transaction content
 const generateTransactionContent = (transaction) => {
-    const { transactionType, referenceId } = transaction;
+    const { transactionType, referenceId, description } = transaction;
+
+    // Nếu có description và là doanh thu từ đề thi, sử dụng description
+    if (description && description.includes("Doanh thu từ đề thi")) {
+        return description;
+    }
 
     if (transactionType === "deposit") {
         return `Nạp tiền - Mã giao dịch: ${referenceId || "N/A"}`;
@@ -26,6 +31,16 @@ const TYPE_META = {
     withdraw: { label: "Rút Tiền", badge: "bg-red-50 text-red-600" },
     purchase: { label: "Mua", badge: "bg-emerald-50 text-emerald-600" },
     adjustment: { label: "Điều Chỉnh", badge: "bg-purple-50 text-purple-600" },
+    revenue: { label: "Doanh Thu", badge: "bg-green-50 text-green-600" },
+};
+
+// Helper function to get transaction type label
+const getTransactionTypeLabel = (transaction) => {
+    // Nếu là doanh thu từ đề thi, hiển thị "Doanh Thu"
+    if (transaction.description && transaction.description.includes("Doanh thu từ đề thi")) {
+        return TYPE_META.revenue;
+    }
+    return TYPE_META[transaction.transactionType] || { label: "Khác", badge: "bg-gray-50 text-gray-600" };
 };
 
 const STATUS_META = {
@@ -107,14 +122,22 @@ export default function TransactionHistory({ role = "student" }) {
     const mappedTransactions = useMemo(() => {
         return transactions.map((transaction) => {
             const amount = parseFloat(transaction.amount || 0);
-            const displayAmount = transaction.transferType === "in" ? amount : -amount;
+            // Xác định số tiền hiển thị:
+            // - Nếu transferType === "in" → số dương (tiền vào)
+            // - Nếu description chứa "Doanh thu từ đề thi" → số dương (doanh thu)
+            // - Ngược lại → số âm (tiền ra)
+            const isRevenue = transaction.transferType === "in" || 
+                             (transaction.description && transaction.description.includes("Doanh thu từ đề thi"));
+            const displayAmount = isRevenue ? amount : -amount;
             const status = transaction.transactionStatus === "success" ? "done" : transaction.transactionStatus;
+            const typeMeta = getTransactionTypeLabel(transaction);
 
             return {
                 id: transaction.id,
                 date: transaction.created_at,
                 content: generateTransactionContent(transaction),
                 type: transaction.transactionType,
+                typeMeta: typeMeta, // Lưu metadata để hiển thị đúng badge
                 amount: displayAmount,
                 balanceBefore: parseFloat(transaction.beforeBalance || 0),
                 balanceAfter: parseFloat(transaction.afterBalance || 0),
@@ -299,10 +322,10 @@ export default function TransactionHistory({ role = "student" }) {
                                             </td>
                                             <td className="px-4 py-3">
                                                 <span
-                                                    className={`rounded-full px-3 py-1 text-xs font-semibold ${TYPE_META[item.type]?.badge
+                                                    className={`rounded-full px-3 py-1 text-xs font-semibold ${item.typeMeta?.badge || "bg-gray-50 text-gray-600"
                                                         }`}
                                                 >
-                                                    {TYPE_META[item.type]?.label || "Khác"}
+                                                    {item.typeMeta?.label || "Khác"}
                                                 </span>
                                             </td>
                                             <td className="px-4 py-3">{renderAmount(item.amount)}</td>
