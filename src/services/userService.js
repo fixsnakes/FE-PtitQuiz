@@ -1,8 +1,6 @@
 import { apiClient } from "./apiClient";
 
-/**
- * Lấy thông tin user profile
- */
+
 export const getUserInformation = async () => {
   try {
     const data = await apiClient.get("/api/user/profile");
@@ -12,10 +10,7 @@ export const getUserInformation = async () => {
   }
 };
 
-/**
- * Upload avatar
- * @param {File} avatarFile - File ảnh avatar
- */
+
 export const uploadAvatar = async (avatarFile) => {
   try {
     const formData = new FormData();
@@ -24,9 +19,9 @@ export const uploadAvatar = async (avatarFile) => {
     const API_BASE_URL =
       import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, "") ||
       "http://localhost:5005";
-    
+
     const token = localStorage.getItem("accessToken");
-    
+
     const response = await fetch(`${API_BASE_URL}/api/upload/avatar`, {
       method: "POST",
       headers: {
@@ -51,23 +46,18 @@ export const uploadAvatar = async (avatarFile) => {
   }
 };
 
-/**
- * Cập nhật profile
- * @param {string} newfullName - Tên mới
- * @param {string} email - Email
- * @param {string} avatar_url - URL avatar (optional)
- */
+
 export const UpdateProfile = async (newfullName, email, avatar_url = null) => {
   try {
     const payload = {
       fullName: newfullName,
       email: email,
     };
-    
+
     if (avatar_url !== null) {
       payload.avatar_url = avatar_url;
     }
-    
+
     const data = await apiClient.post("/api/user/profile", payload);
     return { status: true, data };
   } catch (error) {
@@ -78,11 +68,7 @@ export const UpdateProfile = async (newfullName, email, avatar_url = null) => {
   }
 };
 
-/**
- * Đổi mật khẩu
- * @param {string} currentPassword - Mật khẩu hiện tại
- * @param {string} newPassword - Mật khẩu mới
- */
+
 export const ChangePassword = async (currentPassword, newPassword) => {
   try {
     const data = await apiClient.post("/api/user/changepassword", {

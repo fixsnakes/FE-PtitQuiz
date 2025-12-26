@@ -333,7 +333,7 @@ export default function StudentPayment() {
                                                 NGÀY TẠO
                                             </th>
                                             <th className="px-4 py-3 text-left text-xs font-bold uppercase text-slate-700">
-                                                MÃ GIAO DỊCH
+                                                Nội Dung
                                             </th>
                                             <th className="px-4 py-3 text-left text-xs font-bold uppercase text-slate-700">
                                                 PHƯƠNG THỨC

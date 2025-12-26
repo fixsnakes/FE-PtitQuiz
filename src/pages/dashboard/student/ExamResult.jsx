@@ -33,7 +33,7 @@ export default function ExamResult() {
         const data = await getSessionResult(sessionId);
         setResult(data.result);
         setAnswers(data.answers || []);
-        
+
         // Load user rating nếu có
         if (data.result?.exam_id) {
           try {
@@ -82,7 +82,7 @@ export default function ExamResult() {
         result_id: result.id
       });
       toast.success("Đánh giá đã được lưu thành công!");
-      
+
       // Reload user rating
       const ratingData = await getUserRating(result.exam_id);
       if (ratingData) {
@@ -245,11 +245,10 @@ export default function ExamResult() {
                     className="transition-transform hover:scale-110"
                   >
                     <Star
-                      className={`h-8 w-8 ${
-                        star <= rating
-                          ? "fill-amber-400 text-amber-400"
-                          : "text-slate-300"
-                      }`}
+                      className={`h-8 w-8 ${star <= rating
+                        ? "fill-amber-400 text-amber-400"
+                        : "text-slate-300"
+                        }`}
                     />
                   </button>
                 ))}

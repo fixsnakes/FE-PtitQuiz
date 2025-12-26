@@ -30,12 +30,12 @@ export default function RecentExams() {
 
             // Nhóm sessions theo exam_id và lấy exam mới nhất
             const examMap = new Map();
-            
+
             sessionsData.forEach((session) => {
                 if (!session.exam) return;
-                
+
                 const examId = session.exam.id;
-                
+
                 if (!examMap.has(examId)) {
                     examMap.set(examId, {
                         examId: examId,
@@ -157,14 +157,13 @@ export default function RecentExams() {
                                     {exam.status && (
                                         <div className="flex items-center gap-2">
                                             <BookOpen className="h-4 w-4 text-slate-400" />
-                                            <span className={`${
-                                                exam.status === 'submitted' ? 'text-green-600' :
-                                                exam.status === 'in_progress' ? 'text-blue-600' :
-                                                'text-slate-600'
-                                            }`}>
+                                            <span className={`${exam.status === 'submitted' ? 'text-green-600' :
+                                                    exam.status === 'in_progress' ? 'text-blue-600' :
+                                                        'text-slate-600'
+                                                }`}>
                                                 {exam.status === 'submitted' ? 'Đã nộp' :
-                                                 exam.status === 'in_progress' ? 'Đang làm' :
-                                                 exam.status}
+                                                    exam.status === 'in_progress' ? 'Đang làm' :
+                                                        exam.status}
                                             </span>
                                         </div>
                                     )}
