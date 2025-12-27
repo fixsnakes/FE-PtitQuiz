@@ -39,8 +39,9 @@ import AdminDashboard from "./pages/dashboard/admin/AdminDashboard";
 import UserManagement from "./pages/dashboard/admin/UserManagement";
 import ExamManagement from "./pages/dashboard/admin/ExamManagement";
 import ClassManagement from "./pages/dashboard/admin/ClassManagement";
-import PurchaseManagement from "./pages/dashboard/admin/PurchaseManagement";
+import WithdrawalManagement from "./pages/dashboard/admin/WithdrawalManagement";
 import Reports from "./pages/dashboard/admin/Reports";
+// ...existing code...
 import NotificationManagement from "./pages/dashboard/admin/NotificationManagement";
 import ContentModeration from "./pages/dashboard/admin/ContentModeration";
 
@@ -337,10 +338,11 @@ function App() {
         >
           <Route index element={<AdminDashboard />} />
           <Route path="users" element={<UserManagement />} />
-          <Route path="exams" element={<ExamManagement />} />
+
           <Route path="classes" element={<ClassManagement />} />
-          <Route path="purchases" element={<PurchaseManagement />} />
+          <Route path="withdrawals" element={<WithdrawalManagement />} />
           <Route path="reports" element={<Reports />} />
+// ...existing code...
           <Route path="notifications" element={<NotificationManagement />} />
           <Route path="moderation" element={<ContentModeration />} />
         </Route>
@@ -355,8 +357,6 @@ function App() {
             <h1 className="mt-10 text-center text-red-500">404 - Not Found</h1>
           }
         />
-
-
       </Routes>
     </ThemeProvider>
   );

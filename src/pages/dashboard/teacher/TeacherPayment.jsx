@@ -215,17 +215,22 @@ export default function TeacherPayment() {
     });
 
     const getStatusBadge = (withdraw) => {
+        // Log trạng thái để debug
+        console.log('getStatusBadge:', {
+            status: withdraw.status,
+            withdraw_status: withdraw.withdraw_status
+        });
         if (withdraw.status === "pending") {
             return (
                 <span className="text-sm font-semibold text-amber-600">Đang chờ</span>
             );
         }
-        if (withdraw.status === "success" || withdraw.withdraw_status === "approved") {
+        if (withdraw.status === "success" || withdraw.withdraw_status === "approved" || withdraw.status === "approved") {
             return (
                 <span className="text-sm font-semibold text-emerald-600">Thành công</span>
             );
         }
-        if (withdraw.status === "failed" || withdraw.withdraw_status === "rejected") {
+        if (withdraw.status === "failed" || withdraw.withdraw_status === "rejected" || withdraw.status === "rejected") {
             return (
                 <span className="text-sm font-semibold text-red-600">Thất bại</span>
             );

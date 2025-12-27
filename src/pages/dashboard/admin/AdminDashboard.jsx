@@ -4,14 +4,14 @@ import { Link } from "react-router-dom";
 import { toast } from "react-toastify";
 import {
   FiUsers,
-  FiFileText,
-  FiBookOpen,
   FiDollarSign,
   FiTrendingUp,
   FiActivity,
+  FiBarChart2,
 } from "react-icons/fi";
 import adminService from "../../../services/adminService";
 import formatCurrency from "../../../utils/format_currentcy";
+import LineChart from "../../../components/charts/LineChart";
 
 export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
@@ -49,6 +49,33 @@ export default function AdminDashboard() {
 
   const summary = dashboardData?.summary || {};
   const popularExams = dashboardData?.popularExams || [];
+  const dailyStats = dashboardData?.charts?.dailyStats || [];
+
+  // Tính toán số đề thi miễn phí và trả phí từ API
+  const totalExams = summary.totalExams || 0;
+  const freeExams = summary.freeExams || 0;
+  const paidExams = summary.paidExams || (totalExams - freeExams);
+
+  // Format dữ liệu cho biểu đồ
+  const chartCategories = dailyStats.map(item => {
+    const date = new Date(item.date);
+    return date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
+  });
+
+  const chartSeries = [
+    {
+      name: 'Người dùng mới',
+      data: dailyStats.map(item => item.newUsers || 0),
+    },
+    {
+      name: 'Đề thi mới',
+      data: dailyStats.map(item => item.newExams || 0),
+    },
+    {
+      name: 'Lượt thi',
+      data: dailyStats.map(item => item.examSessions || 0),
+    },
+  ];
 
   const stats = [
     {
@@ -56,49 +83,27 @@ export default function AdminDashboard() {
       value: summary.totalUsers || 0,
       icon: FiUsers,
       color: "bg-blue-500",
-      link: "/dashboard/admin/users",
-      detail: `${summary.totalStudents || 0} Học sinh, ${
-        summary.totalTeachers || 0
-      } Giáo viên`,
-    },
-    {
-      label: "Tổng đề thi",
-      value: summary.totalExams || 0,
-      icon: FiFileText,
-      color: "bg-green-500",
-      link: "/dashboard/admin/exams",
-      detail: `${summary.activeSessions || 0} Đang diễn ra`,
-    },
-    {
-      label: "Tổng lớp học",
-      value: summary.totalClasses || 0,
-      icon: FiBookOpen,
-      color: "bg-purple-500",
-      link: "/dashboard/admin/classes",
-      detail: `Hoạt động`,
+      detail: `${summary.totalStudents || 0} Học sinh, ${summary.totalTeachers || 0} Giáo viên`,
     },
     {
       label: "Doanh thu",
       value: formatCurrency(summary.totalRevenue || 0),
       icon: FiDollarSign,
       color: "bg-yellow-500",
-      link: "/dashboard/admin/purchases",
       detail: `${summary.totalPurchases || 0} Giao dịch`,
     },
     {
-      label: "Người dùng mới",
-      value: summary.recentUsers || 0,
+      label: "Tổng đề thi",
+      value: totalExams,
       icon: FiTrendingUp,
       color: "bg-indigo-500",
-      link: "/dashboard/admin/users",
-      detail: "30 ngày qua",
+      detail: `${freeExams} Miễn phí, ${paidExams} Trả phí`,
     },
     {
       label: "Phiên hoạt động",
       value: summary.activeSessions || 0,
       icon: FiActivity,
       color: "bg-pink-500",
-      link: "#",
       detail: "Đang online",
     },
   ];
@@ -116,14 +121,13 @@ export default function AdminDashboard() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat, index) => {
           const Icon = stat.icon;
           return (
-            <Link
+            <div
               key={index}
-              to={stat.link}
-              className="bg-white rounded-xl border border-slate-200 p-6 hover:shadow-lg transition-shadow"
+              className="bg-white rounded-xl border border-slate-200 p-6"
             >
               <div className="flex items-start justify-between">
                 <div className="flex-1">
@@ -141,9 +145,26 @@ export default function AdminDashboard() {
                   <Icon className="h-6 w-6" />
                 </div>
               </div>
-            </Link>
+            </div>
           );
         })}
+      </div>
+
+      {/* Chart: 30 Days Statistics */}
+      <div className="bg-white rounded-xl border border-slate-200 p-6">
+        <div className="mb-6">
+          <h2 className="text-lg font-bold text-slate-800">
+            Thống kê 30 ngày gần nhất
+          </h2>
+          <p className="text-sm text-slate-600 mt-1">
+            Biểu đồ theo dõi người dùng mới, đề thi mới và lượt thi theo ngày
+          </p>
+        </div>
+        <LineChart
+          data={chartSeries}
+          categories={chartCategories}
+          loading={loading}
+        />
       </div>
 
       {/* Popular Exams */}
@@ -152,12 +173,6 @@ export default function AdminDashboard() {
           <h2 className="text-lg font-bold text-slate-800">
             Đề thi phổ biến
           </h2>
-          <Link
-            to="/dashboard/admin/exams"
-            className="text-sm text-red-600 hover:text-red-700 font-medium"
-          >
-            Xem tất cả →
-          </Link>
         </div>
 
         {popularExams.length === 0 ? (
@@ -232,13 +247,13 @@ export default function AdminDashboard() {
         </Link>
 
         <Link
-          to="/dashboard/admin/exams"
+          to="/dashboard/admin/withdrawals"
           className="bg-white rounded-lg border border-slate-200 p-4 hover:border-red-300 hover:shadow-md transition"
         >
-          <FiFileText className="h-8 w-8 text-red-600 mb-3" />
-          <h3 className="font-semibold text-slate-800">Quản lý đề thi</h3>
+          <FiDollarSign className="h-8 w-8 text-red-600 mb-3" />
+          <h3 className="font-semibold text-slate-800">Quản lý rút tiền</h3>
           <p className="text-sm text-slate-600 mt-1">
-            Xem và kiểm duyệt đề thi
+            Xử lý yêu cầu rút tiền
           </p>
         </Link>
 
@@ -246,21 +261,21 @@ export default function AdminDashboard() {
           to="/dashboard/admin/reports"
           className="bg-white rounded-lg border border-slate-200 p-4 hover:border-red-300 hover:shadow-md transition"
         >
-          <FiDollarSign className="h-8 w-8 text-red-600 mb-3" />
-          <h3 className="font-semibold text-slate-800">Báo cáo doanh thu</h3>
+          <FiBarChart2 className="h-8 w-8 text-red-600 mb-3" />
+          <h3 className="font-semibold text-slate-800">Báo cáo thống kê</h3>
           <p className="text-sm text-slate-600 mt-1">
-            Thống kê và phân tích
+            Xem báo cáo hệ thống
           </p>
         </Link>
 
         <Link
-          to="/dashboard/admin/notifications"
+// ...existing code...
           className="bg-white rounded-lg border border-slate-200 p-4 hover:border-red-300 hover:shadow-md transition"
         >
-          <FiActivity className="h-8 w-8 text-red-600 mb-3" />
-          <h3 className="font-semibold text-slate-800">Gửi thông báo</h3>
+          <FiTrendingUp className="h-8 w-8 text-red-600 mb-3" />
+          <h3 className="font-semibold text-slate-800">Phân tích số liệu</h3>
           <p className="text-sm text-slate-600 mt-1">
-            Broadcast cho người dùng
+            Phân tích dữ liệu chi tiết
           </p>
         </Link>
       </div>
