@@ -74,7 +74,116 @@ export default function UserManagement() {
       }
     } catch (error) {
       console.error("Error loading users:", error);
-      toast.error("Không thể tải danh sách người dùng");
+      
+      // Fallback to mock data if API is not available
+      if (error.message.includes('Not Found') || error.status === 404) {
+        const mockUsers = [
+          {
+            id: 1,
+            fullName: "Nguyễn Minh Tuấn",
+            email: "tuannm@ptit.edu.vn",
+            role: "student",
+            status: "active",
+            balance: 5250000,
+            created_at: "2024-01-15T10:30:00Z"
+          },
+          {
+            id: 2,
+            fullName: "Trần Thị Hương",
+            email: "huongtt@ptit.edu.vn",
+            role: "teacher",
+            status: "active",
+            balance: 8750000,
+            created_at: "2024-01-20T14:20:00Z"
+          },
+          {
+            id: 3,
+            fullName: "Lê Quang Huy",
+            email: "huylq@ptit.edu.vn",
+            role: "student",
+            status: "active",
+            balance: 2100000,
+            created_at: "2024-02-01T09:15:00Z"
+          },
+          {
+            id: 4,
+            fullName: "Phạm Thu Trang",
+            email: "trangpt@ptit.edu.vn",
+            role: "teacher",
+            status: "active",
+            balance: 6800000,
+            created_at: "2024-02-10T11:45:00Z"
+          },
+          {
+            id: 5,
+            fullName: "Hoàng Đức Nam",
+            email: "namhd@ptit.edu.vn",
+            role: "student",
+            status: "inactive",
+            balance: 500000,
+            created_at: "2024-03-05T16:30:00Z"
+          },
+          {
+            id: 6,
+            fullName: "Vũ Thị Mai Anh",
+            email: "anhvtm@ptit.edu.vn",
+            role: "teacher",
+            status: "active",
+            balance: 10000000,
+            created_at: "2024-01-01T08:00:00Z"
+          },
+          {
+            id: 7,
+            fullName: "Đặng Văn Khoa",
+            email: "khoadv@ptit.edu.vn",
+            role: "student",
+            status: "active",
+            balance: 3450000,
+            created_at: "2024-03-15T13:20:00Z"
+          },
+          {
+            id: 8,
+            fullName: "Bùi Thị Lan Anh",
+            email: "anhbtl@ptit.edu.vn",
+            role: "teacher",
+            status: "active",
+            balance: 7200000,
+            created_at: "2024-03-20T10:00:00Z"
+          },
+          {
+            id: 9,
+            fullName: "Ngô Tuấn Anh",
+            email: "anhnt@ptit.edu.vn",
+            role: "student",
+            status: "banned",
+            balance: 0,
+            created_at: "2024-04-01T15:30:00Z"
+          },
+          {
+            id: 10,
+            fullName: "Võ Thị Ngọc Linh",
+            email: "linhvtn@ptit.edu.vn",
+            role: "student",
+            status: "active",
+            balance: 4600000,
+            created_at: "2024-04-10T12:15:00Z"
+          }
+        ];
+        
+        setUsers(mockUsers);
+        setPagination({
+          page: 1,
+          limit: 10,
+          total: 10,
+          totalPages: 1
+        });
+        
+        toast.info("Đang sử dụng dữ liệu mẫu. Backend cần kiểm tra endpoint.", {
+          autoClose: 5000,
+        });
+      } else {
+        toast.error("Không thể tải danh sách người dùng");
+      }
     } finally {
       setLoading(false);
     }

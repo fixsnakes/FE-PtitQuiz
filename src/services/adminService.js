@@ -7,6 +7,10 @@ export const getDashboardOverview = () => {
   return apiClient.get(`${ADMIN_BASE}/dashboard`);
 };
 
+export const getDashboardStats30Days = () => {
+  return apiClient.get(`${ADMIN_BASE}/dashboard/stats-30-days`);
+};
+
 // ========== USER MANAGEMENT ==========
 export const getAllUsers = (params = {}) => {
   const query = new URLSearchParams(params).toString();
@@ -159,9 +163,28 @@ export const deleteComment = (id) => {
   return apiClient.delete(`${ADMIN_BASE}/comments/${id}`);
 };
 
+// ========== WITHDRAWAL MANAGEMENT ==========
+export const getWithdrawals = (params = {}) => {
+  const query = new URLSearchParams(params).toString();
+  return apiClient.get(`${ADMIN_BASE}/withdrawals${query ? `?${query}` : ""}`);
+};
+
+export const getWithdrawalById = (id) => {
+  return apiClient.get(`${ADMIN_BASE}/withdrawals/${id}`);
+};
+
+export const approveWithdrawal = (id, data) => {
+  return apiClient.put(`${ADMIN_BASE}/withdrawals/${id}/approve`, data);
+};
+
+export const rejectWithdrawal = (id, data) => {
+  return apiClient.put(`${ADMIN_BASE}/withdrawals/${id}/reject`, data);
+};
+
 export default {
   // Dashboard
   getDashboardOverview,
+  getDashboardStats30Days,
   
   // Users
   getAllUsers,
@@ -206,5 +229,11 @@ export default {
   deletePost,
   getAllComments,
   deleteComment,
+  
+  // Withdrawal Management
+  getWithdrawals,
+  getWithdrawalById,
+  approveWithdrawal,
+  rejectWithdrawal,
 };
 

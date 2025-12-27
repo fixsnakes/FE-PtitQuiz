@@ -3,23 +3,21 @@ import { Outlet, Link, useNavigate, useLocation } from "react-router-dom";
 import {
   FiGrid,
   FiUsers,
-  FiFileText,
-  FiBookOpen,
   FiDollarSign,
   FiBarChart2,
+  FiTrendingUp,
   FiBell,
   FiMessageSquare,
   FiLogOut,
   FiMenu,
   FiX,
+  FiCreditCard,
 } from "react-icons/fi";
 
 const ADMIN_NAV_ITEMS = [
   { label: "Tổng quan", path: "/dashboard/admin", icon: FiGrid, superAdminOnly: false },
   { label: "Quản lý người dùng", path: "/dashboard/admin/users", icon: FiUsers, superAdminOnly: true },
-  { label: "Quản lý đề thi", path: "/dashboard/admin/exams", icon: FiFileText, superAdminOnly: false },
-  { label: "Quản lý lớp học", path: "/dashboard/admin/classes", icon: FiBookOpen, superAdminOnly: false },
-  { label: "Quản lý giao dịch", path: "/dashboard/admin/purchases", icon: FiDollarSign, superAdminOnly: false },
+  { label: "Quản lý rút tiền", path: "/dashboard/admin/withdrawals", icon: FiCreditCard, superAdminOnly: false },
   { label: "Báo cáo thống kê", path: "/dashboard/admin/reports", icon: FiBarChart2, superAdminOnly: false },
   { label: "Thông báo", path: "/dashboard/admin/notifications", icon: FiBell, superAdminOnly: false },
   { label: "Kiểm duyệt nội dung", path: "/dashboard/admin/moderation", icon: FiMessageSquare, superAdminOnly: false },
