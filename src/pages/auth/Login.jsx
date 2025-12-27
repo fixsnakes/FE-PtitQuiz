@@ -76,7 +76,7 @@ export default function Login() {
           {/* Nút Google */}
           <button
             type="button"
-            className="flex items-center justify-center w-full px-4 py-3 font-semibold text-white bg-linear-to-r from-blue-500 to-purple-600 rounded-lg shadow-md hover:scale-105 transition-transform"
+            className="flex items-center justify-center w-full px-4 py-3 font-semibold text-white bg-[#432DD7] rounded-lg shadow-md hover:bg-[#3a26c0] transition-transform transform hover:scale-105"
           >
             <FaGoogle className="w-6 h-6 mr-3" />
             <span>Đăng nhập bằng Google</span>
@@ -144,12 +144,12 @@ export default function Login() {
                 Đăng ký
               </Link>
 
-              <a
-                href="#"
+              <Link
+                to="/auth/forgot-password"
                 className="text-sm font-medium text-blue-600 hover:underline"
               >
                 Quên mật khẩu?
-              </a>
+              </Link>
             </div>
 
             {error && (
@@ -167,7 +167,7 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full px-4 py-3 font-bold text-white bg-linear-to-r from-blue-400 to-purple-500 rounded-lg shadow-md hover:opacity-90 transition-transform transform hover:scale-105 disabled:opacity-70 disabled:cursor-not-allowed"
+              className="w-full px-4 py-3 font-bold text-white bg-[#432DD7] rounded-lg shadow-md hover:bg-[#3a26c0] transition-transform transform hover:scale-105 disabled:opacity-70 disabled:cursor-not-allowed"
             >
               {loading ? "Đang xử lý..." : "Đăng nhập"}
             </button>
