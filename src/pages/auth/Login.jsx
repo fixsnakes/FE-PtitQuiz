@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import left_image from "../../assets/undraw_true-friends_1h3v.png";
-import { FaGoogle } from "react-icons/fa";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 import { Link, useNavigate } from "react-router-dom";
 import { signin } from "../../services/authService";
@@ -72,25 +71,6 @@ export default function Login() {
           <h1 className="text-3xl font-bold text-center text-gray-900">
             Đăng nhập
           </h1>
-
-          {/* Nút Google */}
-          <button
-            type="button"
-            className="flex items-center justify-center w-full px-4 py-3 font-semibold text-white bg-[#432DD7] rounded-lg shadow-md hover:bg-[#3a26c0] transition-transform transform hover:scale-105"
-          >
-            <FaGoogle className="w-6 h-6 mr-3" />
-            <span>Đăng nhập bằng Google</span>
-          </button>
-
-          {/* Divider */}
-          <div className="flex items-center my-6">
-            <hr className="grow border-gray-300" />
-            <span className="mx-4 text-sm text-gray-500">
-              hoặc tiếp tục với
-            </span>
-            <hr className="grow border-gray-300" />
-          </div>
-
           {/* Form đăng nhập */}
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>

@@ -32,10 +32,10 @@ export default function StudentExams() {
     try {
       const response = await getStudentResults();
       console.log("API Response:", response); // Debug log
-      
+
       // apiClient trả về data trực tiếp, không phải response.data
       const results = Array.isArray(response) ? response : (response?.data || []);
-      
+
       if (Array.isArray(results) && results.length > 0) {
         // Map data từ API response
         const mappedExams = results.map((result) => {
@@ -44,7 +44,7 @@ export default function StudentExams() {
           return {
             id: result.id,
             examId: exam.id,
-            examCode: `EXAM${exam.id}`,
+            examCode: `${exam.id}`,
             examTitle: exam.title || "Không có tiêu đề",
             score: parseFloat(result.total_score) || 0,
             correctCount: result.correct_count || 0,
