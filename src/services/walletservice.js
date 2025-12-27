@@ -76,3 +76,34 @@ export const getWithdrawHistory = async (page, limit) => {
         throw error;
     }
 }
+
+// Gửi OTP cho rút tiền
+// payload example:
+// {
+//     "bankName": "ACB",
+//     "bankAccountName": "DAO TUNG LAM",
+//     "bankAccountNumber": "22929031",
+//     "amount": 200000
+// }
+export const sendOTPForWithdraw = async (payload) => {
+    try {
+        const response = await apiClient.post("/api/wallet/withdraw/send-otp", payload);
+        return response;
+    } catch (error) {
+        throw error;
+    }
+}
+
+// Xác thực OTP và thực hiện rút tiền
+// payload example:
+// {
+//     "otp": "123456"
+// }
+export const verifyOTPAndWithdraw = async (payload) => {
+    try {
+        const response = await apiClient.post("/api/wallet/withdraw/verify-otp", payload);
+        return response;
+    } catch (error) {
+        throw error;
+    }
+}

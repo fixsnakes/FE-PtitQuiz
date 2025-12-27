@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Login from "./pages/auth/Login";
 import SignUp from "./pages/auth/SignUp";
+import ForgotPassword from "./pages/auth/ForgotPassword";
 import ProtectedRoute from "./components/ProtectedRoute";
 import RoleRedirect from "./components/RoleRedirect";
 import TeacherDashboard from "./pages/dashboard/teacher/TeacherDashboard";
@@ -65,6 +66,7 @@ function App() {
         {/* Auth routes */}
         <Route path="/auth/login" element={<Login />} />
         <Route path="/auth/register" element={<SignUp />} />
+        <Route path="/auth/forgot-password" element={<ForgotPassword />} />
 
         {/* Dashboard routes */}
         <Route
