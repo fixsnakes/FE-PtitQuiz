@@ -448,7 +448,17 @@ export default function ExamDetail() {
                   </span>
                 </div>
                 <span className="font-medium">{exam.creator.fullName || 'Giáo viên'}</span>
-                {exam.class && (
+                {exam.classes && exam.classes.length > 0 && (
+                  <>
+                    <span className="text-slate-400">•</span>
+                    <span className="line-clamp-1" title={exam.classes.map(c => c.className).join(", ")}>
+                      {exam.classes.length > 1 
+                        ? `${exam.classes.length} lớp: ${exam.classes.map(c => c.className).join(", ")}`
+                        : exam.classes[0].className}
+                    </span>
+                  </>
+                )}
+                {!exam.classes && exam.class && (
                   <>
                     <span className="text-slate-400">•</span>
                     <span className="line-clamp-1">{exam.class.className}</span>
@@ -525,7 +535,26 @@ export default function ExamDetail() {
             </div>
 
             {/* School info */}
-            {exam.class && (
+            {exam.classes && exam.classes.length > 0 && (
+              <div className="mb-4 rounded-lg bg-green-50 p-3">
+                <div className="flex flex-col gap-2 text-sm">
+                  <div className="flex items-center gap-2">
+                    <span className="text-green-600">🏫</span>
+                    <span className="font-semibold text-green-700">
+                      {exam.classes.length > 1 ? `Lớp học (${exam.classes.length}):` : "Lớp học:"}
+                    </span>
+                  </div>
+                  <div className="ml-6 flex flex-wrap gap-2">
+                    {exam.classes.map((cls, idx) => (
+                      <span key={cls.id || idx} className="rounded bg-green-100 px-2 py-1 text-xs text-green-700">
+                        {cls.className} {cls.classCode ? `(${cls.classCode})` : ""}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+            {!exam.classes && exam.class && (
               <div className="mb-4 rounded-lg bg-green-50 p-3">
                 <div className="flex items-center gap-2 text-sm">
                   <span className="text-green-600">🏫</span>

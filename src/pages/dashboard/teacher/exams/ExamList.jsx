@@ -8,6 +8,9 @@ import {
   FiSearch,
   FiUsers,
   FiClock,
+  FiChevronDown,
+  FiChevronUp,
+  FiX,
 } from "react-icons/fi";
 import { toast } from "react-toastify";
 import DashboardLayout from "../../../../layouts/DashboardLayout";
@@ -62,6 +65,21 @@ function statusBadge(status) {
 
 function normalizeExam(exam) {
   const status = computeStatus(exam);
+  
+  // Lấy danh sách classes (many-to-many)
+  let classes = [];
+  if (exam.classes && Array.isArray(exam.classes)) {
+    classes = exam.classes;
+  } else if (exam.class) {
+    // Backward compatibility: nếu vẫn có class cũ
+    classes = [exam.class];
+  }
+  
+  // Tạo chuỗi hiển thị classes
+  const classesDisplay = classes.length > 0 
+    ? classes.map(cls => cls.className ?? cls.name ?? "Không tên").join(", ")
+    : null;
+  
   return {
     id: exam.id ?? exam.exam_id ?? exam._id,
     title: exam.title ?? "Không tiêu đề",
@@ -74,8 +92,9 @@ function normalizeExam(exam) {
     submissionCount:
       exam.submission_count ?? exam.attemptCount ?? exam.student_submissions ?? 0,
     status,
-    className:
-      exam.class?.className ?? exam.class_name ?? exam.className ?? exam.class?.name ?? null,
+    classes: classes, // Array of classes
+    classesDisplay: classesDisplay, // String for display
+    className: classesDisplay, // For backward compatibility
     questionMethod:
       exam.question_creation_method ??
       exam.questionMethod ??
@@ -98,6 +117,7 @@ export default function ExamListPage() {
   const [error, setError] = useState("");
   const [classes, setClasses] = useState([]);
   const [loadingClasses, setLoadingClasses] = useState(true);
+  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
     async function loadClasses() {
@@ -210,91 +230,125 @@ export default function ExamListPage() {
           <div className="absolute right-0 top-0 h-24 w-24 rounded-full bg-indigo-200 opacity-20 blur-2xl"></div>
         </header>
 
-        <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="grid gap-4 md:grid-cols-4">
-            <div className="col-span-2">
-              <label className="mb-1 block text-sm font-medium text-slate-700">Tìm kiếm</label>
-              <div className="flex items-center rounded-lg border border-slate-200 bg-white px-3 py-2.5 shadow-sm focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-200">
-                <FiSearch className="mr-2 text-slate-400" />
-                <input
-                  type="text"
-                  value={filters.keyword}
-                  onChange={(event) => handleFilterChange("keyword", event.target.value)}
-                  placeholder="Tìm theo tên đề thi"
-                  className="flex-1 text-sm text-slate-700 focus:outline-none"
-                />
+        {/* Compact Filter Bar */}
+        <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
+          {/* Always visible search bar */}
+          <div className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="flex-1">
+                <div className="flex items-center rounded-lg border border-slate-200 bg-white px-3 py-2 shadow-sm focus-within:border-indigo-500 focus-within:ring-2 focus-within:ring-indigo-200">
+                  <FiSearch className="mr-2 text-slate-400" />
+                  <input
+                    type="text"
+                    value={filters.keyword}
+                    onChange={(event) => handleFilterChange("keyword", event.target.value)}
+                    placeholder="Tìm kiếm đề thi..."
+                    className="flex-1 text-sm text-slate-700 focus:outline-none"
+                  />
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowFilters(!showFilters)}
+                className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50 hover:shadow-md"
+              >
+                <FiFilter />
+                Bộ lọc
+                {showFilters ? <FiChevronUp className="h-4 w-4" /> : <FiChevronDown className="h-4 w-4" />}
+                {(filters.status || filters.classId || filters.startDate || filters.endDate) && (
+                  <span className="ml-1 rounded-full bg-indigo-600 px-1.5 py-0.5 text-xs font-semibold text-white">
+                    {[filters.status, filters.classId, filters.startDate, filters.endDate].filter(Boolean).length}
+                  </span>
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* Collapsible advanced filters */}
+          {showFilters && (
+            <div className="border-t border-slate-200 bg-slate-50 p-4">
+              <div className="grid gap-4 md:grid-cols-3">
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-slate-700">Trạng thái</label>
+                  <select
+                    value={filters.status}
+                    onChange={(event) => handleFilterChange("status", event.target.value)}
+                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                  >
+                    {STATUS_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-slate-700">Lớp học</label>
+                  <select
+                    value={filters.classId}
+                    onChange={(event) => handleFilterChange("classId", event.target.value)}
+                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                  >
+                    <option value="">Tất cả lớp</option>
+                    {!loadingClasses &&
+                      classes.map((cls) => (
+                        <option key={cls.id ?? cls.classId} value={cls.id ?? cls.classId}>
+                          {cls.className ?? cls.name ?? "Không tên"}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-medium text-slate-700">Khoảng thời gian</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <input
+                      type="date"
+                      value={filters.startDate}
+                      onChange={(event) => handleFilterChange("startDate", event.target.value)}
+                      className="w-full rounded-lg border border-slate-200 bg-white px-2 py-2 text-xs shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                      placeholder="Từ ngày"
+                    />
+                    <input
+                      type="date"
+                      value={filters.endDate}
+                      onChange={(event) => handleFilterChange("endDate", event.target.value)}
+                      className="w-full rounded-lg border border-slate-200 bg-white px-2 py-2 text-xs shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                      placeholder="Đến ngày"
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="mt-4 flex items-center justify-between border-t border-slate-200 pt-4">
+                <div className="text-xs text-slate-500">
+                  {(filters.status || filters.classId || filters.startDate || filters.endDate) && (
+                    <span>
+                      Đang áp dụng <strong>{[filters.status, filters.classId, filters.startDate, filters.endDate].filter(Boolean).length}</strong> bộ lọc
+                    </span>
+                  )}
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={applyFilters}
+                    className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:bg-indigo-700"
+                  >
+                    Áp dụng
+                  </button>
+                  {(filters.status || filters.classId || filters.startDate || filters.endDate) && (
+                    <button
+                      type="button"
+                      onClick={resetFilters}
+                      className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-600 shadow-sm transition hover:bg-slate-50"
+                    >
+                      <FiX className="h-3 w-3" />
+                      Xóa
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">Trạng thái</label>
-              <select
-                value={filters.status}
-                onChange={(event) => handleFilterChange("status", event.target.value)}
-                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
-              >
-                {STATUS_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">Lớp học</label>
-              <select
-                value={filters.classId}
-                onChange={(event) => handleFilterChange("classId", event.target.value)}
-                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
-              >
-                <option value="">Tất cả lớp</option>
-                {!loadingClasses &&
-                  classes.map((cls) => (
-                    <option key={cls.id ?? cls.classId} value={cls.id ?? cls.classId}>
-                      {cls.className ?? cls.name ?? "Không tên"}
-                    </option>
-                  ))}
-              </select>
-            </div>
-          </div>
-
-          <div className="mt-4 grid gap-4 md:grid-cols-2">
-            <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">Từ ngày</label>
-              <input
-                type="date"
-                value={filters.startDate}
-                onChange={(event) => handleFilterChange("startDate", event.target.value)}
-                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
-              />
-            </div>
-            <div>
-              <label className="mb-1 block text-sm font-medium text-slate-700">Đến ngày</label>
-              <input
-                type="date"
-                value={filters.endDate}
-                onChange={(event) => handleFilterChange("endDate", event.target.value)}
-                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
-              />
-            </div>
-          </div>
-
-          <div className="mt-5 flex gap-3 border-t border-slate-100 pt-4">
-            <button
-              type="button"
-              onClick={applyFilters}
-              className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md transition hover:bg-indigo-700 hover:shadow-lg"
-            >
-              Áp dụng bộ lọc
-            </button>
-            <button
-              type="button"
-              onClick={resetFilters}
-              className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-600 shadow-sm transition hover:bg-slate-50 hover:shadow-md"
-            >
-              Đặt lại
-            </button>
-          </div>
-        </section>
+          )}
+        </div>
 
         <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
           {loading ? (
@@ -356,9 +410,16 @@ export default function ExamListPage() {
                           >
                             {badge.label}
                           </span>
-                          {exam.className && (
-                            <span className="rounded-lg bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700">
-                              {exam.className}
+                          {exam.classes && exam.classes.length > 0 && (
+                            <span className="inline-flex items-center gap-1 rounded-lg bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700">
+                              <FiUsers className="h-3 w-3" />
+                              {exam.classes.length} {exam.classes.length === 1 ? 'lớp' : 'lớp'}
+                            </span>
+                          )}
+                          {!exam.classes && exam.className && (
+                            <span className="inline-flex items-center gap-1 rounded-lg bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700">
+                              <FiUsers className="h-3 w-3" />
+                              1 lớp
                             </span>
                           )}
                         </div>

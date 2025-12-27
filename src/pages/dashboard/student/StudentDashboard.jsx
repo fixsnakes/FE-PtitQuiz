@@ -131,10 +131,13 @@ export default function StudentDashboard() {
     }
     const term = searchTerm.toLowerCase().trim();
     return exams.filter(
-      (exam) =>
-        exam.title?.toLowerCase().includes(term) ||
-        exam.des?.toLowerCase().includes(term) ||
-        exam.class?.className?.toLowerCase().includes(term)
+      (exam) => {
+        const titleMatch = exam.title?.toLowerCase().includes(term);
+        const descMatch = exam.des?.toLowerCase().includes(term);
+        const classMatch = exam.classes?.some(c => c.className?.toLowerCase().includes(term)) ||
+                         exam.class?.className?.toLowerCase().includes(term);
+        return titleMatch || descMatch || classMatch;
+      }
     );
   }, [exams, searchTerm]);
 
@@ -210,7 +213,9 @@ export default function StudentDashboard() {
               <div className="flex items-center justify-between">
                 <span className="inline-flex items-center gap-1 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-indigo-700">
                   <GraduationCap className="h-3.5 w-3.5" />
-                  {exam.class?.className || "Public"}
+                  {exam.classes && exam.classes.length > 0
+                    ? (exam.classes.length > 1 ? `${exam.classes.length} lớp` : exam.classes[0].className)
+                    : exam.class?.className || "Public"}
                 </span>
                 <span className="text-xs font-semibold uppercase tracking-wide text-white">
                   {formatDate(exam.created_at)}
@@ -221,7 +226,7 @@ export default function StudentDashboard() {
                   {exam.title}
                 </h3>
                 <p className="mt-1 line-clamp-1 text-sm text-white/90">
-                  {exam.des || exam.class?.className || "Không có mô tả"}
+                  {exam.des || (exam.classes && exam.classes.length > 0 ? exam.classes.map(c => c.className).join(", ") : null) || exam.class?.className || "Không có mô tả"}
                 </p>
               </div>
             </div>
@@ -275,7 +280,30 @@ export default function StudentDashboard() {
             )}
           </div>
 
-          {exam.class && (
+          {exam.classes && exam.classes.length > 0 && (
+            <div className="space-y-1 text-sm text-slate-600">
+              {exam.classes.length > 1 ? (
+                <div>
+                  <p className="font-semibold text-slate-800">{exam.classes.length} lớp học</p>
+                  <div className="mt-1 flex flex-wrap gap-1">
+                    {exam.classes.map((cls, idx) => (
+                      <span key={cls.id || idx} className="rounded bg-indigo-50 px-2 py-0.5 text-xs text-indigo-700">
+                        {cls.className} {cls.classCode ? `(${cls.classCode})` : ""}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <p className="font-semibold text-slate-800">{exam.classes[0].className}</p>
+                  {exam.classes[0].classCode && (
+                    <p className="text-slate-500 line-clamp-1">Mã lớp: {exam.classes[0].classCode}</p>
+                  )}
+                </>
+              )}
+            </div>
+          )}
+          {!exam.classes && exam.class && (
             <div className="space-y-1 text-sm text-slate-600">
               <p className="font-semibold text-slate-800">{exam.class.className}</p>
               {exam.class.classCode && (

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { FiArrowLeft, FiCalendar, FiLoader, FiTrash2 } from "react-icons/fi";
+import { FiArrowLeft, FiCalendar, FiLoader, FiTrash2, FiSearch } from "react-icons/fi";
 import { toast } from "react-toastify";
 import DashboardLayout from "../../../../layouts/DashboardLayout";
 import { getTeacherClasses } from "../../../../services/classService";
@@ -37,6 +37,15 @@ function normalizeExam(exam) {
     return `${year}-${month}-${day}T${hours}:${minutes}`;
   };
 
+  // Lấy classIds từ exam.classes (many-to-many relationship)
+  let classIds = [];
+  if (exam.classes && Array.isArray(exam.classes)) {
+    classIds = exam.classes.map(cls => cls.id ?? cls.classId ?? cls._id ?? cls.class_id).filter(Boolean);
+  } else if (exam.class_id) {
+    // Backward compatibility: nếu vẫn có class_id cũ
+    classIds = [exam.class_id];
+  }
+
   return {
     id: exam.id ?? exam.exam_id ?? exam._id,
     title: exam.title ?? "",
@@ -44,7 +53,7 @@ function normalizeExam(exam) {
     startTime: toLocalDateTime(exam.start_time),
     endTime: toLocalDateTime(exam.end_time),
     noTimeLimit: !exam.start_time || !exam.end_time,
-    classId: exam.class_id ?? exam.classId ?? "",
+    classIds: classIds, // Array of class IDs
     description: exam.des ?? exam.description ?? "",
     totalScore: exam.total_score ?? exam.totalScore ?? "",
     isPublic: exam.is_public ?? exam.isPublic ?? true,
@@ -103,6 +112,7 @@ function EditExamPage() {
   const [selectedImage, setSelectedImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [classSearchTerm, setClassSearchTerm] = useState("");
 
   useEffect(() => {
     async function loadData() {
@@ -279,7 +289,7 @@ function EditExamPage() {
       minutes: Number(config.minutes),
       start_time: config.noTimeLimit ? null : toIso(config.startTime),
       end_time: config.noTimeLimit ? null : toIso(config.endTime),
-      class_id: config.classId || null,
+      class_ids: config.classIds && config.classIds.length > 0 ? config.classIds : null,
       des: config.description.trim() || null,
       total_score: config.totalScore ? Number(config.totalScore) : null,
       is_public: config.isPublic,
@@ -582,21 +592,95 @@ function EditExamPage() {
                 <FiLoader className="animate-spin" />
                 Đang tải danh sách lớp...
               </div>
+            ) : classes.length === 0 ? (
+              <p className="text-sm text-slate-500">
+                Bạn chưa có lớp nào. Vào mục Lớp học để tạo mới hoặc bỏ trống trường này.
+              </p>
             ) : (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Chọn lớp</label>
-                <select
-                  value={config.classId}
-                  onChange={(event) => updateConfig("classId", event.target.value)}
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200 bg-white"
-                >
-                  <option value="">Không gán lớp</option>
-                  {classes.map((cls) => (
-                    <option key={cls.id} value={cls.id}>
-                      {cls.className} ({cls.classCode})
-                    </option>
-                  ))}
-                </select>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Chọn lớp (có thể chọn nhiều lớp)
+                </label>
+                
+                {/* Search input */}
+                <div className="mb-3 relative">
+                  <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+                  <input
+                    type="text"
+                    value={classSearchTerm}
+                    onChange={(e) => setClassSearchTerm(e.target.value)}
+                    placeholder="Tìm kiếm lớp theo tên hoặc mã lớp..."
+                    className="w-full rounded-lg border border-slate-200 pl-10 pr-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                  />
+                </div>
+
+                {/* Filtered classes list with scroll */}
+                <div className="max-h-64 overflow-y-auto rounded-lg border border-slate-200 bg-slate-50 p-2">
+                  {classes
+                    .filter((cls) => {
+                      if (!classSearchTerm.trim()) return true;
+                      const term = classSearchTerm.toLowerCase();
+                      return (
+                        cls.className?.toLowerCase().includes(term) ||
+                        cls.classCode?.toLowerCase().includes(term)
+                      );
+                    })
+                    .map((cls) => (
+                      <label
+                        key={cls.id}
+                        className="flex items-center gap-2 cursor-pointer hover:bg-white p-2 rounded transition-colors"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={config.classIds?.includes(cls.id) || false}
+                          onChange={(e) => {
+                            const currentIds = config.classIds || [];
+                            if (e.target.checked) {
+                              updateConfig("classIds", [...currentIds, cls.id]);
+                            } else {
+                              updateConfig("classIds", currentIds.filter((id) => id !== cls.id));
+                            }
+                          }}
+                          className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-slate-300 rounded"
+                        />
+                        <span className="text-sm text-gray-700 flex-1">
+                          <span className="font-medium">{cls.className}</span>
+                          {cls.classCode && (
+                            <span className="text-slate-500 ml-1">({cls.classCode})</span>
+                          )}
+                        </span>
+                      </label>
+                    ))}
+                  
+                  {classes.filter((cls) => {
+                    if (!classSearchTerm.trim()) return true;
+                    const term = classSearchTerm.toLowerCase();
+                    return (
+                      cls.className?.toLowerCase().includes(term) ||
+                      cls.classCode?.toLowerCase().includes(term)
+                    );
+                  }).length === 0 && (
+                    <p className="text-sm text-slate-500 text-center py-4">
+                      Không tìm thấy lớp nào phù hợp
+                    </p>
+                  )}
+                </div>
+
+                {/* Selected count and clear all */}
+                {config.classIds && config.classIds.length > 0 && (
+                  <div className="mt-3 flex items-center justify-between">
+                    <p className="text-xs text-slate-500">
+                      Đã chọn <span className="font-semibold text-indigo-600">{config.classIds.length}</span> lớp
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => updateConfig("classIds", [])}
+                      className="text-xs text-red-600 hover:text-red-700 font-medium"
+                    >
+                      Bỏ chọn tất cả
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </FormSection>

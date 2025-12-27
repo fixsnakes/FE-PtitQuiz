@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { FiCalendar, FiLoader } from "react-icons/fi";
+import { FiCalendar, FiLoader, FiSearch } from "react-icons/fi";
 import DashboardLayout from "../../../../layouts/DashboardLayout";
 import { getTeacherClasses } from "../../../../services/classService";
 import { createExam } from "../../../../services/examService";
@@ -96,6 +96,7 @@ function CreateExamPage() {
   const [selectedImage, setSelectedImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [classSearchTerm, setClassSearchTerm] = useState("");
 
   useEffect(() => {
     async function loadClasses() {
@@ -539,32 +540,85 @@ function CreateExamPage() {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Chọn lớp (có thể chọn nhiều lớp)
                 </label>
-                <div className="space-y-2">
-                  {classes.map((cls) => (
-                    <label key={cls.id} className="flex items-center gap-2 cursor-pointer hover:bg-slate-50 p-2 rounded">
-                      <input
-                        type="checkbox"
-                        checked={config.classIds?.includes(cls.id) || false}
-                        onChange={(e) => {
-                          const currentIds = config.classIds || [];
-                          if (e.target.checked) {
-                            updateConfig("classIds", [...currentIds, cls.id]);
-                          } else {
-                            updateConfig("classIds", currentIds.filter(id => id !== cls.id));
-                          }
-                        }}
-                        className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-slate-300 rounded"
-                      />
-                      <span className="text-sm text-gray-700">
-                        {cls.className} ({cls.classCode})
-                      </span>
-                    </label>
-                  ))}
+                
+                {/* Search input */}
+                <div className="mb-3 relative">
+                  <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+                  <input
+                    type="text"
+                    value={classSearchTerm}
+                    onChange={(e) => setClassSearchTerm(e.target.value)}
+                    placeholder="Tìm kiếm lớp theo tên hoặc mã lớp..."
+                    className="w-full rounded-lg border border-slate-200 pl-10 pr-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                  />
                 </div>
+
+                {/* Filtered classes list with scroll */}
+                <div className="max-h-64 overflow-y-auto rounded-lg border border-slate-200 bg-slate-50 p-2">
+                  {classes
+                    .filter((cls) => {
+                      if (!classSearchTerm.trim()) return true;
+                      const term = classSearchTerm.toLowerCase();
+                      return (
+                        cls.className?.toLowerCase().includes(term) ||
+                        cls.classCode?.toLowerCase().includes(term)
+                      );
+                    })
+                    .map((cls) => (
+                      <label
+                        key={cls.id}
+                        className="flex items-center gap-2 cursor-pointer hover:bg-white p-2 rounded transition-colors"
+                      >
+                        <input
+                          type="checkbox"
+                          checked={config.classIds?.includes(cls.id) || false}
+                          onChange={(e) => {
+                            const currentIds = config.classIds || [];
+                            if (e.target.checked) {
+                              updateConfig("classIds", [...currentIds, cls.id]);
+                            } else {
+                              updateConfig("classIds", currentIds.filter((id) => id !== cls.id));
+                            }
+                          }}
+                          className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-slate-300 rounded"
+                        />
+                        <span className="text-sm text-gray-700 flex-1">
+                          <span className="font-medium">{cls.className}</span>
+                          {cls.classCode && (
+                            <span className="text-slate-500 ml-1">({cls.classCode})</span>
+                          )}
+                        </span>
+                      </label>
+                    ))}
+                  
+                  {classes.filter((cls) => {
+                    if (!classSearchTerm.trim()) return true;
+                    const term = classSearchTerm.toLowerCase();
+                    return (
+                      cls.className?.toLowerCase().includes(term) ||
+                      cls.classCode?.toLowerCase().includes(term)
+                    );
+                  }).length === 0 && (
+                    <p className="text-sm text-slate-500 text-center py-4">
+                      Không tìm thấy lớp nào phù hợp
+                    </p>
+                  )}
+                </div>
+
+                {/* Selected count and clear all */}
                 {config.classIds && config.classIds.length > 0 && (
-                  <p className="mt-2 text-xs text-slate-500">
-                    Đã chọn {config.classIds.length} lớp
-                  </p>
+                  <div className="mt-3 flex items-center justify-between">
+                    <p className="text-xs text-slate-500">
+                      Đã chọn <span className="font-semibold text-indigo-600">{config.classIds.length}</span> lớp
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => updateConfig("classIds", [])}
+                      className="text-xs text-red-600 hover:text-red-700 font-medium"
+                    >
+                      Bỏ chọn tất cả
+                    </button>
+                  </div>
                 )}
               </div>
             )}
