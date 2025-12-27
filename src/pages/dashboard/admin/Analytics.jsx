@@ -12,6 +12,8 @@ import {
 } from "react-icons/fi";
 import adminService from "../../../services/adminService";
 import formatCurrency from "../../../utils/format_currentcy";
+import LineChart from "../../../components/charts/LineChart";
+import PieChart from "../../../components/charts/PieChart";
 
 export default function Analytics() {
   const [loading, setLoading] = useState(false);
@@ -45,6 +47,33 @@ export default function Analytics() {
           revenue: 23.4,
           exams: 8.7,
           engagement: 5.3
+        },
+        // Dữ liệu biểu đồ tăng trưởng người dùng (30 ngày)
+        userGrowthChart: {
+          categories: [
+            '01/12', '03/12', '05/12', '07/12', '09/12', '11/12', 
+            '13/12', '15/12', '17/12', '19/12', '21/12', '23/12', 
+            '25/12', '27/12', '29/12', '31/12'
+          ],
+          series: [
+            {
+              name: 'Người dùng mới',
+              data: [45, 52, 48, 61, 55, 58, 62, 68, 71, 65, 72, 78, 82, 88, 91, 95]
+            },
+            {
+              name: 'Người dùng hoạt động',
+              data: [320, 335, 342, 358, 365, 378, 385, 392, 405, 412, 425, 438, 445, 458, 472, 485]
+            },
+            {
+              name: 'Tổng người dùng',
+              data: [1200, 1252, 1300, 1361, 1416, 1474, 1536, 1604, 1675, 1740, 1812, 1890, 1972, 2060, 2151, 2246]
+            }
+          ]
+        },
+        // Dữ liệu biểu đồ phân bổ doanh thu
+        revenueDistribution: {
+          labels: ['Sinh viên làm đề miễn phí', 'Sinh viên làm đề trả phí'],
+          data: [35, 65]
         }
       });
     } catch (error) {
@@ -155,7 +184,7 @@ export default function Analytics() {
 
           {/* Charts Section */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* User Growth Chart Placeholder */}
+            {/* User Growth Chart */}
             <div className="bg-white rounded-xl border border-slate-200 p-6">
               <div className="flex items-center gap-3 mb-6">
                 <div className="bg-blue-100 rounded-lg p-2">
@@ -163,30 +192,49 @@ export default function Analytics() {
                 </div>
                 <h3 className="text-lg font-semibold text-slate-900">Tăng trưởng người dùng</h3>
               </div>
-              <div className="flex items-center justify-center h-64 bg-slate-50 rounded-lg border-2 border-dashed border-slate-200">
-                <div className="text-center">
-                  <FiBarChart2 className="h-12 w-12 text-slate-400 mx-auto mb-3" />
-                  <p className="text-slate-500 font-medium">Biểu đồ tăng trưởng người dùng</p>
-                  <p className="text-sm text-slate-400 mt-1">Sẽ hiển thị khi có dữ liệu</p>
+              {analyticsData?.userGrowthChart ? (
+                <LineChart
+                  data={analyticsData.userGrowthChart.series}
+                  categories={analyticsData.userGrowthChart.categories}
+                  loading={loading}
+                />
+              ) : (
+                <div className="flex items-center justify-center h-64 bg-slate-50 rounded-lg border-2 border-dashed border-slate-200">
+                  <div className="text-center">
+                    <FiBarChart2 className="h-12 w-12 text-slate-400 mx-auto mb-3" />
+                    <p className="text-slate-500 font-medium">Biểu đồ tăng trưởng người dùng</p>
+                    <p className="text-sm text-slate-400 mt-1">Sẽ hiển thị khi có dữ liệu</p>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
-            {/* Revenue Distribution Placeholder */}
+            {/* Revenue Distribution */}
             <div className="bg-white rounded-xl border border-slate-200 p-6">
               <div className="flex items-center gap-3 mb-6">
                 <div className="bg-yellow-100 rounded-lg p-2">
                   <FiPieChart className="h-5 w-5 text-yellow-600" />
                 </div>
-                <h3 className="text-lg font-semibold text-slate-900">Phân bổ doanh thu</h3>
+                <h3 className="text-lg font-semibold text-slate-900">Phân bổ sinh viên làm đề</h3>
               </div>
-              <div className="flex items-center justify-center h-64 bg-slate-50 rounded-lg border-2 border-dashed border-slate-200">
-                <div className="text-center">
-                  <FiPieChart className="h-12 w-12 text-slate-400 mx-auto mb-3" />
-                  <p className="text-slate-500 font-medium">Biểu đồ phân bổ doanh thu</p>
-                  <p className="text-sm text-slate-400 mt-1">Sẽ hiển thị khi có dữ liệu</p>
+              {analyticsData?.revenueDistribution ? (
+                <PieChart
+                  data={analyticsData.revenueDistribution.data}
+                  labels={analyticsData.revenueDistribution.labels}
+                  loading={loading}
+                  height={380}
+                  showLegend={true}
+                  colors={['#10B981', '#3B82F6']}
+                />
+              ) : (
+                <div className="flex items-center justify-center h-64 bg-slate-50 rounded-lg border-2 border-dashed border-slate-200">
+                  <div className="text-center">
+                    <FiPieChart className="h-12 w-12 text-slate-400 mx-auto mb-3" />
+                    <p className="text-slate-500 font-medium">Biểu đồ phân bổ sinh viên làm đề</p>
+                    <p className="text-sm text-slate-400 mt-1">Sẽ hiển thị khi có dữ liệu</p>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
 

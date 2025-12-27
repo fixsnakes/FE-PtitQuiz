@@ -307,7 +307,7 @@ function App() {
         >
           <Route index element={<AdminDashboard />} />
           <Route path="users" element={<UserManagement />} />
-          <Route path="exams" element={<ExamManagement />} />
+
           <Route path="classes" element={<ClassManagement />} />
           <Route path="withdrawals" element={<WithdrawalManagement />} />
           <Route path="reports" element={<Reports />} />
