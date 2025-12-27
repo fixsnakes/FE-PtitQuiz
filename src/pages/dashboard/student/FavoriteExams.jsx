@@ -29,10 +29,10 @@ export default function FavoriteExams() {
         try {
             setLoading(true);
             const response = await getFavoriteExams();
-            
+
             // apiClient trả về data trực tiếp, không phải response.data
             const favorites = Array.isArray(response) ? response : (response?.data || []);
-            
+
             if (Array.isArray(favorites) && favorites.length > 0) {
                 // Map data từ API response sang format giống StudentDashboard
                 const mappedExams = favorites.map((favorite) => {
@@ -157,7 +157,7 @@ export default function FavoriteExams() {
                                     {exam.des || exam.class?.className || "Không có mô tả"}
                                 </p>
                             </div>
-                            
+
                             {/* Overlay info on image */}
                             <div className="absolute inset-0 z-[5] flex flex-col justify-between bg-gradient-to-t from-black/60 via-transparent to-transparent p-4">
                                 <div className="flex items-center justify-between">
@@ -211,16 +211,15 @@ export default function FavoriteExams() {
                             {exam.question_count || 0} câu
                         </span>
                         {exam.status && (
-                            <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 ${
-                                exam.status === 'ongoing' ? 'bg-green-100 text-green-700' :
-                                exam.status === 'upcoming' ? 'bg-blue-100 text-blue-700' :
-                                exam.status === 'ended' ? 'bg-red-100 text-red-700' :
-                                'bg-gray-100 text-gray-700'
-                            }`}>
+                            <span className={`inline-flex items-center gap-1 rounded-full px-3 py-1 ${exam.status === 'ongoing' ? 'bg-green-100 text-green-700' :
+                                    exam.status === 'upcoming' ? 'bg-blue-100 text-blue-700' :
+                                        exam.status === 'ended' ? 'bg-red-100 text-red-700' :
+                                            'bg-gray-100 text-gray-700'
+                                }`}>
                                 {exam.status === 'ongoing' ? 'Đang diễn ra' :
-                                 exam.status === 'upcoming' ? 'Sắp tới' :
-                                 exam.status === 'ended' ? 'Đã kết thúc' :
-                                 'Không giới hạn'}
+                                    exam.status === 'upcoming' ? 'Sắp tới' :
+                                        exam.status === 'ended' ? 'Đã kết thúc' :
+                                            'Không giới hạn'}
                             </span>
                         )}
                     </div>

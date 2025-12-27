@@ -183,7 +183,7 @@ export default function ExamListPage() {
           <div className="relative z-10 flex flex-wrap items-center justify-between gap-4">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[0.3em] text-indigo-500">
-                Kỳ thi
+                Bài thi
               </p>
               <h1 className="mt-2 text-3xl font-bold text-slate-900">Danh sách đề thi</h1>
               <p className="mt-1 text-sm text-slate-600">{filteredCountLabel}</p>
@@ -298,22 +298,40 @@ export default function ExamListPage() {
 
         <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
           {loading ? (
-            <div className="flex items-center justify-center gap-2 py-12 text-slate-500">
-              <FiLoader className="animate-spin text-xl" />
-              <span>Đang tải danh sách đề thi...</span>
+            <div className="flex flex-col items-center justify-center gap-3 py-16">
+              <div className="relative">
+                <div className="h-12 w-12 animate-spin rounded-full border-4 border-indigo-200 border-t-indigo-600"></div>
+                <FiLoader className="absolute inset-0 m-auto animate-pulse text-xl text-indigo-600" />
+              </div>
+              <p className="text-sm font-medium text-slate-600">Đang tải danh sách đề thi...</p>
             </div>
           ) : error ? (
-            <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-              {error}
+            <div className="rounded-xl border border-red-200 bg-red-50 p-6">
+              <div className="flex items-start gap-3">
+                <div className="rounded-full bg-red-100 p-2">
+                  <FiFileText className="h-5 w-5 text-red-600" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="mb-1 font-semibold text-red-900">Lỗi tải dữ liệu</h3>
+                  <p className="text-sm text-red-700">{error}</p>
+                </div>
+              </div>
             </div>
           ) : exams.length === 0 ? (
-            <div className="py-12 text-center">
-              <FiFileText className="mx-auto mb-3 text-4xl text-slate-300" />
-              <p className="mb-2 text-base font-medium text-slate-600">Không tìm thấy đề thi nào.</p>
+            <div className="py-16 text-center">
+              <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-slate-100 to-slate-50">
+                <FiFileText className="text-4xl text-slate-400" />
+              </div>
+              <h3 className="mb-2 text-lg font-semibold text-slate-700">Không tìm thấy đề thi nào</h3>
+              <p className="mb-6 text-sm text-slate-500">
+                {Object.values(filters).some(v => v) 
+                  ? "Thử điều chỉnh bộ lọc để tìm thấy đề thi phù hợp."
+                  : "Bắt đầu tạo đề thi đầu tiên của bạn."}
+              </p>
               <button
                 type="button"
                 onClick={() => navigate("/dashboard/teacher/exams/create")}
-                className="mt-4 inline-flex items-center gap-2 rounded-lg border border-indigo-200 bg-white px-5 py-2.5 text-sm font-semibold text-indigo-600 shadow-sm transition hover:bg-indigo-50 hover:shadow-md"
+                className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-md transition hover:bg-indigo-700 hover:shadow-lg"
               >
                 <FiFileText />
                 Tạo đề thi đầu tiên
@@ -321,49 +339,55 @@ export default function ExamListPage() {
             </div>
           ) : (
             <div className="space-y-4">
-              {exams.map((exam) => {
+              {exams.map((exam, index) => {
                 const badge = statusBadge(exam.status);
                 return (
                   <div
                     key={exam.id}
-                    className="group rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition-all hover:border-indigo-300 hover:shadow-md"
+                    className="group rounded-xl border border-slate-200 bg-white p-6 shadow-sm transition-all duration-300 hover:border-indigo-300 hover:shadow-lg hover:-translate-y-0.5"
+                    style={{ animationDelay: `${index * 50}ms` }}
                   >
                     <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                       <div className="flex-1">
-                        <div className="flex flex-wrap items-center gap-3 mb-3">
-                          <h2 className="text-xl font-bold text-slate-900 group-hover:text-indigo-700 transition-colors">{exam.title}</h2>
+                        <div className="mb-3 flex flex-wrap items-center gap-3">
+                          <h2 className="text-xl font-bold text-slate-900 transition-colors group-hover:text-indigo-700">{exam.title}</h2>
                           <span
-                            className={`rounded-full border px-3 py-1 text-xs font-semibold ${badge.className}`}
+                            className={`rounded-full border px-3 py-1 text-xs font-semibold transition-all ${badge.className}`}
                           >
                             {badge.label}
                           </span>
+                          {exam.className && (
+                            <span className="rounded-lg bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700">
+                              {exam.className}
+                            </span>
+                          )}
                         </div>
-                        <p className="text-sm text-slate-600 line-clamp-2 mb-4">
+                        <p className="mb-4 line-clamp-2 text-sm text-slate-600">
                           {exam.description || "Chưa có mô tả."}
                         </p>
-                        <div className="flex flex-wrap gap-4 text-sm">
-                          <span className="inline-flex items-center gap-1.5 rounded-lg bg-slate-50 px-3 py-1.5 text-slate-700">
-                            <FiClock className="text-slate-500" />
+                        <div className="flex flex-wrap gap-3 text-sm">
+                          <span className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-slate-50 to-white px-3 py-1.5 text-slate-700 shadow-sm transition-all hover:shadow-md">
+                            <FiClock className="text-indigo-500" />
                             {exam.minutes ? `${exam.minutes} phút` : "Không giới hạn"}
                           </span>
-                          <span className="inline-flex items-center gap-1.5 rounded-lg bg-slate-50 px-3 py-1.5 text-slate-700">
-                            <FiFileText className="text-slate-500" />
+                          <span className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-slate-50 to-white px-3 py-1.5 text-slate-700 shadow-sm transition-all hover:shadow-md">
+                            <FiFileText className="text-indigo-500" />
                             {exam.questionCount} câu hỏi
                           </span>
-                          <span className="inline-flex items-center gap-1.5 rounded-lg bg-slate-50 px-3 py-1.5 text-slate-700">
-                            <FiUsers className="text-slate-500" />
+                          <span className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-slate-50 to-white px-3 py-1.5 text-slate-700 shadow-sm transition-all hover:shadow-md">
+                            <FiUsers className="text-indigo-500" />
                             {exam.submissionCount} lượt làm
                           </span>
                           {exam.totalScore && (
-                            <span className="inline-flex items-center gap-1.5 rounded-lg bg-slate-50 px-3 py-1.5 text-slate-700">
-                              Tổng điểm: <span className="font-semibold">{exam.totalScore}</span>
+                            <span className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-indigo-50 to-indigo-100 px-3 py-1.5 font-semibold text-indigo-700 shadow-sm">
+                              {exam.totalScore} điểm
                             </span>
                           )}
                         </div>
                       </div>
-                      <div className="rounded-lg border border-slate-100 bg-slate-50 p-4 text-sm">
+                      <div className="rounded-lg border border-slate-100 bg-gradient-to-br from-slate-50 to-white p-4 text-sm shadow-sm">
                         <div className="flex items-start gap-2 text-slate-600">
-                          <FiCalendar className="mt-0.5 text-slate-400" />
+                          <FiCalendar className="mt-0.5 text-indigo-500" />
                           <div className="space-y-1">
                             <p className="font-medium text-slate-700">
                               {exam.startTime
@@ -389,11 +413,6 @@ export default function ExamListPage() {
                             </p>
                           </div>
                         </div>
-                        {exam.className && (
-                          <p className="mt-3 text-xs font-medium text-indigo-600">
-                            📚 Lớp: {exam.className}
-                          </p>
-                        )}
                       </div>
                     </div>
                     <div className="mt-5 flex flex-wrap gap-2 border-t border-slate-100 pt-4">
@@ -407,7 +426,7 @@ export default function ExamListPage() {
                         return (
                           <Link
                             to={targetPath}
-                            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 shadow-sm transition hover:bg-slate-50 hover:shadow-md"
+                            className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 shadow-sm transition-all hover:bg-slate-50 hover:shadow-md hover:-translate-y-0.5"
                           >
                             Quản lý câu hỏi
                           </Link>
@@ -415,19 +434,19 @@ export default function ExamListPage() {
                       })()}
                       <Link
                         to={`/dashboard/teacher/exams/${exam.id}/edit`}
-                        className="inline-flex items-center gap-2 rounded-lg border border-indigo-200 bg-white px-4 py-2 text-xs font-semibold text-indigo-600 shadow-sm transition hover:bg-indigo-50 hover:shadow-md"
+                        className="inline-flex items-center gap-2 rounded-lg border border-indigo-200 bg-white px-4 py-2 text-xs font-semibold text-indigo-600 shadow-sm transition-all hover:bg-indigo-50 hover:shadow-md hover:-translate-y-0.5"
                       >
                         Chỉnh sửa
                       </Link>
                       <Link
                         to={`/dashboard/teacher/exams/${exam.id}/results`}
-                        className="inline-flex items-center gap-2 rounded-lg border border-emerald-200 bg-white px-4 py-2 text-xs font-semibold text-emerald-600 shadow-sm transition hover:bg-emerald-50 hover:shadow-md"
+                        className="inline-flex items-center gap-2 rounded-lg border border-emerald-200 bg-white px-4 py-2 text-xs font-semibold text-emerald-600 shadow-sm transition-all hover:bg-emerald-50 hover:shadow-md hover:-translate-y-0.5"
                       >
                         Xem kết quả
                       </Link>
                       <button
                         type="button"
-                        className="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-white px-4 py-2 text-xs font-semibold text-red-600 shadow-sm transition hover:bg-red-50 hover:shadow-md"
+                        className="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-white px-4 py-2 text-xs font-semibold text-red-600 shadow-sm transition-all hover:bg-red-50 hover:shadow-md hover:-translate-y-0.5"
                         onClick={async () => {
                           if (!window.confirm(`Bạn chắc chắn muốn xóa đề thi "${exam.title}"?`)) {
                             return;

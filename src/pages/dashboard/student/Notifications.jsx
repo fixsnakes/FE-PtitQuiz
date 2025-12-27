@@ -130,8 +130,8 @@ export default function StudentNotifications() {
 
     // Điều hướng dựa trên type và data
     if (notification.data) {
-      const data = typeof notification.data === 'string' 
-        ? JSON.parse(notification.data) 
+      const data = typeof notification.data === 'string'
+        ? JSON.parse(notification.data)
         : notification.data;
 
       switch (notification.type) {
@@ -236,11 +236,10 @@ export default function StudentNotifications() {
                   setFilter("all");
                   setPagination((prev) => ({ ...prev, page: 1 }));
                 }}
-                className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
-                  filter === "all"
+                className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${filter === "all"
                     ? "bg-indigo-600 text-white"
                     : "border border-slate-200 text-slate-600 hover:bg-slate-50"
-                }`}
+                  }`}
               >
                 Tất cả
               </button>
@@ -250,11 +249,10 @@ export default function StudentNotifications() {
                   setFilter("unread");
                   setPagination((prev) => ({ ...prev, page: 1 }));
                 }}
-                className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
-                  filter === "unread"
+                className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${filter === "unread"
                     ? "bg-indigo-600 text-white"
                     : "border border-slate-200 text-slate-600 hover:bg-slate-50"
-                }`}
+                  }`}
               >
                 Chưa đọc {unreadCount > 0 && `(${unreadCount})`}
               </button>
@@ -282,19 +280,17 @@ export default function StudentNotifications() {
                   <div
                     key={notification.id}
                     onClick={() => handleNotificationClick(notification)}
-                    className={`cursor-pointer rounded-xl border p-4 transition hover:shadow-md ${
-                      notification.is_read
+                    className={`cursor-pointer rounded-xl border p-4 transition hover:shadow-md ${notification.is_read
                         ? "border-slate-200 bg-white"
                         : "border-indigo-200 bg-indigo-50/30"
-                    }`}
+                      }`}
                   >
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex flex-1 items-start gap-3">
-                        <div className={`flex h-10 w-10 items-center justify-center rounded-full ${
-                          notification.is_read
+                        <div className={`flex h-10 w-10 items-center justify-center rounded-full ${notification.is_read
                             ? "bg-slate-100 text-slate-600"
                             : "bg-indigo-100 text-indigo-600"
-                        }`}>
+                          }`}>
                           {getNotificationIcon(notification.type)}
                         </div>
                         <div className="flex-1">

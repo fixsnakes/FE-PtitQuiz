@@ -49,285 +49,283 @@ function App() {
   return (
     <ThemeProvider>
       <Routes>
-      {/* Auth routes */}
-      <Route path="/auth/login" element={<Login />} />
-      <Route path="/auth/register" element={<SignUp />} />
+        {/* Auth routes */}
+        <Route path="/auth/login" element={<Login />} />
+        <Route path="/auth/register" element={<SignUp />} />
 
-      {/* Dashboard routes */}
-      <Route
-        path="/dashboard/teacher"
-        element={
-          <ProtectedRoute allowedRoles={["teacher"]}>
-            <TeacherDashboard />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/dashboard/teacher/classes"
-        element={<Navigate to="/teacher/classes" replace />}
-      />
-      <Route
-        path="/teacher/classes"
-        element={
-          <ProtectedRoute allowedRoles={["teacher"]}>
-            <TeacherClasses />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/dashboard/teacher/classes/create"
-        element={<Navigate to="/teacher/classes/create" replace />}
-      />
-      <Route
-        path="/teacher/classes/create"
-        element={
-          <ProtectedRoute allowedRoles={["teacher"]}>
-            <CreateClass />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/dashboard/teacher/classes/:classId"
-        element={
-          <ProtectedRoute allowedRoles={["teacher"]}>
-            <ClassDetail />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/teacher/classes/:classId"
-        element={
-          <ProtectedRoute allowedRoles={["teacher"]}>
-            <ClassDetail />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/dashboard/teacher/exams"
-        element={
-          <ProtectedRoute allowedRoles={["teacher"]}>
-            <ExamListPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/dashboard/teacher/exams/create"
-        element={
-          <ProtectedRoute allowedRoles={["teacher"]}>
-            <CreateExamPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/dashboard/teacher/exams/:examId/questions"
-        element={
-          <ProtectedRoute allowedRoles={["teacher"]}>
-            <QuestionMethodSelector />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/dashboard/teacher/exams/:examId/questions/text"
-        element={
-          <ProtectedRoute allowedRoles={["teacher"]}>
-            <AddQuestionsByText />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/dashboard/teacher/exams/:examId/questions/editor"
-        element={
-          <ProtectedRoute allowedRoles={["teacher"]}>
-            <ManageExamQuestions />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/dashboard/teacher/exams/:examId/edit"
-        element={
-          <ProtectedRoute allowedRoles={["teacher"]}>
-            <EditExamPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/dashboard/teacher/exams/:examId/results"
-        element={
-          <ProtectedRoute allowedRoles={["teacher"]}>
-            <ExamResultsPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/dashboard/teacher/exams/:examId/monitoring"
-        element={
-          <ProtectedRoute allowedRoles={["teacher"]}>
-            <ExamMonitoringPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/dashboard/teacher/notifications"
-        element={
-          <ProtectedRoute allowedRoles={["teacher"]}>
-            <NotificationsPage />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/dashboard/teacher/exam-purchases"
-        element={
-          <ProtectedRoute allowedRoles={["teacher"]}>
-            <TeacherExamPurchases />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/dashboard/teacher/transactions"
-        element={
-          <ProtectedRoute allowedRoles={["teacher"]}>
-            <TransactionHistory role="teacher" />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/dashboard/student"
-        element={
-          <ProtectedRoute allowedRoles={["student"]}>
-            <StudentDashboard />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/dashboard/profile"
-        element={
-          <ProtectedRoute allowedRoles={["teacher", "student"]}>
-            <Profile />
-          </ProtectedRoute>
-        }
-      />
+        {/* Dashboard routes */}
+        <Route
+          path="/dashboard/teacher"
+          element={
+            <ProtectedRoute allowedRoles={["teacher"]}>
+              <TeacherDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/teacher/classes"
+          element={<Navigate to="/teacher/classes" replace />}
+        />
+        <Route
+          path="/teacher/classes"
+          element={
+            <ProtectedRoute allowedRoles={["teacher"]}>
+              <TeacherClasses />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/teacher/classes/create"
+          element={<Navigate to="/teacher/classes/create" replace />}
+        />
+        <Route
+          path="/teacher/classes/create"
+          element={
+            <ProtectedRoute allowedRoles={["teacher"]}>
+              <CreateClass />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/teacher/classes/:classId"
+          element={
+            <ProtectedRoute allowedRoles={["teacher"]}>
+              <ClassDetail />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/teacher/classes/:classId"
+          element={
+            <ProtectedRoute allowedRoles={["teacher"]}>
+              <ClassDetail />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/teacher/exams"
+          element={
+            <ProtectedRoute allowedRoles={["teacher"]}>
+              <ExamListPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/teacher/exams/create"
+          element={
+            <ProtectedRoute allowedRoles={["teacher"]}>
+              <CreateExamPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/teacher/exams/:examId/questions"
+          element={
+            <ProtectedRoute allowedRoles={["teacher"]}>
+              <QuestionMethodSelector />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/teacher/exams/:examId/questions/text"
+          element={
+            <ProtectedRoute allowedRoles={["teacher"]}>
+              <AddQuestionsByText />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/teacher/exams/:examId/questions/editor"
+          element={
+            <ProtectedRoute allowedRoles={["teacher"]}>
+              <ManageExamQuestions />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/teacher/exams/:examId/edit"
+          element={
+            <ProtectedRoute allowedRoles={["teacher"]}>
+              <EditExamPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/teacher/exams/:examId/results"
+          element={
+            <ProtectedRoute allowedRoles={["teacher"]}>
+              <ExamResultsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/teacher/exams/:examId/monitoring"
+          element={
+            <ProtectedRoute allowedRoles={["teacher"]}>
+              <ExamMonitoringPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/teacher/notifications"
+          element={
+            <ProtectedRoute allowedRoles={["teacher"]}>
+              <NotificationsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/teacher/exam-purchases"
+          element={
+            <ProtectedRoute allowedRoles={["teacher"]}>
+              <TeacherExamPurchases />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/teacher/transactions"
+          element={
+            <ProtectedRoute allowedRoles={["teacher"]}>
+              <TransactionHistory role="teacher" />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/student"
+          element={
+            <ProtectedRoute allowedRoles={["student"]}>
+              <StudentDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/profile"
+          element={
+            <ProtectedRoute allowedRoles={["teacher", "student"]}>
+              <Profile />
+            </ProtectedRoute>
+          }
+        />
 
-      <Route
-        path="/dashboard/student/classes"
-        element={
-          <ProtectedRoute allowedRoles={["student"]}>
-            <StudentClasses />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/dashboard/student/classes/:classId"
-        element={
-          <ProtectedRoute allowedRoles={["student"]}>
-            <StudentClassDetail />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/dashboard/student/payment"
-        element={
-          <ProtectedRoute allowedRoles={["student"]}>
-            <StudentPayment />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/dashboard/student/transactions"
-        element={
-          <ProtectedRoute allowedRoles={["student"]}>
-            <TransactionHistory role="student" />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/dashboard/student/exams"
-        element={
-          <ProtectedRoute allowedRoles={["student"]}>
-            <StudentExams />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/dashboard/student/exams/:examId"
-        element={
-          <ProtectedRoute allowedRoles={["student"]}>
-            <ExamDetail />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/student/exams/:examId/take"
-        element={
-          <ProtectedRoute allowedRoles={["student"]}>
-            <TakeExam />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/student/exams/:examId/result/:sessionId"
-        element={
-          <ProtectedRoute allowedRoles={["student"]}>
-            <ExamResult />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/dashboard/student/recent"
-        element={
-          <ProtectedRoute allowedRoles={["student"]}>
-            <RecentExams />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/dashboard/student/favorite"
-        element={
-          <ProtectedRoute allowedRoles={["student"]}>
-            <FavoriteExams />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/dashboard/student/notifications"
-        element={
-          <ProtectedRoute allowedRoles={["student"]}>
-            <StudentNotifications />
-          </ProtectedRoute>
-        }
-      />
+        <Route
+          path="/dashboard/student/classes"
+          element={
+            <ProtectedRoute allowedRoles={["student"]}>
+              <StudentClasses />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/student/classes/:classId"
+          element={
+            <ProtectedRoute allowedRoles={["student"]}>
+              <StudentClassDetail />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/student/payment"
+          element={
+            <ProtectedRoute allowedRoles={["student"]}>
+              <StudentPayment />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/student/transactions"
+          element={
+            <ProtectedRoute allowedRoles={["student"]}>
+              <TransactionHistory role="student" />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/student/exams"
+          element={
+            <ProtectedRoute allowedRoles={["student"]}>
+              <StudentExams />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/student/exams/:examId"
+          element={
+            <ProtectedRoute allowedRoles={["student"]}>
+              <ExamDetail />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/student/exams/:examId/take"
+          element={
+            <ProtectedRoute allowedRoles={["student"]}>
+              <TakeExam />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/student/exams/:examId/result/:sessionId"
+          element={
+            <ProtectedRoute allowedRoles={["student"]}>
+              <ExamResult />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/student/recent"
+          element={
+            <ProtectedRoute allowedRoles={["student"]}>
+              <RecentExams />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/student/favorite"
+          element={
+            <ProtectedRoute allowedRoles={["student"]}>
+              <FavoriteExams />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/student/notifications"
+          element={
+            <ProtectedRoute allowedRoles={["student"]}>
+              <StudentNotifications />
+            </ProtectedRoute>
+          }
+        />
 
-      {/* Admin routes */}
-      <Route
-        path="/dashboard/admin"
-        element={
-          <ProtectedRoute allowedRoles={["admin", "superadmin"]}>
-            <AdminLayout />
-          </ProtectedRoute>
-        }
-      >
-        <Route index element={<AdminDashboard />} />
-        <Route path="users" element={<UserManagement />} />
-        <Route path="exams" element={<ExamManagement />} />
-        <Route path="classes" element={<ClassManagement />} />
-        <Route path="withdrawals" element={<WithdrawalManagement />} />
-        <Route path="reports" element={<Reports />} />
-        <Route path="analytics" element={<Analytics />} />
-        <Route path="notifications" element={<NotificationManagement />} />
-        <Route path="moderation" element={<ContentModeration />} />
-      </Route>
+        {/* Admin routes */}
+        <Route
+          path="/dashboard/admin"
+          element={
+            <ProtectedRoute allowedRoles={["admin", "superadmin"]}>
+              <AdminLayout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<AdminDashboard />} />
+          <Route path="users" element={<UserManagement />} />
+          <Route path="exams" element={<ExamManagement />} />
+          <Route path="classes" element={<ClassManagement />} />
+          <Route path="withdrawals" element={<WithdrawalManagement />} />
+          <Route path="reports" element={<Reports />} />
+          <Route path="analytics" element={<Analytics />} />
+          <Route path="notifications" element={<NotificationManagement />} />
+          <Route path="moderation" element={<ContentModeration />} />
+        </Route>
 
-      {/* Root redirect based on role */}
-      <Route path="/" element={<RoleRedirect />} />
+        {/* Root redirect based on role */}
+        <Route path="/" element={<RoleRedirect />} />
 
-      {/* 404 */}
-      <Route
-        path="*"
-        element={
-          <h1 className="mt-10 text-center text-red-500">404 - Not Found</h1>
-        }
-      />
-
-
+        {/* 404 */}
+        <Route
+          path="*"
+          element={
+            <h1 className="mt-10 text-center text-red-500">404 - Not Found</h1>
+          }
+        />
       </Routes>
     </ThemeProvider>
   );
