@@ -3,8 +3,6 @@ import { Outlet, Link, useNavigate, useLocation } from "react-router-dom";
 import {
   FiGrid,
   FiUsers,
-  FiFileText,
-  FiBookOpen,
   FiDollarSign,
   FiBarChart2,
   FiTrendingUp,
@@ -19,8 +17,6 @@ import {
 const ADMIN_NAV_ITEMS = [
   { label: "Tổng quan", path: "/dashboard/admin", icon: FiGrid, superAdminOnly: false },
   { label: "Quản lý người dùng", path: "/dashboard/admin/users", icon: FiUsers, superAdminOnly: true },
-  { label: "Quản lý đề thi", path: "/dashboard/admin/exams", icon: FiFileText, superAdminOnly: false },
-  { label: "Quản lý lớp học", path: "/dashboard/admin/classes", icon: FiBookOpen, superAdminOnly: false },
   { label: "Quản lý rút tiền", path: "/dashboard/admin/withdrawals", icon: FiCreditCard, superAdminOnly: false },
   { label: "Báo cáo thống kê", path: "/dashboard/admin/reports", icon: FiBarChart2, superAdminOnly: false },
   { label: "Phân tích số liệu", path: "/dashboard/admin/analytics", icon: FiTrendingUp, superAdminOnly: false },
