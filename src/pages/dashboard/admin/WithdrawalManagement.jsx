@@ -5,133 +5,6 @@ import adminService from "../../../services/adminService";
 import formatCurrency from "../../../utils/format_currentcy";
 import formatDateTime from "../../../utils/format_time";
 
-// Mock data for testing - 5 withdrawal requests
-const MOCK_WITHDRAWALS = [
-    {
-        id: 1,
-        user_id: 10,
-        bankName: "Vietcombank",
-        bankAccountName: "NGUYEN VAN AN",
-        bankAccountNumber: "1234567890123",
-        amount: 500000,
-        status: "pending",
-        admin_note: null,
-        reject_reason: null,
-        processed_by: null,
-        processed_at: null,
-        created_at: "2025-12-24T10:30:00.000Z",
-        user: {
-            id: 10,
-            fullName: "Nguyễn Văn An",
-            email: "nguyenvanan@gmail.com",
-            balance: 2500000
-        }
-    },
-    {
-        id: 2,
-        user_id: 11,
-        bankName: "ACB",
-        bankAccountName: "TRAN THI BINH",
-        bankAccountNumber: "9876543210987",
-        amount: 1200000,
-        status: "approved",
-        admin_note: "Đã chuyển tiền lúc 14:30 ngày 23/12/2025",
-        reject_reason: null,
-        processed_by: 1,
-        processed_at: "2025-12-23T14:30:00.000Z",
-        created_at: "2025-12-23T10:00:00.000Z",
-        user: {
-            id: 11,
-            fullName: "Trần Thị Bình",
-            email: "tranthibinh@gmail.com",
-            balance: 800000
-        },
-        processedBy: {
-            id: 1,
-            fullName: "Admin Nguyễn",
-            email: "admin@ptitquiz.com"
-        }
-    },
-    {
-        id: 3,
-        user_id: 12,
-        bankName: "Techcombank",
-        bankAccountName: "LE HOANG CUONG",
-        bankAccountNumber: "5555666677788",
-        amount: 300000,
-        status: "pending",
-        admin_note: null,
-        reject_reason: null,
-        processed_by: null,
-        processed_at: null,
-        created_at: "2025-12-24T15:45:00.000Z",
-        user: {
-            id: 12,
-            fullName: "Lê Hoàng Cường",
-            email: "lehoangcuong@gmail.com",
-            balance: 1800000
-        }
-    },
-    {
-        id: 4,
-        user_id: 13,
-        bankName: "BIDV",
-        bankAccountName: "PHAM THI DUNG",
-        bankAccountNumber: "1111222233344",
-        amount: 800000,
-        status: "rejected",
-        admin_note: null,
-        reject_reason: "Thông tin ngân hàng không chính xác. Vui lòng kiểm tra lại số tài khoản và tên chủ tài khoản.",
-        processed_by: 1,
-        processed_at: "2025-12-22T16:45:00.000Z",
-        created_at: "2025-12-22T09:20:00.000Z",
-        user: {
-            id: 13,
-            fullName: "Phạm Thị Dung",
-            email: "phamthidung@gmail.com",
-            balance: 1800000
-        },
-        processedBy: {
-            id: 1,
-            fullName: "Admin Nguyễn",
-            email: "admin@ptitquiz.com"
-        }
-    },
-    {
-        id: 5,
-        user_id: 14,
-        bankName: "VPBank",
-        bankAccountName: "HOANG VAN EM",
-        bankAccountNumber: "9999888877766",
-        amount: 2000000,
-        status: "approved",
-        admin_note: "Đã xác nhận chuyển khoản thành công vào lúc 11:20",
-        reject_reason: null,
-        processed_by: 1,
-        processed_at: "2025-12-21T11:20:00.000Z",
-        created_at: "2025-12-21T09:00:00.000Z",
-        user: {
-            id: 14,
-            fullName: "Hoàng Văn Em",
-            email: "hoangvanem@gmail.com",
-            balance: 500000
-        },
-        processedBy: {
-            id: 1,
-            fullName: "Admin Nguyễn",
-            email: "admin@ptitquiz.com"
-        }
-    }
-];
-
-const MOCK_SUMMARY = {
-    totalPending: 2,
-    totalApproved: 2,
-    totalRejected: 1,
-    totalAmountPending: 800000,
-    totalAmountApproved: 3200000
-};
-
 export default function WithdrawalManagement() {
     const [withdrawals, setWithdrawals] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -169,99 +42,36 @@ export default function WithdrawalManagement() {
 
     const loadWithdrawals = async () => {
         try {
-        setLoading(true);
-        
-        // TODO: Uncomment để dùng API thật
-        // const params = {
-        //     page: pagination.page,
-        //     limit: pagination.limit,
-        //     ...(statusFilter && { status: statusFilter }),
-        //     ...(search && { search }),
-        //     sortBy,
-        //     order,
-        //     ...(fromDate && { fromDate }),
-        //     ...(toDate && { toDate }),
-        // };
-        // const response = await adminService.getWithdrawals(params);
-        
-        // MOCK DATA - Xóa phần này khi API backend đã sẵn sàng
-        let filteredData = [...MOCK_WITHDRAWALS];
-        
-        // Filter by status
-        if (statusFilter) {
-            filteredData = filteredData.filter(w => w.status === statusFilter);
-        }
-        
-        // Filter by search (email)
-        if (search) {
-            filteredData = filteredData.filter(w => 
-                w.user.email.toLowerCase().includes(search.toLowerCase()) ||
-                w.user.fullName.toLowerCase().includes(search.toLowerCase())
-            );
-        }
-        
-        // Filter by date range
-        if (fromDate) {
-            filteredData = filteredData.filter(w => {
-                const createdDate = new Date(w.created_at).setHours(0, 0, 0, 0);
-                const from = new Date(fromDate).setHours(0, 0, 0, 0);
-                return createdDate >= from;
-            });
-        }
-        
-        if (toDate) {
-            filteredData = filteredData.filter(w => {
-                const createdDate = new Date(w.created_at).setHours(0, 0, 0, 0);
-                const to = new Date(toDate).setHours(23, 59, 59, 999);
-                return createdDate <= to;
-            });
-        }
-        
-        // Sort
-        filteredData.sort((a, b) => {
-            if (sortBy === "created_at") {
-                const compare = new Date(a.created_at) - new Date(b.created_at);
-                return order === "DESC" ? -compare : compare;
-            } else if (sortBy === "amount") {
-                const compare = a.amount - b.amount;
-                return order === "DESC" ? -compare : compare;
+            setLoading(true);
+            
+            const params = {
+                page: pagination.page,
+                limit: pagination.limit,
+                ...(statusFilter && { status: statusFilter }),
+                ...(search && { search }),
+                sortBy,
+                order,
+                ...(fromDate && { fromDate }),
+                ...(toDate && { toDate }),
+            };
+            
+            const response = await adminService.getWithdrawals(params);
+            
+            if (response.success) {
+                setWithdrawals(response.data.withdrawals || []);
+                setPagination(response.data.pagination || pagination);
+                setSummary(response.data.summary || null);
+            } else {
+                toast.error(response.message || "Không thể tải danh sách rút tiền");
             }
-            return 0;
-        });
-        
-        const response = {
-            success: true,
-            data: {
-                withdrawals: filteredData,
-                pagination: {
-                    page: 1,
-                    limit: 10,
-                    total: filteredData.length,
-                    totalPages: 1
-                },
-                summary: MOCK_SUMMARY
-            }
-        };
-        
-        if (response.success) {
-            setWithdrawals(response.data.withdrawals || []);
-            setPagination(response.data.pagination || pagination);
-            setSummary(response.data.summary || null);
-        } else {
-            toast.error(response.message || "Không thể tải danh sách rút tiền");
-        }
         } catch (error) {
-        console.error("Error loading withdrawals:", error);
-        
-        // Hiển thị lỗi chi tiết
-        const errorMessage = error.body?.message || error.message || "Không thể tải danh sách rút tiền";
-        toast.error(errorMessage);
-        
-        // Set empty data để tránh crash UI
-        setWithdrawals([]);
-        setSummary(null);
+            console.error("Error loading withdrawals:", error);
+            const errorMessage = error.body?.message || error.message || "Không thể tải danh sách rút tiền";
+            toast.error(errorMessage);
+            setWithdrawals([]);
+            setSummary(null);
         } finally {
-        setLoading(false);
+            setLoading(false);
         }
     };
 
@@ -289,56 +99,18 @@ export default function WithdrawalManagement() {
         }
 
         try {
-            // TODO: Uncomment để dùng API thật
-            // let response;
-            // if (editForm.status === "approved") {
-            //     response = await adminService.approveWithdrawal(
-            //         selectedWithdrawal.id,
-            //         { admin_note: editForm.note }
-            //     );
-            // } else if (editForm.status === "rejected") {
-            //     response = await adminService.rejectWithdrawal(
-            //         selectedWithdrawal.id,
-            //         { reject_reason: editForm.note }
-            //     );
-            // }
-            
-            // MOCK DATA - Xóa phần này khi API backend đã sẵn sàng
-            // Cập nhật mock data gốc
-            const withdrawalIndex = MOCK_WITHDRAWALS.findIndex(w => w.id === selectedWithdrawal.id);
-            if (withdrawalIndex !== -1) {
-                MOCK_WITHDRAWALS[withdrawalIndex] = {
-                    ...MOCK_WITHDRAWALS[withdrawalIndex],
-                    status: editForm.status,
-                    admin_note: editForm.status === "approved" ? editForm.note : MOCK_WITHDRAWALS[withdrawalIndex].admin_note,
-                    reject_reason: editForm.status === "rejected" ? editForm.note : MOCK_WITHDRAWALS[withdrawalIndex].reject_reason,
-                    processed_at: new Date().toISOString(),
-                    processed_by: 1,
-                    processedBy: {
-                        id: 1,
-                        fullName: "Admin Nguyễn",
-                        email: "admin@ptitquiz.com"
-                    }
-                };
+            let response;
+            if (editForm.status === "approved") {
+                response = await adminService.approveWithdrawal(
+                    selectedWithdrawal.id,
+                    { admin_note: editForm.note }
+                );
+            } else if (editForm.status === "rejected") {
+                response = await adminService.rejectWithdrawal(
+                    selectedWithdrawal.id,
+                    { reject_reason: editForm.note }
+                );
             }
-            
-            // Cập nhật summary
-            const pendingCount = MOCK_WITHDRAWALS.filter(w => w.status === "pending").length;
-            const approvedCount = MOCK_WITHDRAWALS.filter(w => w.status === "approved").length;
-            const rejectedCount = MOCK_WITHDRAWALS.filter(w => w.status === "rejected").length;
-            const pendingAmount = MOCK_WITHDRAWALS.filter(w => w.status === "pending").reduce((sum, w) => sum + w.amount, 0);
-            const approvedAmount = MOCK_WITHDRAWALS.filter(w => w.status === "approved").reduce((sum, w) => sum + w.amount, 0);
-            
-            MOCK_SUMMARY.totalPending = pendingCount;
-            MOCK_SUMMARY.totalApproved = approvedCount;
-            MOCK_SUMMARY.totalRejected = rejectedCount;
-            MOCK_SUMMARY.totalAmountPending = pendingAmount;
-            MOCK_SUMMARY.totalAmountApproved = approvedAmount;
-            
-            const response = {
-                success: true,
-                message: editForm.status === "approved" ? "Đã duyệt yêu cầu rút tiền" : "Đã từ chối yêu cầu rút tiền"
-            };
             
             if (response.success) {
                 toast.success(
@@ -348,8 +120,6 @@ export default function WithdrawalManagement() {
                 );
                 setShowEditModal(false);
                 setEditForm({ status: "", note: "" });
-                
-                // Reload để cập nhật UI
                 loadWithdrawals();
             }
         } catch (error) {
@@ -360,22 +130,15 @@ export default function WithdrawalManagement() {
 
     const handleViewDetail = async (withdrawal) => {
         try {
-        // TODO: Uncomment để dùng API thật
-        // const response = await adminService.getWithdrawalById(withdrawal.id);
-        
-        // MOCK DATA - Xóa phần này khi API backend đã sẵn sàng
-        const response = {
-            success: true,
-            data: withdrawal
-        };
-        
-        if (response.success) {
-            setWithdrawalDetail(response.data);
-            setShowDetailModal(true);
-        }
+            const response = await adminService.getWithdrawalById(withdrawal.id);
+            
+            if (response.success) {
+                setWithdrawalDetail(response.data);
+                setShowDetailModal(true);
+            }
         } catch (error) {
-        console.error("Error loading withdrawal detail:", error);
-        toast.error("Không thể tải thông tin chi tiết");
+            console.error("Error loading withdrawal detail:", error);
+            toast.error("Không thể tải thông tin chi tiết");
         }
     };
 
@@ -387,26 +150,25 @@ export default function WithdrawalManagement() {
         setSortBy("created_at");
         setOrder("DESC");
         setPagination({ ...pagination, page: 1 });
-        loadWithdrawals();
     };
 
     const getStatusConfig = (status) => {
         const config = {
-        pending: {
-            label: "Chờ xử lý",
-            badge: "bg-yellow-50 text-yellow-600",
-            dot: "bg-yellow-500",
-        },
-        approved: {
-            label: "Đã chuyển tiền",
-            badge: "bg-green-50 text-green-600",
-            dot: "bg-green-500",
-        },
-        rejected: {
-            label: "Từ chối",
-            badge: "bg-red-50 text-red-600",
-            dot: "bg-red-500",
-        },
+            pending: {
+                label: "Chờ xử lý",
+                badge: "bg-yellow-50 text-yellow-600",
+                dot: "bg-yellow-500",
+            },
+            approved: {
+                label: "Đã chuyển tiền",
+                badge: "bg-green-50 text-green-600",
+                dot: "bg-green-500",
+            },
+            rejected: {
+                label: "Từ chối",
+                badge: "bg-red-50 text-red-600",
+                dot: "bg-red-500",
+            },
         };
         return config[status] || config.pending;
     };
