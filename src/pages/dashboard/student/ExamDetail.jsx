@@ -262,7 +262,9 @@ export default function ExamDetail() {
                 <div className="flex items-center justify-between">
                   <span className="inline-flex items-center gap-1 rounded-full bg-indigo-100 px-3 py-1 text-xs font-semibold text-indigo-700">
                     <GraduationCap className="h-3.5 w-3.5" />
-                    {similarExam.class?.className || "Public"}
+                    {(similarExam.classes && similarExam.classes.length > 0)
+                    ? similarExam.classes.map(c => c.className).join(", ")
+                    : similarExam.class?.className || "Public"}
                   </span>
                   <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                     {formatDate(similarExam.created_at)}
@@ -272,7 +274,10 @@ export default function ExamDetail() {
                   {similarExam.title}
                 </h3>
                 <p className="mt-2 text-sm font-medium text-indigo-600">
-                  {similarExam.des || similarExam.class?.className || "Không có mô tả"}
+                  {similarExam.des || 
+                    (similarExam.classes && similarExam.classes.length > 0
+                      ? similarExam.classes.map(c => c.className).join(", ")
+                      : similarExam.class?.className) || "Không có mô tả"}
                 </p>
               </div>
             </div>
@@ -281,7 +286,9 @@ export default function ExamDetail() {
               <div className="flex items-center justify-between">
                 <span className="inline-flex items-center gap-1 rounded-full bg-indigo-100 px-3 py-1 text-xs font-semibold text-indigo-700">
                   <GraduationCap className="h-3.5 w-3.5" />
-                  {similarExam.class?.className || "Public"}
+                  {(similarExam.classes && similarExam.classes.length > 0)
+                    ? similarExam.classes.map(c => c.className).join(", ")
+                    : similarExam.class?.className || "Public"}
                 </span>
                 <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                   {formatDate(similarExam.created_at)}
@@ -291,7 +298,10 @@ export default function ExamDetail() {
                 {similarExam.title}
               </h3>
               <p className="mt-2 text-sm font-medium text-indigo-600">
-                {similarExam.des || similarExam.class?.className || "Không có mô tả"}
+                {similarExam.des || 
+                  (similarExam.classes && similarExam.classes.length > 0
+                    ? similarExam.classes.map(c => c.className).join(", ")
+                    : similarExam.class?.className) || "Không có mô tả"}
               </p>
             </div>
           )}
@@ -302,7 +312,9 @@ export default function ExamDetail() {
               <div className="flex items-center justify-between">
                 <span className="inline-flex items-center gap-1 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-indigo-700">
                   <GraduationCap className="h-3.5 w-3.5" />
-                  {similarExam.class?.className || "Public"}
+                  {(similarExam.classes && similarExam.classes.length > 0)
+                    ? similarExam.classes.map(c => c.className).join(", ")
+                    : similarExam.class?.className || "Public"}
                 </span>
                 <span className="text-xs font-semibold uppercase tracking-wide text-white">
                   {formatDate(similarExam.created_at)}
@@ -313,7 +325,10 @@ export default function ExamDetail() {
                   {similarExam.title}
                 </h3>
                 <p className="mt-1 line-clamp-1 text-sm text-white/90">
-                  {similarExam.des || similarExam.class?.className || "Không có mô tả"}
+                  {similarExam.des || 
+                    (similarExam.classes && similarExam.classes.length > 0
+                      ? similarExam.classes.map(c => c.className).join(", ")
+                      : similarExam.class?.className) || "Không có mô tả"}
                 </p>
               </div>
             </div>
@@ -344,11 +359,24 @@ export default function ExamDetail() {
             )}
           </div>
 
-          {similarExam.class && (
+          {((similarExam.classes && similarExam.classes.length > 0) || similarExam.class) && (
             <div className="space-y-1 text-sm text-slate-600">
-              <p className="font-semibold text-slate-800">{similarExam.class.className}</p>
-              {similarExam.class.classCode && (
-                <p className="text-slate-500 line-clamp-1">Mã lớp: {similarExam.class.classCode}</p>
+              {similarExam.classes && similarExam.classes.length > 0 ? (
+                <>
+                  <p className="font-semibold text-slate-800">
+                    {similarExam.classes.map(c => c.className).join(", ")}
+                  </p>
+                  {similarExam.classes.length > 1 && (
+                    <p className="text-slate-500">({similarExam.classes.length} lớp)</p>
+                  )}
+                </>
+              ) : (
+                <>
+                  <p className="font-semibold text-slate-800">{similarExam.class.className}</p>
+                  {similarExam.class.classCode && (
+                    <p className="text-slate-500 line-clamp-1">Mã lớp: {similarExam.class.classCode}</p>
+                  )}
+                </>
               )}
             </div>
           )}
@@ -448,12 +476,16 @@ export default function ExamDetail() {
                   </span>
                 </div>
                 <span className="font-medium">{exam.creator.fullName || 'Giáo viên'}</span>
-                {exam.class && (
+                {(exam.classes && exam.classes.length > 0) || exam.class ? (
                   <>
                     <span className="text-slate-400">•</span>
-                    <span className="line-clamp-1">{exam.class.className}</span>
+                    <span className="line-clamp-1">
+                      {exam.classes && exam.classes.length > 0
+                        ? exam.classes.map(c => c.className).join(", ")
+                        : exam.class?.className}
+                    </span>
                   </>
-                )}
+                ) : null}
               </div>
             )}
 
@@ -525,14 +557,21 @@ export default function ExamDetail() {
             </div>
 
             {/* School info */}
-            {exam.class && (
+            {((exam.classes && exam.classes.length > 0) || exam.class) && (
               <div className="mb-4 rounded-lg bg-green-50 p-3">
                 <div className="flex items-center gap-2 text-sm">
                   <span className="text-green-600">🏫</span>
                   <span className="font-semibold text-green-700">
-                    Lớp học: {exam.class.className}
+                    Lớp học: {exam.classes && exam.classes.length > 0
+                      ? exam.classes.map(c => c.className).join(", ")
+                      : exam.class?.className}
                   </span>
                 </div>
+                {exam.classes && exam.classes.length > 1 && (
+                  <p className="mt-1 text-xs text-green-600">
+                    ({exam.classes.length} lớp)
+                  </p>
+                )}
               </div>
             )}
 

@@ -37,6 +37,14 @@ function normalizeExam(exam) {
     return `${year}-${month}-${day}T${hours}:${minutes}`;
   };
 
+  // Lấy classIds từ exam.classes (array) hoặc exam.class_id (backward compatibility)
+  let classIds = [];
+  if (exam.classes && Array.isArray(exam.classes)) {
+    classIds = exam.classes.map(c => c.id);
+  } else if (exam.class_id) {
+    classIds = [exam.class_id];
+  }
+
   return {
     id: exam.id ?? exam.exam_id ?? exam._id,
     title: exam.title ?? "",
@@ -44,7 +52,7 @@ function normalizeExam(exam) {
     startTime: toLocalDateTime(exam.start_time),
     endTime: toLocalDateTime(exam.end_time),
     noTimeLimit: !exam.start_time || !exam.end_time,
-    classId: exam.class_id ?? exam.classId ?? "",
+    classIds: classIds,
     description: exam.des ?? exam.description ?? "",
     totalScore: exam.total_score ?? exam.totalScore ?? "",
     isPublic: exam.is_public ?? exam.isPublic ?? true,
@@ -279,7 +287,7 @@ function EditExamPage() {
       minutes: Number(config.minutes),
       start_time: config.noTimeLimit ? null : toIso(config.startTime),
       end_time: config.noTimeLimit ? null : toIso(config.endTime),
-      class_id: config.classId || null,
+      class_ids: config.classIds && config.classIds.length > 0 ? config.classIds : [],
       des: config.description.trim() || null,
       total_score: config.totalScore ? Number(config.totalScore) : null,
       is_public: config.isPublic,
@@ -584,19 +592,36 @@ function EditExamPage() {
               </div>
             ) : (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Chọn lớp</label>
-                <select
-                  value={config.classId}
-                  onChange={(event) => updateConfig("classId", event.target.value)}
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200 bg-white"
-                >
-                  <option value="">Không gán lớp</option>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Chọn lớp (có thể chọn nhiều lớp)
+                </label>
+                <div className="space-y-2">
                   {classes.map((cls) => (
-                    <option key={cls.id} value={cls.id}>
-                      {cls.className} ({cls.classCode})
-                    </option>
+                    <label key={cls.id} className="flex items-center gap-2 cursor-pointer hover:bg-slate-50 p-2 rounded">
+                      <input
+                        type="checkbox"
+                        checked={config.classIds?.includes(cls.id) || false}
+                        onChange={(e) => {
+                          const currentIds = config.classIds || [];
+                          if (e.target.checked) {
+                            updateConfig("classIds", [...currentIds, cls.id]);
+                          } else {
+                            updateConfig("classIds", currentIds.filter(id => id !== cls.id));
+                          }
+                        }}
+                        className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-slate-300 rounded"
+                      />
+                      <span className="text-sm text-gray-700">
+                        {cls.className} ({cls.classCode})
+                      </span>
+                    </label>
                   ))}
-                </select>
+                </div>
+                {config.classIds && config.classIds.length > 0 && (
+                  <p className="mt-2 text-xs text-slate-500">
+                    Đã chọn {config.classIds.length} lớp
+                  </p>
+                )}
               </div>
             )}
           </FormSection>

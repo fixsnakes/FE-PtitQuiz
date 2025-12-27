@@ -75,7 +75,10 @@ function normalizeExam(exam) {
       exam.submission_count ?? exam.attemptCount ?? exam.student_submissions ?? 0,
     status,
     className:
-      exam.class?.className ?? exam.class_name ?? exam.className ?? exam.class?.name ?? null,
+      // Lấy tên lớp từ exam.classes (array) hoặc exam.class (backward compatibility)
+      exam.classes && Array.isArray(exam.classes) && exam.classes.length > 0
+        ? exam.classes.map(c => c.className).join(", ")
+        : exam.class?.className ?? exam.class_name ?? exam.className ?? exam.class?.name ?? null,
     questionMethod:
       exam.question_creation_method ??
       exam.questionMethod ??
@@ -357,8 +360,10 @@ export default function ExamListPage() {
                             {badge.label}
                           </span>
                           {exam.className && (
-                            <span className="rounded-lg bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700">
-                              {exam.className}
+                            <span className="rounded-lg bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700" title={exam.className}>
+                              {exam.className.split(", ").length > 1 
+                                ? `${exam.className.split(", ").length} lớp` 
+                                : exam.className}
                             </span>
                           )}
                         </div>

@@ -134,6 +134,7 @@ export default function StudentDashboard() {
       (exam) =>
         exam.title?.toLowerCase().includes(term) ||
         exam.des?.toLowerCase().includes(term) ||
+        (exam.classes && exam.classes.some(c => c.className?.toLowerCase().includes(term))) ||
         exam.class?.className?.toLowerCase().includes(term)
     );
   }, [exams, searchTerm]);
@@ -210,7 +211,9 @@ export default function StudentDashboard() {
               <div className="flex items-center justify-between">
                 <span className="inline-flex items-center gap-1 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-indigo-700">
                   <GraduationCap className="h-3.5 w-3.5" />
-                  {exam.class?.className || "Public"}
+                  {(exam.classes && exam.classes.length > 0)
+                    ? exam.classes.map(c => c.className).join(", ")
+                    : exam.class?.className || "Public"}
                 </span>
                 <span className="text-xs font-semibold uppercase tracking-wide text-white">
                   {formatDate(exam.created_at)}
@@ -221,7 +224,10 @@ export default function StudentDashboard() {
                   {exam.title}
                 </h3>
                 <p className="mt-1 line-clamp-1 text-sm text-white/90">
-                  {exam.des || exam.class?.className || "Không có mô tả"}
+                  {exam.des || 
+                    (exam.classes && exam.classes.length > 0
+                      ? exam.classes.map(c => c.className).join(", ")
+                      : exam.class?.className) || "Không có mô tả"}
                 </p>
               </div>
             </div>
@@ -275,11 +281,24 @@ export default function StudentDashboard() {
             )}
           </div>
 
-          {exam.class && (
+          {((exam.classes && exam.classes.length > 0) || exam.class) && (
             <div className="space-y-1 text-sm text-slate-600">
-              <p className="font-semibold text-slate-800">{exam.class.className}</p>
-              {exam.class.classCode && (
-                <p className="text-slate-500 line-clamp-1">Mã lớp: {exam.class.classCode}</p>
+              {exam.classes && exam.classes.length > 0 ? (
+                <>
+                  <p className="font-semibold text-slate-800">
+                    {exam.classes.map(c => c.className).join(", ")}
+                  </p>
+                  {exam.classes.length > 1 && (
+                    <p className="text-slate-500">({exam.classes.length} lớp)</p>
+                  )}
+                </>
+              ) : (
+                <>
+                  <p className="font-semibold text-slate-800">{exam.class.className}</p>
+                  {exam.class.classCode && (
+                    <p className="text-slate-500 line-clamp-1">Mã lớp: {exam.class.classCode}</p>
+                  )}
+                </>
               )}
             </div>
           )}

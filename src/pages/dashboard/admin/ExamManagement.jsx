@@ -341,9 +341,16 @@ export default function ExamManagement() {
                           </p>
                         </td>
                         <td className="py-3 px-4">
-                          {exam.class ? (
+                          {(exam.classes && exam.classes.length > 0) || exam.class ? (
                             <p className="text-sm text-slate-600">
-                              {exam.class.className}
+                              {exam.classes && exam.classes.length > 0
+                                ? exam.classes.map(c => c.className).join(", ")
+                                : exam.class?.className}
+                              {exam.classes && exam.classes.length > 1 && (
+                                <span className="ml-1 text-xs text-slate-400">
+                                  ({exam.classes.length} lớp)
+                                </span>
+                              )}
                             </p>
                           ) : (
                             <span className="text-xs text-slate-400 italic">
