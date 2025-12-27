@@ -41,7 +41,7 @@ import ExamManagement from "./pages/dashboard/admin/ExamManagement";
 import ClassManagement from "./pages/dashboard/admin/ClassManagement";
 import WithdrawalManagement from "./pages/dashboard/admin/WithdrawalManagement";
 import Reports from "./pages/dashboard/admin/Reports";
-import Analytics from "./pages/dashboard/admin/Analytics";
+// ...existing code...
 import NotificationManagement from "./pages/dashboard/admin/NotificationManagement";
 import ContentModeration from "./pages/dashboard/admin/ContentModeration";
 
@@ -342,7 +342,7 @@ function App() {
           <Route path="classes" element={<ClassManagement />} />
           <Route path="withdrawals" element={<WithdrawalManagement />} />
           <Route path="reports" element={<Reports />} />
-          <Route path="analytics" element={<Analytics />} />
+// ...existing code...
           <Route path="notifications" element={<NotificationManagement />} />
           <Route path="moderation" element={<ContentModeration />} />
         </Route>

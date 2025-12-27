@@ -269,7 +269,7 @@ export default function AdminDashboard() {
         </Link>
 
         <Link
-          to="/dashboard/admin/analytics"
+// ...existing code...
           className="bg-white rounded-lg border border-slate-200 p-4 hover:border-red-300 hover:shadow-md transition"
         >
           <FiTrendingUp className="h-8 w-8 text-red-600 mb-3" />

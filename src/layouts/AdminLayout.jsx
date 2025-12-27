@@ -19,7 +19,6 @@ const ADMIN_NAV_ITEMS = [
   { label: "Quản lý người dùng", path: "/dashboard/admin/users", icon: FiUsers, superAdminOnly: true },
   { label: "Quản lý rút tiền", path: "/dashboard/admin/withdrawals", icon: FiCreditCard, superAdminOnly: false },
   { label: "Báo cáo thống kê", path: "/dashboard/admin/reports", icon: FiBarChart2, superAdminOnly: false },
-  { label: "Phân tích số liệu", path: "/dashboard/admin/analytics", icon: FiTrendingUp, superAdminOnly: false },
   { label: "Thông báo", path: "/dashboard/admin/notifications", icon: FiBell, superAdminOnly: false },
   { label: "Kiểm duyệt nội dung", path: "/dashboard/admin/moderation", icon: FiMessageSquare, superAdminOnly: false },
 ];
