@@ -183,7 +183,7 @@ export default function AdminDashboard() {
       value: formatCurrency(summary.totalRevenue || 0),
       icon: FiDollarSign,
       color: "bg-yellow-500",
-      link: "/dashboard/admin/purchases",
+      link: "/dashboard/admin/reports",
       detail: `${summary.totalPurchases || 0} Giao dịch`,
     },
     {
