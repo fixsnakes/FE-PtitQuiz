@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import DashboardLayout from "../../../layouts/DashboardLayout";
-import { getWithdrawHistory, createWithdrawRequest } from "../../../services/walletservice";
+import { getWithdrawHistory, sendOTPForWithdraw, verifyOTPAndWithdraw } from "../../../services/walletservice";
 import { getUserInformation } from "../../../services/userService";
 import {
     FiRefreshCw,
@@ -32,6 +32,9 @@ export default function TeacherPayment() {
     const [statusFilter, setStatusFilter] = useState("all");
     const [copiedField, setCopiedField] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [sendingOTP, setSendingOTP] = useState(false);
+    const [otp, setOtp] = useState("");
+    const [withdrawStep, setWithdrawStep] = useState(1); // 1: Nhập thông tin, 2: Xác thực OTP
 
     // Fetch wallet balance and withdraw history
     useEffect(() => {
@@ -77,7 +80,7 @@ export default function TeacherPayment() {
         setAmount((prev) => Math.max(50000, prev + delta));
     };
 
-    const handleCreateWithdraw = async () => {
+    const handleSendOTP = async () => {
         // Validation
         if (!bankName.trim()) {
             toast.error("Vui lòng nhập tên ngân hàng");
@@ -101,7 +104,7 @@ export default function TeacherPayment() {
         }
 
         try {
-            setLoading(true);
+            setSendingOTP(true);
             const payload = {
                 bankName: bankName.trim(),
                 bankAccountName: bankAccountName.trim(),
@@ -109,29 +112,66 @@ export default function TeacherPayment() {
                 amount: amount,
             };
 
-            const response = await createWithdrawRequest(payload);
+            const response = await sendOTPForWithdraw(payload);
 
-            if (response?.message && response?.data) {
-                toast.success("Tạo yêu cầu rút tiền thành công");
+            if (response?.success && response?.message) {
+                toast.success(response.message || "Mã OTP đã được gửi đến email của bạn");
+                setWithdrawStep(2);
+            } else {
+                toast.error(response?.message || "Không thể gửi mã OTP");
+            }
+        } catch (error) {
+            console.error("Error sending OTP for withdraw:", error);
+            const errorMessage = error?.body?.message || error?.message || "Không thể gửi mã OTP";
+            toast.error(errorMessage);
+        } finally {
+            setSendingOTP(false);
+        }
+    };
+
+    const handleVerifyOTPAndWithdraw = async () => {
+        if (!otp || otp.length !== 6) {
+            toast.error("Vui lòng nhập mã OTP 6 chữ số");
+            return;
+        }
+
+        try {
+            setLoading(true);
+            const payload = {
+                otp: otp,
+            };
+
+            const response = await verifyOTPAndWithdraw(payload);
+
+            if (response?.success && response?.message) {
+                toast.success(response.message || "Rút tiền thành công");
 
                 // Reset form
                 setBankName("");
                 setBankAccountName("");
                 setBankAccountNumber("");
                 setAmount(50000);
+                setOtp("");
+                setWithdrawStep(1);
 
                 // Refresh wallet balance and withdraw history
                 await fetchWalletBalance();
                 await fetchWithdrawHistory();
             } else {
-                toast.error(response?.message || "Không thể tạo yêu cầu rút tiền");
+                toast.error(response?.message || "Không thể thực hiện rút tiền");
             }
         } catch (error) {
-            console.error("Error creating withdraw request:", error);
-            toast.error(error?.response?.data?.message || "Không thể tạo yêu cầu rút tiền");
+            console.error("Error verifying OTP and withdrawing:", error);
+            const errorMessage = error?.body?.message || error?.message || "Không thể thực hiện rút tiền";
+            toast.error(errorMessage);
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleBackToStep1 = () => {
+        setWithdrawStep(1);
+        setOtp("");
     };
 
     const handleCopy = async (text, field) => {
@@ -290,11 +330,11 @@ export default function TeacherPayment() {
 
                                 {/* Submit Button */}
                                 <button
-                                    onClick={handleCreateWithdraw}
-                                    disabled={loading}
-                                    className="w-full rounded-lg bg-indigo-600 px-6 py-3 text-base font-semibold text-white shadow-lg transition hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                                    onClick={handleSendOTP}
+                                    disabled={sendingOTP}
+                                    className="w-full rounded-lg bg-[#432DD7] px-6 py-3 text-base font-semibold text-white shadow-lg transition hover:bg-[#3a26c0] disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
-                                    {loading ? "Đang xử lý..." : "Tạo yêu cầu rút tiền"}
+                                    {sendingOTP ? "Đang gửi OTP Xác minh..." : "Tạo yêu cầu rút tiền"}
                                 </button>
                             </div>
                         </section>
@@ -354,10 +394,13 @@ export default function TeacherPayment() {
                                                 NGÀY TẠO
                                             </th>
                                             <th className="px-4 py-3 text-left text-xs font-bold uppercase text-slate-700">
-                                                MÃ YÊU CẦU
+                                                MÃ ĐƠN
                                             </th>
                                             <th className="px-4 py-3 text-left text-xs font-bold uppercase text-slate-700">
                                                 NGÂN HÀNG
+                                            </th>
+                                            <th className="px-4 py-3 text-left text-xs font-bold uppercase text-slate-700">
+                                                TÊN TÀI KHOẢN
                                             </th>
                                             <th className="px-4 py-3 text-left text-xs font-bold uppercase text-slate-700">
                                                 SỐ TÀI KHOẢN
@@ -419,6 +462,9 @@ export default function TeacherPayment() {
                                                             <span className="inline-flex h-2 w-2 rounded-full bg-blue-500"></span>
                                                             <span className="font-medium text-slate-700">{withdraw.bankName}</span>
                                                         </div>
+                                                    </td>
+                                                    <td className="px-4 py-3 text-slate-600">
+                                                        {withdraw.bankAccountName}
                                                     </td>
                                                     <td className="px-4 py-3 text-slate-600">
                                                         {withdraw.bankAccountNumber}
@@ -520,6 +566,87 @@ export default function TeacherPayment() {
                         </section>
                     </div>
                 </div>
+
+                {/* OTP Verification Modal */}
+                {withdrawStep === 2 && (
+                    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-opacity duration-300">
+                        <div className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-auto overflow-hidden animate-fade-in-up">
+                            <div className="flex justify-between items-center p-5 border-b border-gray-100 bg-gray-50">
+                                <h3 className="text-xl font-bold text-gray-800">Xác thực OTP</h3>
+                                <button
+                                    type="button"
+                                    onClick={handleBackToStep1}
+                                    className="text-gray-400 hover:text-gray-600 transition-colors p-1 rounded-full hover:bg-gray-200"
+                                >
+                                    <FiX className="h-6 w-6" />
+                                </button>
+                            </div>
+
+                            <div className="p-6 space-y-6">
+                                <p className="text-sm text-gray-600">
+                                    Mã OTP đã được gửi đến email của bạn. Vui lòng nhập mã OTP để xác thực và hoàn tất rút tiền.
+                                </p>
+
+                                {/* Thông tin rút tiền (read-only) */}
+                                <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 space-y-2">
+                                    <p className="text-sm font-semibold text-slate-700 mb-2">Thông tin rút tiền:</p>
+                                    <div className="grid grid-cols-1 gap-2 text-sm text-slate-600">
+                                        <div>
+                                            <span className="font-medium">Ngân hàng:</span> {bankName}
+                                        </div>
+                                        <div>
+                                            <span className="font-medium">Tên tài khoản:</span> {bankAccountName}
+                                        </div>
+                                        <div>
+                                            <span className="font-medium">Số tài khoản:</span> {bankAccountNumber}
+                                        </div>
+                                        <div>
+                                            <span className="font-medium">Số tiền:</span> {formatCurrency(amount)} đ
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* OTP Input */}
+                                <div className="space-y-2">
+                                    <label className="block text-sm font-medium text-gray-700">
+                                        Nhập mã OTP
+                                    </label>
+                                    <div className="relative">
+                                        <input
+                                            type="text"
+                                            value={otp}
+                                            onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                                            placeholder="Nhập mã OTP 6 chữ số"
+                                            maxLength={6}
+                                            autoFocus
+                                            className="block w-full px-4 py-3 rounded-xl border border-slate-200 text-center text-small"
+                                        />
+                                    </div>
+                                    <p className="text-xs text-gray-500 mt-2">
+                                        Vui lòng kiểm tra email và nhập mã OTP 6 chữ số
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div className="p-5 border-t border-gray-100 bg-gray-50 flex justify-end space-x-3">
+                                <button
+                                    type="button"
+                                    onClick={handleBackToStep1}
+                                    className="px-5 py-2.5 rounded-xl text-gray-700 font-medium hover:bg-gray-200 transition-colors"
+                                >
+                                    Hủy bỏ
+                                </button>
+                                <button
+                                    onClick={handleVerifyOTPAndWithdraw}
+                                    disabled={loading}
+                                    className="px-6 py-2.5 bg-[#432DD7] text-white font-bold rounded-xl hover:bg-[#3a26c0] focus:ring-4 focus:ring-indigo-300 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {loading ? "Đang xử lý..." : "Xác thực và rút tiền"}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
             </div>
         </DashboardLayout>
     );
