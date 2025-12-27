@@ -5,21 +5,6 @@ import { toast } from "react-toastify";
 import DashboardLayout from "../../../layouts/DashboardLayout";
 import { getTransactionHistory } from "../../../services/transactionService";
 
-// Helper function to generate transaction content
-const generateTransactionContent = (transaction) => {
-    const { transactionType, referenceId } = transaction;
-
-    if (transactionType === "deposit") {
-        return `Nạp tiền - Mã giao dịch: ${referenceId || "N/A"}`;
-    } else if (transactionType === "withdraw") {
-        return `Rút tiền - Mã giao dịch: ${referenceId || "N/A"}`;
-    } else if (transactionType === "purchase") {
-        return `Mua đề thi - Mã giao dịch: ${referenceId || "N/A"}`;
-    } else if (transactionType === "adjustment") {
-        return `Điều chỉnh số dư - Mã giao dịch: ${referenceId || "N/A"}`;
-    }
-    return `Giao dịch - Mã: ${referenceId || "N/A"}`;
-};
 
 const TYPE_META = {
     deposit: { label: "Nạp Tiền", badge: "bg-blue-50 text-blue-600" },
@@ -113,7 +98,7 @@ export default function TransactionHistory({ role = "student" }) {
             return {
                 id: transaction.id,
                 date: transaction.created_at,
-                content: generateTransactionContent(transaction),
+                content: transaction.description,
                 type: transaction.transactionType,
                 amount: displayAmount,
                 balanceBefore: parseFloat(transaction.beforeBalance || 0),
@@ -123,7 +108,7 @@ export default function TransactionHistory({ role = "student" }) {
         });
     }, [transactions]);
 
-    // Client-side search only (server handles other filters)
+    // search - hoc sinh
     const filtered = useMemo(() => {
         if (!search) return mappedTransactions;
         return mappedTransactions.filter((item) => {
@@ -134,7 +119,7 @@ export default function TransactionHistory({ role = "student" }) {
         });
     }, [mappedTransactions, search]);
 
-    // Use API pagination
+    // pagination
     const totalPages = pagination.totalPages || 1;
     const currentPage = Math.min(page, totalPages);
     const startIndex = (currentPage - 1) * pageSize;
@@ -163,9 +148,6 @@ export default function TransactionHistory({ role = "student" }) {
                 <div className="flex items-center justify-between">
                     <div>
                         <h1 className="text-2xl font-bold text-slate-900">Lịch Sử Giao Dịch</h1>
-                        <p className="text-sm text-slate-500">
-                            Xem lại các giao dịch nạp và mua key gần đây
-                        </p>
                     </div>
                 </div>
 
@@ -238,7 +220,7 @@ export default function TransactionHistory({ role = "student" }) {
                             <thead className="border-b border-slate-200 bg-slate-50">
                                 <tr>
                                     <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500">
-                                        #
+                                        Mã Giao Dịch
                                     </th>
                                     <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500">
                                         NGÀY GIAO DỊCH
@@ -287,9 +269,10 @@ export default function TransactionHistory({ role = "student" }) {
                                     </tr>
                                 ) : (
                                     pageItems.map((item, idx) => (
+
                                         <tr key={item.id} className="hover:bg-slate-50">
-                                            <td className="px-4 py-3 text-slate-600">
-                                                {startIndex + idx + 1}
+                                            <td className="px-4 py-3 text-slate-600 ">
+                                                {item.id}
                                             </td>
                                             <td className="px-4 py-3 text-slate-700">
                                                 {formatDate(item.date)}

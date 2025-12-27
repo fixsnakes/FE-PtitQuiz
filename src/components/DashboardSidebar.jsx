@@ -26,7 +26,7 @@ const SIDEBAR_ITEMS = {
     { label: "Thông báo", path: "/dashboard/teacher/notifications", icon: FiBell },
     { label: "Thống kê mua đề thi", path: "/dashboard/teacher/exam-purchases", icon: FiDollarSign },
     { label: "Lịch sử giao dịch", path: "/dashboard/teacher/transactions", icon: FiClock },
-    { label: "Ví của tôi", path: "/dashboard/wallet", icon: MdPayment },
+    { label: "Ví", path: "/dashboard/wallet", icon: MdPayment },
     { label: "Tài Khoản", path: "/dashboard/profile", icon: CiUser },
   ],
   student: [
@@ -36,7 +36,7 @@ const SIDEBAR_ITEMS = {
     { label: "Truy cập gần đây", path: "/dashboard/student/recent", icon: FiClock },
     { label: "Lớp học", path: "/dashboard/student/classes", icon: FiUsers },
     { label: "Thông báo", path: "/dashboard/student/notifications", icon: FiBell },
-    { label: "Ví của tôi", path: "/dashboard/student/payment", icon: MdPayment },
+    { label: "Ví", path: "/dashboard/student/payment", icon: MdPayment },
     { label: "Lịch sử giao dịch", path: "/dashboard/student/transactions", icon: FiDollarSign },
     { label: "Tài Khoản", path: "/dashboard/profile", icon: CiUser },
   ],

@@ -212,7 +212,7 @@ export default function StudentPayment() {
                     <div className="lg:col-span-2 space-y-6">
                         {/* Transaction Section */}
                         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                            <h2 className="mb-4 text-xl font-semibold text-slate-900">Giao dịch</h2>
+                            <h2 className="mb-4 text-xl font-semibold text-slate-900">Nạp tiền</h2>
                             <p className="mb-6 text-sm text-slate-600">
                                 Quý khách vui lòng lựa chọn phương thức giao dịch và số tiền giao dịch
                             </p>

@@ -6,10 +6,10 @@ import DashboardLayout from '../../../layouts/DashboardLayout';
 import { getClasses, joinClass } from '../../../services/classServiceTemp';
 import { toast } from 'react-toastify';
 
-const CARD_GRADIENTS = [
-  "from-[#fef2ff] via-[#f6e8ff] to-[#eef2ff]",
-  "from-[#fff4ec] via-[#ffe6d8] to-[#fff0f5]",
-  "from-[#e9f9ff] via-[#eaf3ff] to-[#f5f1ff]",
+const CARD_COLORS = [
+  "bg-indigo-50",
+  "bg-purple-50",
+  "bg-blue-50",
 ];
 
 const ClassCard = ({ classInfo, index = 0 }) => {
@@ -22,7 +22,7 @@ const ClassCard = ({ classInfo, index = 0 }) => {
   return (
     <article className="flex flex-col rounded-3xl border border-slate-100 bg-white shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
       <div
-        className={`relative h-32 w-full rounded-3xl bg-gradient-to-r ${CARD_GRADIENTS[index % CARD_GRADIENTS.length]} px-5 py-4`}
+        className={`relative h-32 w-full rounded-3xl ${CARD_COLORS[index % CARD_COLORS.length]} px-5 py-4`}
       >
         <div className="flex items-start justify-between">
           <div className="space-y-2">
@@ -234,55 +234,19 @@ function StudentClasses() {
         <header className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-indigo-500">
-                Lớp học
-              </p>
               <h1 className="mt-2 text-3xl font-bold text-slate-900">
                 Danh sách lớp học của tôi
               </h1>
             </div>
             <button
               onClick={openModal}
-              className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:opacity-90"
+              className="inline-flex items-center gap-2 rounded-full bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-lg transition hover:bg-indigo-700"
             >
               <Plus className="h-5 w-5" />
               Tham gia lớp học
             </button>
           </div>
 
-          <div className="mt-6 grid gap-4 md:grid-cols-3">
-            <div className="rounded-2xl border border-violet-100 bg-gradient-to-br from-violet-50 to-white p-5">
-              <p className="text-sm font-medium text-violet-500">Tổng số lớp</p>
-              <p className="mt-2 text-3xl font-bold text-violet-900">
-                {listClasses.length}
-              </p>
-              <p className="text-xs text-violet-500">
-                Các lớp bạn đã tham gia
-              </p>
-            </div>
-            <div className="rounded-2xl border border-sky-100 bg-gradient-to-br from-sky-50 to-white p-5">
-              <p className="text-sm font-medium text-sky-500">
-                Lớp đang hiển thị
-              </p>
-              <p className="mt-2 text-3xl font-bold text-sky-900">
-                {listClasses.length}
-              </p>
-              <p className="text-xs text-sky-500">
-                Kết quả sau khi áp dụng bộ lọc hiện tại
-              </p>
-            </div>
-            <div className="rounded-2xl border border-emerald-100 bg-gradient-to-br from-emerald-50 to-white p-5">
-              <p className="text-sm font-medium text-emerald-500">
-                Trang hiện tại
-              </p>
-              <p className="mt-2 text-3xl font-bold text-emerald-900">
-                {currentPage}
-              </p>
-              <p className="text-xs text-emerald-500">
-                / {totalPages} trang
-              </p>
-            </div>
-          </div>
         </header>
 
         <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
