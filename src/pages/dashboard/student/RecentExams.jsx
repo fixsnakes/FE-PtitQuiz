@@ -98,15 +98,9 @@ export default function RecentExams() {
             <div className="space-y-6">
                 <header className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
                     <div>
-                        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-indigo-500">
-                            Truy cập gần đây
-                        </p>
                         <h1 className="mt-2 text-3xl font-bold text-slate-900">
                             Bài thi truy cập gần đây
                         </h1>
-                        <p className="mt-1 text-sm text-slate-500">
-                            Danh sách các bài thi bạn đã xem hoặc làm gần đây
-                        </p>
                     </div>
                 </header>
 
@@ -158,8 +152,8 @@ export default function RecentExams() {
                                         <div className="flex items-center gap-2">
                                             <BookOpen className="h-4 w-4 text-slate-400" />
                                             <span className={`${exam.status === 'submitted' ? 'text-green-600' :
-                                                    exam.status === 'in_progress' ? 'text-blue-600' :
-                                                        'text-slate-600'
+                                                exam.status === 'in_progress' ? 'text-blue-600' :
+                                                    'text-slate-600'
                                                 }`}>
                                                 {exam.status === 'submitted' ? 'Đã nộp' :
                                                     exam.status === 'in_progress' ? 'Đang làm' :

@@ -31,6 +31,7 @@ import FavoriteExams from "./pages/dashboard/student/FavoriteExams";
 import StudentPayment from "./pages/dashboard/student/StudentPayment";
 import StudentNotifications from "./pages/dashboard/student/Notifications";
 import TransactionHistory from "./pages/dashboard/common/TransactionHistory";
+import TeacherPayment from "./pages/dashboard/teacher/TeacherPayment";
 // Admin imports
 import AdminLayout from "./layouts/AdminLayout";
 import AdminDashboard from "./pages/dashboard/admin/AdminDashboard";
@@ -44,6 +45,18 @@ import NotificationManagement from "./pages/dashboard/admin/NotificationManageme
 import ContentModeration from "./pages/dashboard/admin/ContentModeration";
 
 import "react-toastify/dist/ReactToastify.css";
+
+function WalletRedirect() {
+  const stored = localStorage.getItem("currentUser");
+  const user = stored ? JSON.parse(stored) : null;
+  if (user?.role === "teacher") {
+    return <Navigate to="/dashboard/teacher/payment" replace />;
+  }
+  if (user?.role === "student") {
+    return <Navigate to="/dashboard/student/payment" replace />;
+  }
+  return <Navigate to="/auth/login" replace />;
+}
 
 function App() {
   return (
@@ -191,6 +204,14 @@ function App() {
           }
         />
         <Route
+          path="/dashboard/teacher/payment"
+          element={
+            <ProtectedRoute allowedRoles={["teacher"]}>
+              <TeacherPayment />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/dashboard/student"
           element={
             <ProtectedRoute allowedRoles={["student"]}>
@@ -203,6 +224,14 @@ function App() {
           element={
             <ProtectedRoute allowedRoles={["teacher", "student"]}>
               <Profile />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/wallet"
+          element={
+            <ProtectedRoute allowedRoles={["teacher", "student"]}>
+              <WalletRedirect />
             </ProtectedRoute>
           }
         />
