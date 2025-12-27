@@ -611,7 +611,16 @@ export default function ClassDetail() {
     setLoadingExams(true);
     try {
       const response = await listExams({ class_id: classInfo.id });
-      const examsList = Array.isArray(response) ? response : [];
+
+      // API /api/exams trả về dạng { data: [...], pagination: {...} }
+      const examsList = Array.isArray(response)
+        ? response
+        : Array.isArray(response?.data)
+        ? response.data
+        : Array.isArray(response?.exams)
+        ? response.exams
+        : [];
+
       setExams(examsList);
     } catch (err) {
       toast.error(err?.body?.message || err?.message || "Không thể tải danh sách đề thi.");

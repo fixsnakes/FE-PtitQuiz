@@ -165,7 +165,7 @@ export default function TeacherExamPurchases() {
                     Số đề thi trả phí
                   </h2>
                   <p className="mt-1 text-3xl font-bold text-slate-900">
-                    {exams.length}
+                    {revenue.totalPaidExams ?? exams.length}
                   </p>
                 </div>
                 <FiFileText className="text-3xl text-indigo-500 opacity-50" />

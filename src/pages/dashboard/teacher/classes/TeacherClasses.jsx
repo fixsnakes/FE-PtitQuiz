@@ -320,10 +320,10 @@ export default function TeacherClasses() {
                           <FiUsers />
                           {classItem.studentCount} học sinh
                         </span>
-                        <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1">
+                        {/* <span className="inline-flex items-center gap-1 rounded-full bg-slate-100 px-3 py-1">
                           <FiBookOpen />
                           0 đề thi
-                        </span>
+                        </span> */}
                       </div>
 
                       <div className="mt-auto flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-4">

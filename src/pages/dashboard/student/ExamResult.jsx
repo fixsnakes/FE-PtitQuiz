@@ -307,13 +307,17 @@ export default function ExamResult() {
               const question = answer.question;
               const isCorrect = answer.is_correct;
               const selectedAnswer = answer.selectedAnswer;
+              const isAnswered = answer.id !== null && answer.id !== undefined;
+              const isBlank = !isAnswered;
 
               return (
                 <div
-                  key={answer.id}
+                  key={answer.exam_question_id || question?.id || index}
                   className={`rounded-2xl border-2 p-5 ${isCorrect
                     ? "border-emerald-200 bg-emerald-50"
-                    : "border-red-200 bg-red-50"
+                    : isBlank
+                      ? "border-amber-200 bg-amber-50"
+                      : "border-red-200 bg-red-50"
                     }`}
                 >
                   <div className="mb-4 flex items-start justify-between">
@@ -324,16 +328,20 @@ export default function ExamResult() {
                         </span>
                         {isCorrect ? (
                           <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+                        ) : isBlank ? (
+                          <Clock className="h-5 w-5 text-amber-600" />
                         ) : (
                           <XCircle className="h-5 w-5 text-red-600" />
                         )}
                         <span
                           className={`rounded-full border px-3 py-1 text-xs font-semibold ${isCorrect
                             ? "border-emerald-200 bg-emerald-100 text-emerald-700"
-                            : "border-red-200 bg-red-100 text-red-700"
+                            : isBlank
+                              ? "border-amber-200 bg-amber-100 text-amber-700"
+                              : "border-red-200 bg-red-100 text-red-700"
                             }`}
                         >
-                          {isCorrect ? "Đúng" : "Sai"} ({answer.score || 0}{" "}
+                          {isCorrect ? "Đúng" : isBlank ? "Bỏ trống" : "Sai"} ({answer.score || 0}{" "}
                           điểm)
                         </span>
                       </div>
@@ -389,6 +397,11 @@ export default function ExamResult() {
                                     (Đáp án đúng)
                                   </span>
                                 )}
+                                {isBlank && isCorrectAnswer && (
+                                  <span className="ml-auto text-xs text-amber-600">
+                                    (Đáp án đúng - bạn chưa chọn)
+                                  </span>
+                                )}
                               </div>
                             </div>
                           );
@@ -405,11 +418,18 @@ export default function ExamResult() {
                             Câu trả lời của bạn:
                           </label>
                           <div className="rounded-xl border border-slate-200 bg-white p-4">
-                            <p className="text-slate-900">
+                            <p className={`${isBlank ? "text-amber-600 italic" : "text-slate-900"}`}>
                               {answer.answer_text || "Chưa trả lời"}
                             </p>
                           </div>
                         </div>
+                        {isBlank && (
+                          <div className="rounded-xl border border-amber-200 bg-amber-50 p-3">
+                            <p className="text-sm text-amber-800">
+                              ⚠️ Câu hỏi này cần giáo viên chấm điểm thủ công
+                            </p>
+                          </div>
+                        )}
                       </div>
                     )}
                 </div>

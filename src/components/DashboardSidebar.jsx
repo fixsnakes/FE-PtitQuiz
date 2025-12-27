@@ -21,7 +21,7 @@ import { MdPayment } from "react-icons/md";
 const SIDEBAR_ITEMS = {
   teacher: [
     { label: "Tổng quan", path: "/dashboard/teacher", icon: FiGrid },
-    { label: "Kỳ thi", path: "/dashboard/teacher/exams", icon: FiFileText },
+    { label: "Bài thi", path: "/dashboard/teacher/exams", icon: FiFileText },
     { label: "Lớp học", path: "/dashboard/teacher/classes", icon: FiUsers },
     { label: "Thông báo", path: "/dashboard/teacher/notifications", icon: FiBell },
     { label: "Thống kê mua đề thi", path: "/dashboard/teacher/exam-purchases", icon: FiDollarSign },
