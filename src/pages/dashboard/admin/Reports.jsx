@@ -23,10 +23,6 @@ const COLOR_MAP = {
 // Helper function
 const getColorClass = (color) => COLOR_MAP[color] || "text-slate-600";
 
-// Mock data
-import { MOCK_REVENUE_DATA } from "./mockData/revenueData";
-import { MOCK_TRANSACTIONS } from "./mockData/transactionData";
-
 // Transaction type constants
 const TRANSACTION_TYPES = {
   DEPOSIT: "deposit",
@@ -86,91 +82,108 @@ export default function Reports() {
     }
   }, [dropdownOpen]);
 
+  // Load revenue report
+  const loadRevenueReport = async () => {
+    try {
+      setLoading(true);
+      const params = {
+        group_by: "month",
+        year: yearFilter,
+        period: period
+      };
+      
+      const response = await adminService.getRevenueReport(params);
+      if (response.success) {
+        setRevenueReport(response.data);
+      } else {
+        toast.error(response.message || "Không thể tải báo cáo doanh thu");
+      }
+    } catch (error) {
+      console.error("Error loading revenue report:", error);
+      toast.error(error.body?.message || "Không thể tải báo cáo doanh thu");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Load transaction history
+  const loadTransactionHistory = async () => {
+    try {
+      setTransactionLoading(true);
+      
+      // Build query parameters for server-side filtering
+      const params = {
+        page: transactionFilters.page,
+        limit: transactionFilters.limit,
+      };
+      
+      if (transactionFilters.searchAccount) {
+        params.search = transactionFilters.searchAccount;
+      }
+      
+      if (transactionFilters.typeFilter !== "all") {
+        params.type = transactionFilters.typeFilter;
+      }
+      
+      if (transactionFilters.dateFrom) {
+        params.dateFrom = transactionFilters.dateFrom;
+      }
+      
+      if (transactionFilters.dateTo) {
+        params.dateTo = transactionFilters.dateTo;
+      }
+      
+      const response = await adminService.getTransactionHistory(params);
+      if (response.success) {
+        setTransactionHistory(response.data);
+      } else {
+        toast.error(response.message || "Không thể tải lịch sử giao dịch");
+      }
+    } catch (error) {
+      console.error("Error loading transaction history:", error);
+      toast.error(error.body?.message || "Không thể tải lịch sử giao dịch");
+    } finally {
+      setTransactionLoading(false);
+    }
+  };
+
+  // Track initial mount to avoid double API calls
+  const isInitialMount = useRef(true);
+
+  // Load data when tab changes
   useEffect(() => {
     if (activeTab === "revenue") {
       loadRevenueReport();
     } else if (activeTab === "transactions") {
       loadTransactionHistory();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
 
-  // Reload transactions when filters change
+  // Reload revenue report when period or year changes (skip on initial mount)
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return; // Skip on initial mount, already handled by tab change effect
+    }
+    
+    if (activeTab === "revenue") {
+      loadRevenueReport();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [period, yearFilter]);
+
+  // Reload transactions when filters change (debounced for search)
   useEffect(() => {
     if (activeTab === "transactions") {
-      loadTransactionHistory();
+      const timeoutId = setTimeout(() => {
+        loadTransactionHistory();
+      }, transactionFilters.searchAccount ? 500 : 0);
+      
+      return () => clearTimeout(timeoutId);
     }
-  }, [transactionFilters]);
-
-  const loadRevenueReport = async () => {
-    try {
-      setLoading(true);
-      // TODO: Uncomment để dùng API thật
-      // const response = await adminService.getRevenueReport({ group_by: "month" });
-      // if (response.success) { setRevenueReport(response.data); }
-      
-      // MOCK DATA
-      await new Promise(resolve => setTimeout(resolve, 300));
-      setRevenueReport(MOCK_REVENUE_DATA);
-    } catch (error) {
-      console.error("Error loading revenue report:", error);
-      toast.error("Không thể tải báo cáo doanh thu");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const loadTransactionHistory = async () => {
-    try {
-      setTransactionLoading(true);
-      // TODO: Implement API call
-      // const response = await adminService.getTransactionHistory(transactionFilters);
-      // if (response.success) { setTransactionHistory(response.data); }
-      
-      // MOCK DATA with filtering
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
-      let filteredTransactions = [...MOCK_TRANSACTIONS.transactions];
-      
-      // Filter by search account (name or email)
-      if (transactionFilters.searchAccount) {
-        const searchLower = transactionFilters.searchAccount.toLowerCase();
-        filteredTransactions = filteredTransactions.filter(t => 
-          t.user?.fullName.toLowerCase().includes(searchLower) ||
-          t.user?.email.toLowerCase().includes(searchLower)
-        );
-      }
-      
-      // Filter by type
-      if (transactionFilters.typeFilter !== "all") {
-        filteredTransactions = filteredTransactions.filter(t => t.transactionType === transactionFilters.typeFilter);
-      }
-      
-      // Filter by date range
-      if (transactionFilters.dateFrom) {
-        filteredTransactions = filteredTransactions.filter(t => new Date(t.created_at) >= new Date(transactionFilters.dateFrom));
-      }
-      if (transactionFilters.dateTo) {
-        const endDate = new Date(transactionFilters.dateTo);
-        endDate.setHours(23, 59, 59, 999);
-        filteredTransactions = filteredTransactions.filter(t => new Date(t.created_at) <= endDate);
-      }
-      
-      setTransactionHistory({
-        transactions: filteredTransactions,
-        pagination: {
-          total: filteredTransactions.length,
-          page: transactionFilters.page,
-          limit: transactionFilters.limit,
-          totalPages: Math.ceil(filteredTransactions.length / transactionFilters.limit)
-        }
-      });
-    } catch (error) {
-      console.error("Error loading transaction history:", error);
-      toast.error("Không thể tải lịch sử giao dịch");
-    } finally {
-      setTransactionLoading(false);
-    }
-  };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [transactionFilters, activeTab]);
 
   const tabs = [
     { id: "revenue", label: "Báo cáo doanh thu", icon: FiTrendingUp },
@@ -441,8 +454,7 @@ export default function Reports() {
                   <div className="flex gap-3">
                     <button
                       onClick={() => {
-                        setTransactionFilters({ ...transactionFilters, page: 1 });
-                        loadTransactionHistory();
+                        setTransactionFilters(prev => ({ ...prev, page: 1 }));
                       }}
                       className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition font-medium"
                     >
@@ -503,9 +515,7 @@ export default function Reports() {
                           </td>
                         </tr>
                       ) : (
-                        transactionHistory.transactions
-                          .slice((transactionFilters.page - 1) * transactionFilters.limit, transactionFilters.page * transactionFilters.limit)
-                          .map((transaction) => {
+                        transactionHistory.transactions.map((transaction) => {
                             const typeMeta = TRANSACTION_TYPE_META[transaction.transactionType] || { label: transaction.transactionType, badge: "bg-slate-50 text-slate-600" };
                             
                             return (
