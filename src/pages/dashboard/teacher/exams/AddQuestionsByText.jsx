@@ -201,7 +201,7 @@ function buildQuestionPayload(question) {
 }
 
 const ExamInstructions = () => (
-  <div className="space-y-2 rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm text-gray-700">
+  <div className="space-y-4 rounded-lg border border-blue-200 bg-blue-50 p-4 text-sm text-gray-700">
     <h4 className="font-semibold text-gray-800">Quy tắc soạn câu hỏi</h4>
     <ul className="list-disc list-inside space-y-1">
       <li>Mỗi câu hỏi cách nhau 1 dòng trống.</li>
@@ -214,6 +214,25 @@ const ExamInstructions = () => (
         <code className="rounded bg-gray-200 px-1">&lt;br /&gt;</code>
       </li>
     </ul>
+    
+    <div className="mt-4 rounded-lg border border-blue-300 bg-white p-3">
+      <h5 className="mb-2 font-semibold text-gray-800">Nội dung mẫu:</h5>
+      <pre className="whitespace-pre-wrap text-xs text-gray-700 font-mono bg-gray-50 p-3 rounded border border-gray-200 overflow-x-auto">
+{`Phần 1
+
+When we went back to the bookstore, the bookseller _ the book we wanted.
+A. sold    
+*B. had sold    
+C. sells     
+D. has sold
+
+By the end of last summer, the farmers _ all the crop.
+A. harvested    
+*B. had harvested   
+C. harvest     
+D. are harvested`}
+      </pre>
+    </div>
   </div>
 );
 

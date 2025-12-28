@@ -25,9 +25,6 @@ import {
 const QUESTION_TYPES = [
   { value: "single_choice", label: "Trắc nghiệm (1 đáp án đúng)" },
   { value: "multiple_choice", label: "Trắc nghiệm (nhiều đáp án đúng)" },
-  { value: "true_false", label: "Đúng / Sai" },
-  { value: "short_answer", label: "Tự luận ngắn" },
-  { value: "essay", label: "Bài luận dài" },
 ];
 
 const DIFFICULTY_OPTIONS = [
@@ -36,7 +33,7 @@ const DIFFICULTY_OPTIONS = [
   { value: "hard", label: "Khó" },
 ];
 
-const ANSWER_TYPES = ["single_choice", "multiple_choice", "true_false"];
+const ANSWER_TYPES = ["single_choice", "multiple_choice"];
 
 const QUESTION_METHOD_LABELS = {
   text: "Văn bản",
@@ -59,10 +56,7 @@ const createDefaultFormState = (type = "single_choice") => ({
   type,
   difficulty: "medium",
   image_url: "",
-  answers:
-    type === "true_false"
-      ? TRUE_FALSE_PRESET.map((answer) => ({ ...answer }))
-      : makeBlankAnswers(),
+  answers: makeBlankAnswers(),
 });
 
 function normalizeQuestion(raw) {
@@ -120,7 +114,7 @@ function AnswersEditor({ type, answers, onChange, disabled }) {
   };
 
   const toggleCorrect = (index) => {
-    if (type === "single_choice" || type === "true_false") {
+    if (type === "single_choice") {
       // Single choice: chỉ cho phép 1 đáp án đúng
       const next = answers.map((answer, idx) => ({
         ...answer,
@@ -336,12 +330,13 @@ export default function ManageExamQuestions() {
     updater((prev) => {
       const next = { ...prev, [field]: value };
       if (field === "type") {
-        if (value === "true_false") {
-          next.answers = TRUE_FALSE_PRESET.map((answer) => ({ ...answer }));
-        } else if (value === "single_choice" || value === "multiple_choice") {
+        // Chỉ cho phép single_choice hoặc multiple_choice
+        if (value === "single_choice" || value === "multiple_choice") {
           next.answers = makeBlankAnswers();
         } else {
-          next.answers = [];
+          // Nếu type không hợp lệ, đặt về single_choice
+          next.type = "single_choice";
+          next.answers = makeBlankAnswers();
         }
       }
       return next;

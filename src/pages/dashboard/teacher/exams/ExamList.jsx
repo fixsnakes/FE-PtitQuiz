@@ -11,11 +11,15 @@ import {
   FiChevronDown,
   FiChevronUp,
   FiX,
+  FiMessageSquare,
+  FiTrash2,
 } from "react-icons/fi";
 import { toast } from "react-toastify";
 import DashboardLayout from "../../../../layouts/DashboardLayout";
 import { getTeacherClasses } from "../../../../services/classService";
 import { listExams, deleteExam } from "../../../../services/examService";
+import { getCommentsByExam, deleteComment, createComment } from "../../../../services/examCommentService";
+import formatDateTime from "../../../../utils/format_time";
 
 const STATUS_OPTIONS = [
   { value: "", label: "Tất cả" },
@@ -118,6 +122,15 @@ export default function ExamListPage() {
   const [classes, setClasses] = useState([]);
   const [loadingClasses, setLoadingClasses] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
+  
+  // Comments management state
+  const [selectedExamId, setSelectedExamId] = useState(null);
+  const [comments, setComments] = useState([]);
+  const [commentsLoading, setCommentsLoading] = useState(false);
+  const [showCommentsModal, setShowCommentsModal] = useState(false);
+  const [replyingTo, setReplyingTo] = useState(null);
+  const [replyText, setReplyText] = useState("");
+  const [newCommentText, setNewCommentText] = useState("");
 
   useEffect(() => {
     async function loadClasses() {
@@ -187,6 +200,99 @@ export default function ExamListPage() {
     };
     setFilters(next);
     fetchExams(next);
+  };
+
+  // Load comments for selected exam
+  const loadComments = async (examId) => {
+    if (!examId) return;
+    try {
+      setCommentsLoading(true);
+      const response = await getCommentsByExam(examId);
+      setComments(Array.isArray(response) ? response : (response?.data || []));
+    } catch (error) {
+      console.error("Error loading comments:", error);
+      toast.error("Không thể tải bình luận");
+    } finally {
+      setCommentsLoading(false);
+    }
+  };
+
+  // Open comments modal
+  const handleOpenComments = async (examId) => {
+    setSelectedExamId(examId);
+    setShowCommentsModal(true);
+    await loadComments(examId);
+  };
+
+  // Close comments modal
+  const handleCloseComments = () => {
+    setShowCommentsModal(false);
+    setSelectedExamId(null);
+    setComments([]);
+    setReplyingTo(null);
+    setReplyText("");
+    setNewCommentText("");
+  };
+
+  // Submit new comment
+  const handleSubmitComment = async () => {
+    if (!newCommentText.trim()) {
+      toast.error("Vui lòng nhập nội dung bình luận");
+      return;
+    }
+    if (!selectedExamId) return;
+    try {
+      await createComment({
+        exam_id: selectedExamId,
+        text: newCommentText.trim(),
+      });
+      setNewCommentText("");
+      toast.success("Đã thêm bình luận");
+      await loadComments(selectedExamId);
+    } catch (error) {
+      console.error("Error creating comment:", error);
+      toast.error(error.message || "Không thể thêm bình luận");
+    }
+  };
+
+  // Submit reply
+  const handleSubmitReply = async (parentId) => {
+    if (!replyText.trim()) {
+      toast.error("Vui lòng nhập nội dung phản hồi");
+      return;
+    }
+    if (!selectedExamId) return;
+    try {
+      await createComment({
+        exam_id: selectedExamId,
+        text: replyText.trim(),
+        parent_id: parentId,
+      });
+      setReplyText("");
+      setReplyingTo(null);
+      toast.success("Đã thêm phản hồi");
+      await loadComments(selectedExamId);
+    } catch (error) {
+      console.error("Error creating reply:", error);
+      toast.error(error.message || "Không thể thêm phản hồi");
+    }
+  };
+
+  // Delete comment
+  const handleDeleteComment = async (commentId) => {
+    if (!window.confirm("Bạn có chắc chắn muốn xóa bình luận này? Hành động này không thể hoàn tác.")) {
+      return;
+    }
+    try {
+      await deleteComment(commentId);
+      toast.success("Đã xóa bình luận");
+      if (selectedExamId) {
+        await loadComments(selectedExamId);
+      }
+    } catch (error) {
+      console.error("Error deleting comment:", error);
+      toast.error(error.message || "Không thể xóa bình luận");
+    }
   };
 
   const filteredCountLabel = useMemo(() => {
@@ -507,6 +613,14 @@ export default function ExamListPage() {
                       </Link>
                       <button
                         type="button"
+                        onClick={() => handleOpenComments(exam.id)}
+                        className="inline-flex items-center gap-2 rounded-lg border border-purple-200 bg-white px-4 py-2 text-xs font-semibold text-purple-600 shadow-sm transition-all hover:bg-purple-50 hover:shadow-md hover:-translate-y-0.5"
+                      >
+                        <FiMessageSquare />
+                        Quản lý bình luận
+                      </button>
+                      <button
+                        type="button"
                         className="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-white px-4 py-2 text-xs font-semibold text-red-600 shadow-sm transition-all hover:bg-red-50 hover:shadow-md hover:-translate-y-0.5"
                         onClick={async () => {
                           if (!window.confirm(`Bạn chắc chắn muốn xóa đề thi "${exam.title}"?`)) {
@@ -531,6 +645,205 @@ export default function ExamListPage() {
             </div>
           )}
         </section>
+
+        {/* Comments Management Modal */}
+        {showCommentsModal && selectedExamId && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+            <div className="w-full max-w-4xl max-h-[90vh] rounded-2xl border border-slate-200 bg-white shadow-xl flex flex-col">
+              {/* Modal Header */}
+              <div className="flex items-center justify-between border-b border-slate-200 p-6">
+                <div>
+                  <h2 className="text-xl font-bold text-slate-900">Quản lý bình luận</h2>
+                  <p className="text-sm text-slate-500 mt-1">
+                    {exams.find(e => e.id === selectedExamId)?.title || "Đề thi"}
+                  </p>
+                </div>
+                <div className="flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => loadComments(selectedExamId)}
+                    className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 transition hover:bg-slate-50"
+                  >
+                    <FiLoader className="animate-spin" />
+                    Làm mới
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleCloseComments}
+                    className="rounded-lg p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+                  >
+                    <FiX className="h-5 w-5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Modal Content */}
+              <div className="flex-1 overflow-y-auto p-6">
+                {/* New Comment Form */}
+                <div className="mb-6 rounded-lg border border-slate-200 bg-slate-50 p-4">
+                  <h3 className="mb-3 text-sm font-semibold text-slate-900">Viết bình luận mới</h3>
+                  <textarea
+                    value={newCommentText}
+                    onChange={(e) => setNewCommentText(e.target.value)}
+                    placeholder="Nhập bình luận của bạn..."
+                    className="w-full rounded-lg border border-slate-300 bg-white p-3 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                    rows={3}
+                  />
+                  <div className="mt-3 flex justify-end">
+                    <button
+                      type="button"
+                      onClick={handleSubmitComment}
+                      disabled={!newCommentText.trim()}
+                      className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Đăng bình luận
+                    </button>
+                  </div>
+                </div>
+
+                {commentsLoading ? (
+                  <div className="flex items-center justify-center py-10">
+                    <FiLoader className="animate-spin text-3xl text-indigo-600" />
+                  </div>
+                ) : comments.length === 0 ? (
+                  <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/60 p-10 text-center text-sm text-slate-500">
+                    <FiMessageSquare className="mx-auto mb-2 text-4xl text-slate-300" />
+                    <p>Chưa có bình luận nào</p>
+                    <p className="mt-1 text-xs">Hãy là người đầu tiên bình luận!</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {comments.map((comment) => (
+                      <div
+                        key={comment.id}
+                        className="rounded-lg border border-slate-200 bg-white p-4"
+                      >
+                        {/* Comment Header */}
+                        <div className="mb-3 flex items-start justify-between">
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-indigo-100 text-indigo-700">
+                              <span className="text-sm font-bold">
+                                {comment.user?.fullName?.charAt(0)?.toUpperCase() || "U"}
+                              </span>
+                            </div>
+                            <div>
+                              <p className="font-semibold text-slate-900">
+                                {comment.user?.fullName || "Người dùng"}
+                                {comment.user?.role && (
+                                  <span className="ml-2 rounded bg-slate-100 px-2 py-0.5 text-xs text-slate-600">
+                                    {comment.user.role === "teacher" ? "Giáo viên" : "Học sinh"}
+                                  </span>
+                                )}
+                              </p>
+                              <p className="text-xs text-slate-500">
+                                {formatDateTime(comment.created_at)}
+                              </p>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteComment(comment.id)}
+                            className="inline-flex items-center gap-1 rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-600 transition hover:bg-red-100"
+                            title="Xóa bình luận"
+                          >
+                            <FiTrash2 className="h-3 w-3" />
+                            Xóa
+                          </button>
+                        </div>
+
+                        {/* Comment Content */}
+                        <p className="mb-3 text-slate-700 whitespace-pre-wrap">{comment.text}</p>
+
+                        {/* Reply Button */}
+                        <button
+                          type="button"
+                          onClick={() => setReplyingTo(replyingTo === comment.id ? null : comment.id)}
+                          className="mb-3 text-sm text-indigo-600 hover:text-indigo-700 font-medium"
+                        >
+                          {replyingTo === comment.id ? "Hủy phản hồi" : "Phản hồi"}
+                        </button>
+
+                        {/* Reply Form */}
+                        {replyingTo === comment.id && (
+                          <div className="mb-3 rounded-lg border border-indigo-200 bg-indigo-50 p-3">
+                            <textarea
+                              value={replyText}
+                              onChange={(e) => setReplyText(e.target.value)}
+                              placeholder="Nhập phản hồi của bạn..."
+                              className="w-full rounded-lg border border-slate-300 bg-white p-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                              rows={3}
+                            />
+                            <div className="mt-2 flex justify-end gap-2">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  setReplyingTo(null);
+                                  setReplyText("");
+                                }}
+                                className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+                              >
+                                Hủy
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleSubmitReply(comment.id)}
+                                disabled={!replyText.trim()}
+                                className="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                Đăng phản hồi
+                              </button>
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Replies */}
+                        {comment.replies && comment.replies.length > 0 && (
+                          <div className="mt-4 space-y-3 border-l-2 border-slate-200 pl-4">
+                            {comment.replies.map((reply) => (
+                              <div key={reply.id} className="rounded-lg bg-slate-50 p-3">
+                                <div className="mb-2 flex items-start justify-between">
+                                  <div className="flex items-center gap-2">
+                                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-200 text-slate-700">
+                                      <span className="text-xs font-bold">
+                                        {reply.user?.fullName?.charAt(0)?.toUpperCase() || "U"}
+                                      </span>
+                                    </div>
+                                    <div>
+                                      <p className="text-sm font-semibold text-slate-900">
+                                        {reply.user?.fullName || "Người dùng"}
+                                        {reply.user?.role && (
+                                          <span className="ml-2 rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-600">
+                                            {reply.user.role === "teacher" ? "GV" : "HS"}
+                                          </span>
+                                        )}
+                                      </p>
+                                      <p className="text-xs text-slate-500">
+                                        {formatDateTime(reply.created_at)}
+                                      </p>
+                                    </div>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteComment(reply.id)}
+                                    className="inline-flex items-center gap-1 rounded-lg border border-red-200 bg-red-50 px-2 py-1 text-xs font-semibold text-red-600 transition hover:bg-red-100"
+                                    title="Xóa phản hồi"
+                                  >
+                                    <FiTrash2 className="h-3 w-3" />
+                                  </button>
+                                </div>
+                                <p className="text-sm text-slate-700 whitespace-pre-wrap">{reply.text}</p>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </DashboardLayout>
   );

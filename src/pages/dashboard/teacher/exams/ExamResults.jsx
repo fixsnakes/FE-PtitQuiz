@@ -126,6 +126,7 @@ function ExamResultsPage() {
     }
   };
 
+
   if (loading) {
     return (
       <DashboardLayout role="teacher">
