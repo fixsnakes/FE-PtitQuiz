@@ -100,29 +100,6 @@ export default function TransactionHistory({ role = "student" }) {
         fetchTransactions();
     }, [page, pageSize, typeFilter, dateFrom, dateTo]);
 
-    // Auto-refresh every 10 seconds if there are pending transactions
-    useEffect(() => {
-        // Check if there are any pending transactions
-        const hasPendingTransactions = mappedTransactions.some(
-            (transaction) => transaction.status === "pending"
-        );
-
-        // Only set up interval if there are pending transactions
-        if (!hasPendingTransactions) {
-            return;
-        }
-
-        // Set up interval to refresh every 10 seconds
-        const intervalId = setInterval(() => {
-            fetchTransactions();
-        }, 10000); // 10 seconds
-
-        // Cleanup interval on unmount or when no more pending transactions
-        return () => {
-            clearInterval(intervalId);
-        };
-    }, [mappedTransactions, page, pageSize, typeFilter, dateFrom, dateTo]);
-
     // Map API transactions to display format
     const mappedTransactions = useMemo(() => {
         return transactions.map((transaction) => {
@@ -150,6 +127,29 @@ export default function TransactionHistory({ role = "student" }) {
             };
         });
     }, [transactions]);
+
+    // Auto-refresh every 10 seconds if there are pending transactions
+    useEffect(() => {
+        // Check if there are any pending transactions
+        const hasPendingTransactions = mappedTransactions.some(
+            (transaction) => transaction.status === "pending"
+        );
+
+        // Only set up interval if there are pending transactions
+        if (!hasPendingTransactions) {
+            return;
+        }
+
+        // Set up interval to refresh every 10 seconds
+        const intervalId = setInterval(() => {
+            fetchTransactions();
+        }, 10000); // 10 seconds
+
+        // Cleanup interval on unmount or when no more pending transactions
+        return () => {
+            clearInterval(intervalId);
+        };
+    }, [mappedTransactions, page, pageSize, typeFilter, dateFrom, dateTo]);
 
     // search - hoc sinh
     const filtered = useMemo(() => {
