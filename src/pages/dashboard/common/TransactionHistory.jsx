@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect, useCallback } from "react";
 import { Search } from "lucide-react";
 import { FiChevronLeft, FiChevronRight } from "react-icons/fi";
 import { toast } from "react-toastify";
@@ -59,45 +59,69 @@ export default function TransactionHistory({ role = "student" }) {
     const [page, setPage] = useState(1);
 
     // Fetch transaction history from API
-    useEffect(() => {
-        const fetchTransactions = async () => {
-            setLoading(true);
-            try {
-                const params = {
-                    page,
-                    limit: pageSize,
-                    sortBy: "created_at",
-                    order: "DESC",
-                };
+    const fetchTransactions = async () => {
+        setLoading(true);
+        try {
+            const params = {
+                page,
+                limit: pageSize,
+                sortBy: "created_at",
+                order: "DESC",
+            };
 
-                // Add filters only if they are set
-                if (typeFilter !== "all") params.transactionType = typeFilter;
-                if (dateFrom) params.fromDate = dateFrom;
-                if (dateTo) params.toDate = dateTo;
+            // Add filters only if they are set
+            if (typeFilter !== "all") params.transactionType = typeFilter;
+            if (dateFrom) params.fromDate = dateFrom;
+            if (dateTo) params.toDate = dateTo;
 
-                const response = await getTransactionHistory(params);
-                if (response?.data && response?.message) {
-                    const apiTransactions = response.data.transactions || [];
-                    setTransactions(apiTransactions);
-                    setPagination(response.data.pagination || {
-                        total: 0,
-                        page: 1,
-                        limit: 10,
-                        totalPages: 1,
-                    });
-                } else {
-                    setTransactions([]);
-                }
-            } catch (error) {
-                console.error("Error fetching transaction history:", error);
+            const response = await getTransactionHistory(params);
+            if (response?.data && response?.message) {
+                const apiTransactions = response.data.transactions || [];
+                setTransactions(apiTransactions);
+                setPagination(response.data.pagination || {
+                    total: 0,
+                    page: 1,
+                    limit: 10,
+                    totalPages: 1,
+                });
+            } else {
                 setTransactions([]);
-                toast.error("Không thể tải lịch sử giao dịch");
-            } finally {
-                setLoading(false);
             }
-        };
+        } catch (error) {
+            console.error("Error fetching transaction history:", error);
+            setTransactions([]);
+            toast.error("Không thể tải lịch sử giao dịch");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
         fetchTransactions();
     }, [page, pageSize, typeFilter, dateFrom, dateTo]);
+
+    // Auto-refresh every 10 seconds if there are pending transactions
+    useEffect(() => {
+        // Check if there are any pending transactions
+        const hasPendingTransactions = mappedTransactions.some(
+            (transaction) => transaction.status === "pending"
+        );
+
+        // Only set up interval if there are pending transactions
+        if (!hasPendingTransactions) {
+            return;
+        }
+
+        // Set up interval to refresh every 10 seconds
+        const intervalId = setInterval(() => {
+            fetchTransactions();
+        }, 10000); // 10 seconds
+
+        // Cleanup interval on unmount or when no more pending transactions
+        return () => {
+            clearInterval(intervalId);
+        };
+    }, [mappedTransactions, page, pageSize, typeFilter, dateFrom, dateTo]);
 
     // Map API transactions to display format
     const mappedTransactions = useMemo(() => {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { toast } from "react-toastify";
 import DashboardLayout from "../../../layouts/DashboardLayout";
 import { getDepositHistory } from "../../../services/walletservice";
@@ -46,33 +46,58 @@ export default function StudentPayment() {
     const [qrImageUrl, setQrImageUrl] = useState("");
     const [loading, setLoading] = useState(false);
 
-    // fetch history data
-    useEffect(() => {
-        const fetchDepositHistory = async () => {
-            setLoading(true);
-            try {
-                const response = await getDepositHistory(currentPage, pageSize);
-                if (response?.data && response?.message) {
-                    setPaymentOrders(response.data.deposits || []);
-                    setPagination(response.data.pagination || {
-                        total: 0,
-                        page: 1,
-                        limit: 10,
-                        totalPages: 1,
-                    });
-                } else {
-                    setPaymentOrders([]);
-                }
-            } catch (error) {
-                console.error("Error fetching deposit history:", error);
+    // fetch history data function
+    const fetchDepositHistory = useCallback(async () => {
+        setLoading(true);
+        try {
+            const response = await getDepositHistory(currentPage, pageSize);
+            if (response?.data && response?.message) {
+                setPaymentOrders(response.data.deposits || []);
+                setPagination(response.data.pagination || {
+                    total: 0,
+                    page: 1,
+                    limit: 10,
+                    totalPages: 1,
+                });
+            } else {
                 setPaymentOrders([]);
-                toast.error("Không thể tải lịch sử giao dịch");
-            } finally {
-                setLoading(false);
             }
+        } catch (error) {
+            console.error("Error fetching deposit history:", error);
+            setPaymentOrders([]);
+            toast.error("Không thể tải lịch sử giao dịch");
+        } finally {
+            setLoading(false);
         }
-        fetchDepositHistory();
     }, [currentPage, pageSize]);
+
+    // Initial fetch and refetch when page/pageSize changes
+    useEffect(() => {
+        fetchDepositHistory();
+    }, [fetchDepositHistory]);
+
+    // Auto-refresh every 10 seconds if there are pending deposits
+    useEffect(() => {
+        // Check if there are any pending deposits
+        const hasPendingDeposits = paymentOrders.some(
+            (deposit) => deposit.deposit_status === "pending"
+        );
+
+        // Only set up interval if there are pending deposits
+        if (!hasPendingDeposits) {
+            return;
+        }
+
+        // Set up interval to refresh every 10 seconds
+        const intervalId = setInterval(() => {
+            fetchDepositHistory();
+        }, 10000); // 10 seconds
+
+        // Cleanup interval on unmount or when no more pending deposits
+        return () => {
+            clearInterval(intervalId);
+        };
+    }, [paymentOrders, fetchDepositHistory]);
 
 
 
@@ -284,26 +309,7 @@ export default function StudentPayment() {
                             <div className="mb-4 flex flex-wrap items-center gap-3">
                                 <button
                                     type="button"
-                                    onClick={async () => {
-                                        setLoading(true);
-                                        try {
-                                            const response = await getDepositHistory(currentPage, pageSize);
-                                            if (response?.data) {
-                                                setPaymentOrders(response.data.deposits || []);
-                                                setPagination(response.data.pagination || {
-                                                    total: 0,
-                                                    page: 1,
-                                                    limit: 10,
-                                                    totalPages: 1,
-                                                });
-                                            }
-                                        } catch (error) {
-                                            console.error("Error refreshing deposit history:", error);
-                                            toast.error("Không thể làm mới dữ liệu");
-                                        } finally {
-                                            setLoading(false);
-                                        }
-                                    }}
+                                    onClick={fetchDepositHistory}
                                     disabled={loading}
                                     className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50 disabled:opacity-50"
                                 >
