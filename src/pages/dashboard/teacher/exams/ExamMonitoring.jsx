@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import {
   FiArrowLeft,
@@ -19,6 +19,13 @@ import DashboardLayout from "../../../../layouts/DashboardLayout";
 import { getExamDetail } from "../../../../services/examService";
 import { getExamCheatingLogs } from "../../../../services/cheatingLogService";
 import formatDateTime from "../../../../utils/format_time";
+import {
+  initSocket,
+  disconnectSocket,
+  joinExamMonitoring,
+  leaveExamMonitoring,
+  onNewCheatingEvent,
+} from "../../../../services/socketService";
 
 const SEVERITY_COLORS = {
   low: "bg-blue-100 text-blue-700 border-blue-200",
@@ -235,27 +242,131 @@ function ExamMonitoringPage() {
   const [logs, setLogs] = useState([]);
   const [statistics, setStatistics] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [autoRefresh, setAutoRefresh] = useState(false);
+  const [isMonitoring, setIsMonitoring] = useState(false);
+  const [socketConnected, setSocketConnected] = useState(false);
   const [filter, setFilter] = useState({
     severity: "",
     type: "",
     studentId: "",
   });
+  // Ref để track các log đã hiển thị toast (tránh hiển thị 2 lần)
+  const notifiedLogIds = useRef(new Set());
 
+  // Khởi tạo và kết nối WebSocket khi component mount
   useEffect(() => {
     if (examId) {
       loadData();
+      
+      // Khởi tạo WebSocket
+      const socket = initSocket();
+      
+      // Lắng nghe sự kiện kết nối
+      socket.on("connect", () => {
+        setSocketConnected(true);
+        joinExamMonitoring(examId);
+      });
+
+      socket.on("disconnect", () => {
+        setSocketConnected(false);
+      });
+
+      // Cleanup khi unmount
+      return () => {
+        leaveExamMonitoring(examId);
+        // Không disconnect socket hoàn toàn vì có thể đang dùng ở nơi khác
+      };
     }
   }, [examId]);
 
+  // Lắng nghe sự kiện gian lận mới qua WebSocket
   useEffect(() => {
-    if (autoRefresh) {
-      const interval = setInterval(() => {
-        loadLogs();
-      }, 5000); // Refresh mỗi 5 giây
-      return () => clearInterval(interval);
-    }
-  }, [autoRefresh, examId, filter]);
+    if (!examId || !isMonitoring) return;
+
+    const unsubscribe = onNewCheatingEvent((data) => {
+      // Chỉ xử lý nếu là exam đang theo dõi
+      if (data.exam_id?.toString() === examId.toString()) {
+        const logId = data.log.id;
+        
+        // Kiểm tra xem đã hiển thị toast cho log này chưa
+        if (notifiedLogIds.current.has(logId)) {
+          return; // Đã hiển thị rồi, bỏ qua
+        }
+
+        // Thêm log mới vào đầu danh sách
+        setLogs((prevLogs) => {
+          // Kiểm tra xem log đã tồn tại chưa (tránh duplicate)
+          const exists = prevLogs.some((log) => log.id === logId);
+          if (exists) {
+            // Nếu đã tồn tại, đánh dấu đã thông báo
+            notifiedLogIds.current.add(logId);
+            return prevLogs;
+          }
+          
+          // Thêm log mới và cập nhật statistics
+          const newLogs = [data.log, ...prevLogs];
+          updateStatistics(newLogs);
+          
+          return newLogs;
+        });
+
+        // Đánh dấu đã hiển thị toast và hiển thị thông báo (ra ngoài setLogs)
+        notifiedLogIds.current.add(logId);
+        toast.info(
+          `Phát hiện gian lận mới: ${CHEATING_TYPE_LABELS[data.log.cheating_type] || data.log.cheating_type}`,
+          { autoClose: 3000 }
+        );
+      }
+    });
+
+    return () => {
+      unsubscribe();
+      // Reset notified logs khi unmount hoặc dependencies thay đổi
+      notifiedLogIds.current.clear();
+    };
+  }, [examId, isMonitoring]);
+
+  // Hàm cập nhật statistics
+  const updateStatistics = (logs) => {
+    const studentStats = {};
+    logs.forEach((log) => {
+      const studentId = log.student_id;
+      if (!studentStats[studentId]) {
+        studentStats[studentId] = {
+          student: log.student,
+          total_events: 0,
+          events_by_type: {},
+          events_by_severity: {},
+          first_event: log.detected_at,
+          last_event: log.detected_at,
+        };
+      }
+      studentStats[studentId].total_events++;
+      studentStats[studentId].events_by_type[log.cheating_type] =
+        (studentStats[studentId].events_by_type[log.cheating_type] || 0) + 1;
+      studentStats[studentId].events_by_severity[log.severity] =
+        (studentStats[studentId].events_by_severity[log.severity] || 0) + 1;
+      if (new Date(log.detected_at) < new Date(studentStats[studentId].first_event)) {
+        studentStats[studentId].first_event = log.detected_at;
+      }
+      if (new Date(log.detected_at) > new Date(studentStats[studentId].last_event)) {
+        studentStats[studentId].last_event = log.detected_at;
+      }
+    });
+
+    setStatistics({
+      total_events: logs.length,
+      total_students: Object.keys(studentStats).length,
+      by_student: Object.values(studentStats),
+      by_type: logs.reduce((acc, log) => {
+        acc[log.cheating_type] = (acc[log.cheating_type] || 0) + 1;
+        return acc;
+      }, {}),
+      by_severity: logs.reduce((acc, log) => {
+        acc[log.severity] = (acc[log.severity] || 0) + 1;
+        return acc;
+      }, {}),
+    });
+  };
 
   const loadData = async () => {
     setLoading(true);
@@ -278,14 +389,17 @@ function ExamMonitoringPage() {
     try {
       const data = await getExamCheatingLogs(examId);
       setLogs(data.logs || []);
-      setStatistics(data.statistics || null);
+      if (data.statistics) {
+        setStatistics(data.statistics);
+      } else {
+        // Tạo statistics từ logs nếu backend không trả về
+        updateStatistics(data.logs || []);
+      }
     } catch (error) {
       console.error("Error loading logs:", error);
-      if (!autoRefresh) {
-        toast.error(
-          error?.body?.message || error?.message || "Không thể tải logs."
-        );
-      }
+      toast.error(
+        error?.body?.message || error?.message || "Không thể tải logs."
+      );
     }
   };
 
@@ -359,15 +473,21 @@ function ExamMonitoringPage() {
               </button>
               <button
                 type="button"
-                onClick={() => setAutoRefresh(!autoRefresh)}
+                onClick={() => {
+                  setIsMonitoring(!isMonitoring);
+                  if (!isMonitoring) {
+                    // Đảm bảo đã join room khi bật monitoring
+                    joinExamMonitoring(examId);
+                  }
+                }}
                 className={`inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-sm font-semibold shadow-sm transition ${
-                  autoRefresh
+                  isMonitoring
                     ? "bg-emerald-600 text-white hover:bg-emerald-700 hover:shadow-lg"
                     : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 hover:shadow-md"
                 }`}
               >
                 <FiClock />
-                {autoRefresh ? "Tắt tự động" : "Bật tự động"}
+                {isMonitoring ? "Tắt giám sát" : "Bật giám sát"}
               </button>
             </div>
           </div>
@@ -397,19 +517,22 @@ function ExamMonitoringPage() {
               </div>
             </div>
             <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-              <div className="text-sm text-slate-500">Đang theo dõi</div>
+              <div className="text-sm text-slate-500">Trạng thái kết nối</div>
               <div className="mt-1 flex items-center gap-2">
-                {autoRefresh ? (
+                {socketConnected ? (
                   <>
                     <div className="h-3 w-3 animate-pulse rounded-full bg-emerald-500"></div>
                     <span className="text-lg font-semibold text-emerald-600">
-                      Hoạt động
+                      {isMonitoring ? "Đang giám sát" : "Đã kết nối"}
                     </span>
                   </>
                 ) : (
-                  <span className="text-lg font-semibold text-slate-400">
-                    Tạm dừng
-                  </span>
+                  <>
+                    <div className="h-3 w-3 rounded-full bg-red-500"></div>
+                    <span className="text-lg font-semibold text-red-600">
+                      Mất kết nối
+                    </span>
+                  </>
                 )}
               </div>
             </div>

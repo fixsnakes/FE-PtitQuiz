@@ -97,6 +97,57 @@ function CreateExamPage() {
   const [imagePreview, setImagePreview] = useState(null);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [classSearchTerm, setClassSearchTerm] = useState("");
+  const [errors, setErrors] = useState({}); // Validation errors
+  const DRAFT_KEY = "exam_draft"; // Key cho localStorage
+
+  // Load draft từ localStorage khi component mount
+  useEffect(() => {
+    try {
+      const savedDraft = localStorage.getItem(DRAFT_KEY);
+      if (savedDraft) {
+        const draft = JSON.parse(savedDraft);
+        // Chỉ load nếu draft còn mới (trong vòng 7 ngày)
+        if (draft.timestamp && Date.now() - draft.timestamp < 7 * 24 * 60 * 60 * 1000) {
+          setConfig(draft.config);
+          if (draft.imagePreview) {
+            setImagePreview(draft.imagePreview);
+          }
+          toast.info("Đã khôi phục bản nháp trước đó.", { autoClose: 3000 });
+        }
+      }
+    } catch (error) {
+      console.error("Error loading draft:", error);
+    }
+  }, []);
+
+  // Auto-save draft vào localStorage
+  useEffect(() => {
+    const saveDraft = () => {
+      try {
+        const draft = {
+          config,
+          imagePreview,
+          timestamp: Date.now(),
+        };
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+      } catch (error) {
+        console.error("Error saving draft:", error);
+      }
+    };
+
+    // Debounce save để tránh lưu quá nhiều
+    const timeoutId = setTimeout(saveDraft, 1000);
+    return () => clearTimeout(timeoutId);
+  }, [config, imagePreview]);
+
+  // Clear draft khi tạo đề thi thành công
+  const clearDraft = () => {
+    try {
+      localStorage.removeItem(DRAFT_KEY);
+    } catch (error) {
+      console.error("Error clearing draft:", error);
+    }
+  };
 
   useEffect(() => {
     async function loadClasses() {
@@ -113,6 +164,71 @@ function CreateExamPage() {
 
     loadClasses();
   }, []);
+
+  // Validation real-time cho từng field
+  const validateField = (field, value, allConfig = config) => {
+    const newErrors = { ...errors };
+    
+    switch (field) {
+      case "title":
+        if (!value?.trim()) {
+          newErrors.title = "Tên đề thi không được để trống";
+        } else {
+          delete newErrors.title;
+        }
+        break;
+      case "minutes":
+        if (!value || Number(value) <= 0) {
+          newErrors.minutes = "Thời gian làm bài phải lớn hơn 0";
+        } else {
+          delete newErrors.minutes;
+        }
+        break;
+      case "totalScore":
+        if (value && Number(value) <= 0) {
+          newErrors.totalScore = "Tổng điểm phải lớn hơn 0";
+        } else {
+          delete newErrors.totalScore;
+        }
+        break;
+      case "startTime":
+        if (!allConfig.noTimeLimit && value && allConfig.endTime) {
+          if (new Date(value) >= new Date(allConfig.endTime)) {
+            newErrors.startTime = "Thời gian bắt đầu phải trước thời gian kết thúc";
+          } else {
+            delete newErrors.startTime;
+          }
+        } else {
+          delete newErrors.startTime;
+        }
+        break;
+      case "endTime":
+        if (!allConfig.noTimeLimit && value && allConfig.startTime) {
+          if (new Date(value) <= new Date(allConfig.startTime)) {
+            newErrors.endTime = "Thời gian kết thúc phải sau thời gian bắt đầu";
+          } else {
+            delete newErrors.endTime;
+          }
+        } else {
+          delete newErrors.endTime;
+        }
+        break;
+      case "fee":
+        if (allConfig.isPaid) {
+          const feeValue = Number(value);
+          if (!value || isNaN(feeValue) || feeValue <= 0) {
+            newErrors.fee = "Mức phí phải lớn hơn 0";
+          } else {
+            delete newErrors.fee;
+          }
+        } else {
+          delete newErrors.fee;
+        }
+        break;
+    }
+    
+    setErrors(newErrors);
+  };
 
   const updateConfig = (field, value) => {
     setConfig((prev) => {
@@ -135,33 +251,36 @@ function CreateExamPage() {
         }
       }
       
+      // Validate field real-time
+      validateField(field, value, newConfig);
+      
       return newConfig;
     });
   };
 
   const validateForm = () => {
     if (!config.title.trim()) {
-      alert("Vui lòng nhập tên đề thi.");
+      toast.error("Vui lòng nhập tên đề thi.", { autoClose: 3000 });
       return false;
     }
 
     if (!config.minutes || Number(config.minutes) <= 0) {
-      alert("Thời gian làm bài phải lớn hơn 0.");
+      toast.error("Thời gian làm bài phải lớn hơn 0.", { autoClose: 3000 });
       return false;
     }
 
     if (config.totalScore && Number(config.totalScore) <= 0) {
-      alert("Tổng điểm phải lớn hơn 0.");
+      toast.error("Tổng điểm phải lớn hơn 0.", { autoClose: 3000 });
       return false;
     }
 
     if (!config.noTimeLimit) {
       if (!config.startTime || !config.endTime) {
-        alert("Vui lòng chọn thời gian bắt đầu và kết thúc, hoặc chọn 'Không giới hạn thời gian'.");
+        toast.error("Vui lòng chọn thời gian bắt đầu và kết thúc, hoặc chọn 'Không giới hạn thời gian'.", { autoClose: 4000 });
         return false;
       }
       if (config.startTime >= config.endTime) {
-        alert("Thời gian kết thúc phải sau thời gian bắt đầu.");
+        toast.error("Thời gian kết thúc phải sau thời gian bắt đầu.", { autoClose: 3000 });
         return false;
       }
     }
@@ -169,7 +288,7 @@ function CreateExamPage() {
     if (config.isPaid) {
       const feeValue = Number(config.fee);
       if (!config.fee || isNaN(feeValue) || feeValue <= 0) {
-        alert("Vui lòng nhập mức phí hợp lệ (lớn hơn 0).");
+        toast.error("Vui lòng nhập mức phí hợp lệ (lớn hơn 0).", { autoClose: 3000 });
         return false;
       }
     }
@@ -258,7 +377,7 @@ function CreateExamPage() {
 
     // Đảm bảo fee là số hợp lệ khi is_paid = true
     if (examPayload.is_paid && (!examPayload.fee || isNaN(examPayload.fee) || examPayload.fee <= 0)) {
-      alert("Vui lòng nhập mức phí hợp lệ (lớn hơn 0).");
+      toast.error("Vui lòng nhập mức phí hợp lệ (lớn hơn 0).", { autoClose: 3000 });
       return;
     }
 
@@ -280,18 +399,18 @@ function CreateExamPage() {
       });
 
       if (newExamId) {
-        const goToQuestions = window.confirm(
-          "Đề thi đã được tạo. Bạn có muốn chuyển sang trang thêm câu hỏi ngay bây giờ?"
-        );
-        if (goToQuestions) {
+        clearDraft(); // Xóa draft sau khi tạo thành công
+        toast.success("Đề thi đã được tạo thành công!", { autoClose: 3000 });
+        // Tự động chuyển sau 1 giây để user thấy thông báo
+        setTimeout(() => {
           navigate(`/dashboard/teacher/exams/${newExamId}/questions`);
-        }
+        }, 1000);
       }
     } catch (error) {
       const message =
         error?.body?.message || error?.message || "Không thể tạo đề thi. Vui lòng thử lại.";
       setSubmitState({ loading: false, message, examId: null });
-      alert(message);
+      toast.error(message, { autoClose: 4000 });
     }
   };
 
@@ -355,9 +474,16 @@ function CreateExamPage() {
                   type="text"
                   value={config.title}
                   onChange={(event) => updateConfig("title", event.target.value)}
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                  className={`w-full rounded-lg border px-3 py-2.5 text-sm focus:outline-none focus:ring-2 ${
+                    errors.title
+                      ? "border-red-300 focus:border-red-500 focus:ring-red-200"
+                      : "border-slate-200 focus:border-indigo-500 focus:ring-indigo-200"
+                  }`}
                   placeholder="Nhập tên đề thi"
                 />
+                {errors.title && (
+                  <p className="mt-1 text-xs text-red-600">{errors.title}</p>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Tổng điểm</label>
@@ -366,9 +492,16 @@ function CreateExamPage() {
                   value={config.totalScore}
                   min={0}
                   onChange={(event) => updateConfig("totalScore", event.target.value)}
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2.5 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                  className={`w-full rounded-lg border px-3 py-2.5 text-sm focus:outline-none focus:ring-2 ${
+                    errors.totalScore
+                      ? "border-red-300 focus:border-red-500 focus:ring-red-200"
+                      : "border-slate-200 focus:border-indigo-500 focus:ring-indigo-200"
+                  }`}
                   placeholder="Ví dụ: 100"
                 />
+                {errors.totalScore && (
+                  <p className="mt-1 text-xs text-red-600">{errors.totalScore}</p>
+                )}
               </div>
             </div>
 
@@ -409,8 +542,15 @@ function CreateExamPage() {
                     min={1}
                     value={config.minutes}
                     onChange={(event) => updateConfig("minutes", event.target.value)}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                    className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 ${
+                      errors.minutes
+                        ? "border-red-300 focus:border-red-500 focus:ring-red-200"
+                        : "border-slate-200 focus:border-indigo-500 focus:ring-indigo-200"
+                    }`}
                   />
+                  {errors.minutes && (
+                    <p className="mt-1 text-xs text-red-600">{errors.minutes}</p>
+                  )}
                 </div>
                 {!config.noTimeLimit && (
                   <>
@@ -424,8 +564,15 @@ function CreateExamPage() {
                         onChange={(event) => updateConfig("startTime", event.target.value)}
                         step="60"
                         max={config.endTime || undefined}
-                        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                        className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 ${
+                          errors.startTime
+                            ? "border-red-300 focus:border-red-500 focus:ring-red-200"
+                            : "border-slate-200 focus:border-indigo-500 focus:ring-indigo-200"
+                        }`}
                       />
+                      {errors.startTime && (
+                        <p className="mt-1 text-xs text-red-600">{errors.startTime}</p>
+                      )}
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -441,17 +588,21 @@ function CreateExamPage() {
                             const startDate = new Date(config.startTime);
                             const endDate = new Date(newEndTime);
                             if (endDate <= startDate) {
-                              alert("Thời gian kết thúc phải lớn hơn thời gian bắt đầu!");
+                              toast.error("Thời gian kết thúc phải lớn hơn thời gian bắt đầu!", { autoClose: 3000 });
                               return;
                             }
                           }
                           updateConfig("endTime", newEndTime);
                         }}
                         step="60"
-                        className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                        className={`w-full rounded-lg border px-3 py-2 text-sm focus:outline-none focus:ring-2 ${
+                          errors.endTime
+                            ? "border-red-300 focus:border-red-500 focus:ring-red-200"
+                            : "border-slate-200 focus:border-indigo-500 focus:ring-indigo-200"
+                        }`}
                       />
-                      {config.startTime && config.endTime && new Date(config.endTime) <= new Date(config.startTime) && (
-                        <p className="mt-1 text-xs text-red-600">Thời gian kết thúc phải lớn hơn thời gian bắt đầu</p>
+                      {errors.endTime && (
+                        <p className="mt-1 text-xs text-red-600">{errors.endTime}</p>
                       )}
                     </div>
                   </>
@@ -661,11 +812,15 @@ function CreateExamPage() {
                   required
                   value={config.fee}
                   onChange={(event) => updateConfig("fee", event.target.value)}
-                  className="w-full max-w-md rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                  className={`w-full max-w-md rounded-lg border bg-white px-4 py-2.5 text-sm focus:outline-none focus:ring-2 ${
+                    errors.fee
+                      ? "border-red-300 focus:border-red-500 focus:ring-red-200"
+                      : "border-slate-300 focus:border-indigo-500 focus:ring-indigo-200"
+                  }`}
                   placeholder="Ví dụ: 50000"
                 />
-                {(!config.fee || Number(config.fee) <= 0) && (
-                  <p className="mt-1 text-xs text-red-600">Vui lòng nhập mức phí hợp lệ (lớn hơn 0)</p>
+                {errors.fee && (
+                  <p className="mt-1 text-xs text-red-600">{errors.fee}</p>
                 )}
                 <p className="mt-2 text-xs text-slate-600">
                   Số tiền sẽ được trừ từ tài khoản học sinh mỗi lần họ bắt đầu làm bài thi.
