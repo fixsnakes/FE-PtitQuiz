@@ -11,6 +11,8 @@ import {
   FiSave,
   FiTrash2,
   FiEdit3,
+  FiCopy,
+  FiSearch,
 } from "react-icons/fi";
 import DashboardLayout from "../../../../layouts/DashboardLayout";
 import { getExamDetail } from "../../../../services/examService";
@@ -21,6 +23,7 @@ import {
   deleteQuestion as deleteQuestionApi,
   reorderQuestions as reorderQuestionsApi,
 } from "../../../../services/questionService";
+import { toast } from "react-toastify";
 
 const QUESTION_TYPES = [
   { value: "single_choice", label: "Trắc nghiệm (1 đáp án đúng)" },
@@ -45,11 +48,6 @@ const makeBlankAnswers = (count = 4) =>
     text: "",
     is_correct: index === 0,
   }));
-
-const TRUE_FALSE_PRESET = [
-  { text: "Đúng", is_correct: true },
-  { text: "Sai", is_correct: false },
-];
 
 const createDefaultFormState = (type = "single_choice") => ({
   question_text: "",
@@ -141,7 +139,7 @@ function AnswersEditor({ type, answers, onChange, disabled }) {
     onChange(next);
   };
 
-  const minOptions = (type === "single_choice" || type === "multiple_choice") ? 2 : 2;
+  const minOptions = 2;
 
   return (
     <div className="space-y-3">
@@ -177,7 +175,7 @@ function AnswersEditor({ type, answers, onChange, disabled }) {
             </p>
           </div>
 
-          {(type === "single_choice" || type === "multiple_choice") && answers.length > minOptions && (
+          {answers.length > minOptions && (
             <button
               type="button"
               disabled={disabled}
@@ -228,6 +226,9 @@ export default function ManageExamQuestions() {
   );
   const [updating, setUpdating] = useState(false);
   const [selectedQuestionId, setSelectedQuestionId] = useState(null);
+  const [selectedQuestionIds, setSelectedQuestionIds] = useState(new Set()); // Bulk selection
+  const [bulkMode, setBulkMode] = useState(false); // Toggle bulk mode
+  const [searchTerm, setSearchTerm] = useState(""); // Search filter
 
   useEffect(() => {
     if (!examId) return;
@@ -256,6 +257,16 @@ export default function ManageExamQuestions() {
       (a, b) => (a.order ?? Infinity) - (b.order ?? Infinity)
     );
   }, [questions]);
+
+  // Filtered questions based on search
+  const filteredQuestions = useMemo(() => {
+    if (!searchTerm.trim()) return sortedQuestions;
+    const term = searchTerm.toLowerCase();
+    return sortedQuestions.filter(q => 
+      q.question_text?.toLowerCase().includes(term) ||
+      q.answers?.some(a => a.text?.toLowerCase().includes(term))
+    );
+  }, [sortedQuestions, searchTerm]);
 
   const requiresAnswers = (type) => ANSWER_TYPES.includes(type);
 
@@ -377,6 +388,7 @@ export default function ManageExamQuestions() {
       const response = await createQuestionApi(payload);
       const newQuestionId =
         response?.id ?? response?.question_id ?? response?.data?.id ?? null;
+      toast.success("Đã thêm câu hỏi mới thành công!", { autoClose: 2000 });
       setMessage("Đã thêm câu hỏi mới.");
       resetForm();
       await fetchQuestions();
@@ -391,7 +403,9 @@ export default function ManageExamQuestions() {
         }, 200);
       }
     } catch (err) {
-      setError(err?.body?.message || err?.message || "Không thể tạo câu hỏi.");
+      const errorMsg = err?.body?.message || err?.message || "Không thể tạo câu hỏi.";
+      toast.error(errorMsg, { autoClose: 3000 });
+      setError(errorMsg);
     } finally {
       setCreating(false);
     }
@@ -428,6 +442,7 @@ export default function ManageExamQuestions() {
       setError("");
       const payload = buildPayloadFromForm(editForm);
       await updateQuestionApi(editingQuestionId, payload);
+      toast.success("Đã cập nhật câu hỏi thành công!", { autoClose: 2000 });
       setMessage("Đã cập nhật câu hỏi.");
       const currentSelectedId = editingQuestionId;
       cancelEdit();
@@ -437,23 +452,141 @@ export default function ManageExamQuestions() {
         setSelectedQuestionId(currentSelectedId);
       }, 100);
     } catch (err) {
-      setError(err?.body?.message || err?.message || "Không thể cập nhật.");
+      const errorMsg = err?.body?.message || err?.message || "Không thể cập nhật.";
+      toast.error(errorMsg, { autoClose: 3000 });
+      setError(errorMsg);
     } finally {
       setUpdating(false);
     }
   };
 
   const handleDeleteQuestion = async (questionId) => {
-    if (!window.confirm("Xóa câu hỏi này?")) return;
+    // Xác nhận xóa với toast
+    const question = questions.find(q => q.id === questionId);
+    const questionText = question?.question_text?.substring(0, 50) || "câu hỏi này";
+    
+    if (!window.confirm(`Bạn có chắc chắn muốn xóa "${questionText}..."?\n\nHành động này không thể hoàn tác.`)) {
+      return;
+    }
+
     try {
       await deleteQuestionApi(questionId);
+      toast.success("Đã xóa câu hỏi thành công.", { autoClose: 2000 });
       setMessage("Đã xóa câu hỏi.");
       if (selectedQuestionId === questionId) {
         setSelectedQuestionId(null);
       }
+      // Xóa khỏi bulk selection nếu có
+      setSelectedQuestionIds(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(questionId);
+        return newSet;
+      });
       fetchQuestions();
     } catch (err) {
-      setError(err?.body?.message || err?.message || "Không thể xóa câu hỏi.");
+      const errorMsg = err?.body?.message || err?.message || "Không thể xóa câu hỏi.";
+      toast.error(errorMsg, { autoClose: 3000 });
+      setError(errorMsg);
+    }
+  };
+
+  // Bulk operations
+  const toggleBulkMode = () => {
+    setBulkMode(!bulkMode);
+    setSelectedQuestionIds(new Set()); // Clear selection khi tắt bulk mode
+  };
+
+  const toggleQuestionSelection = (questionId) => {
+    setSelectedQuestionIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(questionId)) {
+        newSet.delete(questionId);
+      } else {
+        newSet.add(questionId);
+      }
+      return newSet;
+    });
+  };
+
+  const selectAllQuestions = () => {
+    setSelectedQuestionIds(new Set(sortedQuestions.map(q => q.id)));
+  };
+
+  const deselectAllQuestions = () => {
+    setSelectedQuestionIds(new Set());
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedQuestionIds.size === 0) {
+      toast.warning("Vui lòng chọn ít nhất một câu hỏi để xóa.", { autoClose: 2000 });
+      return;
+    }
+
+    const count = selectedQuestionIds.size;
+    if (!window.confirm(`Bạn có chắc chắn muốn xóa ${count} câu hỏi đã chọn?\n\nHành động này không thể hoàn tác.`)) {
+      return;
+    }
+
+    try {
+      // Xóa từng câu hỏi
+      const deletePromises = Array.from(selectedQuestionIds).map(id => deleteQuestionApi(id));
+      await Promise.all(deletePromises);
+      
+      toast.success(`Đã xóa ${count} câu hỏi thành công.`, { autoClose: 2000 });
+      setMessage(`Đã xóa ${count} câu hỏi.`);
+      setSelectedQuestionIds(new Set());
+      setBulkMode(false);
+      fetchQuestions();
+    } catch (err) {
+      const errorMsg = err?.body?.message || err?.message || "Không thể xóa câu hỏi.";
+      toast.error(errorMsg, { autoClose: 3000 });
+      setError(errorMsg);
+    }
+  };
+
+  // Copy/duplicate câu hỏi
+  const handleDuplicateQuestion = async (question) => {
+    try {
+      setCreating(true);
+      setError("");
+      
+      // Tạo payload từ câu hỏi hiện tại
+      const payload = {
+        exam_id: examId,
+        question_text: question.question_text,
+        type: question.type,
+        difficulty: question.difficulty || "medium",
+        image_url: question.image_url || undefined,
+        answers: question.answers?.map((answer) => ({
+          text: answer.text,
+          is_correct: answer.is_correct,
+        })) || [],
+        order: sortedQuestions.length + 1,
+      };
+
+      const response = await createQuestionApi(payload);
+      const newQuestionId =
+        response?.id ?? response?.question_id ?? response?.data?.id ?? null;
+      
+      toast.success("Đã sao chép câu hỏi thành công!", { autoClose: 2000 });
+      await fetchQuestions();
+      
+      // Tự động chọn câu hỏi mới sau khi copy
+      if (newQuestionId) {
+        setTimeout(() => {
+          setSelectedQuestionId(newQuestionId);
+          const element = document.getElementById(`question-${newQuestionId}`);
+          if (element) {
+            element.scrollIntoView({ behavior: "smooth", block: "center" });
+          }
+        }, 200);
+      }
+    } catch (err) {
+      const errorMsg = err?.body?.message || err?.message || "Không thể sao chép câu hỏi.";
+      toast.error(errorMsg, { autoClose: 3000 });
+      setError(errorMsg);
+    } finally {
+      setCreating(false);
     }
   };
 
@@ -512,29 +645,53 @@ export default function ManageExamQuestions() {
   const renderQuestionCard = (question) => {
     const isEditing = editingQuestionId === question.id;
     const isSelected = selectedQuestionId === question.id;
+    const isBulkSelected = bulkMode && selectedQuestionIds.has(question.id);
     return (
       <div
         id={`question-${question.id}`}
         key={`${question.id}-${question.order}`}
         className={`rounded-2xl border bg-white p-5 shadow-sm transition-all duration-300 ease-in-out ${
           isSelected && !isEditing ? "ring-2 ring-indigo-300 border-indigo-400" : ""
+        } ${
+          isBulkSelected ? "ring-2 ring-blue-300 border-blue-400 bg-blue-50/30" : ""
         }`}
         style={{
           transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
         }}
       >
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div>
+          {bulkMode && (
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                checked={isBulkSelected}
+                onChange={() => toggleQuestionSelection(question.id)}
+                className="h-5 w-5 rounded border-slate-300 text-indigo-600 focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+          )}
+          <div className="flex-1">
             <p className="text-xs font-semibold uppercase tracking-[0.3em] text-slate-400">
               Câu hỏi {question.order || sortedQuestions.indexOf(question) + 1}
             </p>
             <h3 className="mt-1 text-lg font-semibold text-slate-900">
               {question.question_text}
             </h3>
-            <p className="text-sm text-slate-500">
-              {QUESTION_TYPES.find((type) => type.value === question.type)
-                ?.label || "Không xác định"}
-            </p>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-slate-500">
+                {QUESTION_TYPES.find((type) => type.value === question.type)
+                  ?.label || "Không xác định"}
+              </span>
+              {question.difficulty && (
+                <span className={`text-xs px-2 py-0.5 rounded-full ${
+                  question.difficulty === "easy" ? "bg-green-100 text-green-700" :
+                  question.difficulty === "hard" ? "bg-red-100 text-red-700" :
+                  "bg-yellow-100 text-yellow-700"
+                }`}>
+                  {DIFFICULTY_OPTIONS.find(d => d.value === question.difficulty)?.label || question.difficulty}
+                </span>
+              )}
+            </div>
           </div>
           <div className="flex flex-wrap gap-2">
             <button
@@ -553,36 +710,50 @@ export default function ManageExamQuestions() {
             >
               {reorderLoading ? <FiLoader className="animate-spin" /> : <FiArrowDown />} Xuống
             </button>
-            <button
-              type="button"
-              onClick={() => startEdit(question)}
-              className="inline-flex items-center gap-1 rounded-full border border-indigo-200 px-3 py-1 text-xs font-semibold text-indigo-600 hover:bg-indigo-50"
-            >
-              <FiEdit3 /> Chỉnh sửa
-            </button>
-            <button
-              type="button"
-              onClick={() => handleDeleteQuestion(question.id)}
-              className="inline-flex items-center gap-1 rounded-full border border-red-200 px-3 py-1 text-xs font-semibold text-red-600 hover:bg-red-50"
-            >
-              <FiTrash2 /> Xóa
-            </button>
+            {!bulkMode && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => handleDuplicateQuestion(question)}
+                  disabled={creating}
+                  className="inline-flex items-center gap-1 rounded-full border border-blue-200 px-3 py-1 text-xs font-semibold text-blue-600 hover:bg-blue-50 disabled:opacity-50"
+                  title="Sao chép câu hỏi"
+                >
+                  <FiCopy /> Sao chép
+                </button>
+                <button
+                  type="button"
+                  onClick={() => startEdit(question)}
+                  className="inline-flex items-center gap-1 rounded-full border border-indigo-200 px-3 py-1 text-xs font-semibold text-indigo-600 hover:bg-indigo-50"
+                >
+                  <FiEdit3 /> Chỉnh sửa
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleDeleteQuestion(question.id)}
+                  className="inline-flex items-center gap-1 rounded-full border border-red-200 px-3 py-1 text-xs font-semibold text-red-600 hover:bg-red-50"
+                >
+                  <FiTrash2 /> Xóa
+                </button>
+              </>
+            )}
           </div>
         </div>
 
         {requiresAnswers(question.type) && question.answers?.length > 0 && (
           <div className="mt-4 space-y-2">
-            {question.answers.map((answer) => (
+            <p className="text-xs font-semibold text-slate-500 mb-2">Đáp án:</p>
+            {question.answers.map((answer, idx) => (
               <div
-                key={answer.id}
+                key={answer.id || idx}
                 className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm ${
                   answer.is_correct
                     ? "border-emerald-200 bg-emerald-50 text-emerald-800"
                     : "border-slate-200 bg-slate-50 text-slate-600"
                 }`}
               >
-                {answer.is_correct ? <FiCheckCircle /> : <FiAlertTriangle />}
-                <span className="font-medium">{answer.text}</span>
+                {answer.is_correct ? <FiCheckCircle className="text-emerald-600" /> : <FiAlertTriangle className="text-slate-400" />}
+                <span className="font-medium flex-1">{answer.text}</span>
               </div>
             ))}
           </div>
@@ -814,6 +985,32 @@ export default function ManageExamQuestions() {
             <div className="rounded-2xl border border-indigo-100 bg-indigo-50 px-4 py-3 text-sm text-indigo-700">
               Trình soạn thảo - Tạo và chỉnh sửa câu hỏi thủ công
             </div>
+            {sortedQuestions.length > 0 && (
+              <>
+                <button
+                  type="button"
+                  onClick={toggleBulkMode}
+                  className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition ${
+                    bulkMode
+                      ? "border-indigo-300 bg-indigo-100 text-indigo-700"
+                      : "border-slate-200 text-slate-600 hover:bg-slate-50"
+                  }`}
+                >
+                  <FiCheckCircle />
+                  {bulkMode ? "Tắt chọn nhiều" : "Chọn nhiều"}
+                </button>
+                {bulkMode && selectedQuestionIds.size > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleBulkDelete}
+                    className="inline-flex items-center gap-2 rounded-full border border-red-300 bg-red-50 px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-100"
+                  >
+                    <FiTrash2 />
+                    Xóa đã chọn ({selectedQuestionIds.size})
+                  </button>
+                )}
+              </>
+            )}
             <button
               type="button"
               onClick={() => navigate("/dashboard/teacher/exams")}
@@ -852,8 +1049,55 @@ export default function ManageExamQuestions() {
                     Danh sách câu hỏi
                   </p>
                   <h2 className="mt-1 text-xl font-semibold text-slate-900">
-                    {sortedQuestions.length} câu hỏi
+                    {filteredQuestions.length} / {sortedQuestions.length} câu hỏi
+                    {bulkMode && selectedQuestionIds.size > 0 && (
+                      <span className="ml-2 text-sm text-indigo-600">
+                        ({selectedQuestionIds.size} đã chọn)
+                      </span>
+                    )}
                   </h2>
+                </div>
+                {bulkMode && sortedQuestions.length > 0 && (
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={selectAllQuestions}
+                      className="text-xs font-medium text-indigo-600 hover:text-indigo-700"
+                    >
+                      Chọn tất cả
+                    </button>
+                    <span className="text-slate-300">|</span>
+                    <button
+                      type="button"
+                      onClick={deselectAllQuestions}
+                      className="text-xs font-medium text-slate-600 hover:text-slate-700"
+                    >
+                      Bỏ chọn tất cả
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Search box */}
+              <div className="mb-4">
+                <div className="relative">
+                  <FiSearch className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                  <input
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder="Tìm kiếm câu hỏi hoặc đáp án..."
+                    className="w-full rounded-lg border border-slate-200 bg-white pl-10 pr-4 py-2 text-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+                  />
+                  {searchTerm && (
+                    <button
+                      type="button"
+                      onClick={() => setSearchTerm("")}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                    >
+                      ✕
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -871,31 +1115,38 @@ export default function ManageExamQuestions() {
                 <>
                   <div className="mb-4">
                     <h3 className="text-sm font-semibold text-slate-700 mb-3">Danh sách câu hỏi</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {sortedQuestions.map((question, index) => {
-                        const isSelected = selectedQuestionId === question.id;
-                        const isEditing = editingQuestionId === question.id;
-                        return (
-                          <button
-                            key={`${question.id}-${question.order}`}
-                            type="button"
-                            onClick={() => {
-                              setSelectedQuestionId(question.id);
-                            }}
-                            className={`w-10 h-10 rounded-lg font-semibold text-sm transition-all duration-300 ease-in-out transform ${
-                              isSelected || isEditing
-                                ? "bg-indigo-600 text-white ring-2 ring-indigo-300 scale-110"
-                                : "bg-white border-2 border-slate-300 text-slate-700 hover:border-indigo-400 hover:bg-indigo-50 hover:scale-105"
-                            }`}
-                            style={{
-                              transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-                            }}
-                          >
-                            {index + 1}
-                          </button>
-                        );
-                      })}
-                    </div>
+                    {filteredQuestions.length === 0 ? (
+                      <div className="py-8 text-center text-sm text-slate-500">
+                        {searchTerm ? "Không tìm thấy câu hỏi nào phù hợp" : "Chưa có câu hỏi nào"}
+                      </div>
+                    ) : (
+                      <div className="flex flex-wrap gap-2">
+                        {filteredQuestions.map((question) => {
+                          const isSelected = selectedQuestionId === question.id;
+                          const isEditing = editingQuestionId === question.id;
+                          const questionNumber = sortedQuestions.findIndex(q => q.id === question.id) + 1;
+                          return (
+                            <button
+                              key={`${question.id}-${question.order}`}
+                              type="button"
+                              onClick={() => {
+                                setSelectedQuestionId(question.id);
+                              }}
+                              className={`w-10 h-10 rounded-lg font-semibold text-sm transition-all duration-300 ease-in-out transform ${
+                                isSelected || isEditing
+                                  ? "bg-indigo-600 text-white ring-2 ring-indigo-300 scale-110"
+                                  : "bg-white border-2 border-slate-300 text-slate-700 hover:border-indigo-400 hover:bg-indigo-50 hover:scale-105"
+                              }`}
+                              style={{
+                                transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                              }}
+                            >
+                              {questionNumber}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
 
                   {/* Chỉ hiển thị câu hỏi được chọn */}

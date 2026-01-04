@@ -16,6 +16,7 @@ import { Clock, AlertTriangle, CheckCircle2 } from "lucide-react";
 function useCheatingDetection(sessionId, isActive) {
   const [cheatingCount, setCheatingCount] = useState(0);
   const warningShown = useRef(false);
+  const questionStartTimes = useRef({});
 
   const logCheating = useCallback(
     async (type, description, severity = "medium", metadata = {}) => {
@@ -220,7 +221,112 @@ function useCheatingDetection(sessionId, isActive) {
     return () => clearInterval(interval);
   }, [isActive, logCheating]);
 
-  return { cheatingCount };
+  // Phát hiện thoát fullscreen
+  useEffect(() => {
+    if (!isActive) return;
+
+    const handleFullscreenChange = () => {
+      if (!document.fullscreenElement && !document.webkitFullscreenElement && !document.mozFullScreenElement) {
+        logCheating(
+          "fullscreen_exit",
+          "Fullscreen mode exited",
+          "medium",
+          {
+            was_fullscreen: true,
+          }
+        );
+        toast.warning("Đã thoát chế độ toàn màn hình!", { autoClose: 2000 });
+      }
+    };
+
+    document.addEventListener("fullscreenchange", handleFullscreenChange);
+    document.addEventListener("webkitfullscreenchange", handleFullscreenChange);
+    document.addEventListener("mozfullscreenchange", handleFullscreenChange);
+
+    return () => {
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+      document.removeEventListener("webkitfullscreenchange", handleFullscreenChange);
+      document.removeEventListener("mozfullscreenchange", handleFullscreenChange);
+    };
+  }, [isActive, logCheating]);
+
+  // Phát hiện mất focus cửa sổ (window blur)
+  useEffect(() => {
+    if (!isActive) return;
+
+    let blurTimeout = null;
+
+    const handleBlur = () => {
+      // Chỉ log sau 1 giây để tránh false positive (ví dụ: click vào input)
+      blurTimeout = setTimeout(() => {
+        if (!document.hasFocus()) {
+          logCheating(
+            "window_blur",
+            "Window lost focus",
+            "medium",
+            {
+              timestamp: new Date().toISOString(),
+            }
+          );
+        }
+      }, 1000);
+    };
+
+    const handleFocus = () => {
+      if (blurTimeout) {
+        clearTimeout(blurTimeout);
+        blurTimeout = null;
+      }
+    };
+
+    window.addEventListener("blur", handleBlur);
+    window.addEventListener("focus", handleFocus);
+
+    return () => {
+      window.removeEventListener("blur", handleBlur);
+      window.removeEventListener("focus", handleFocus);
+      if (blurTimeout) {
+        clearTimeout(blurTimeout);
+      }
+    };
+  }, [isActive, logCheating]);
+
+  // Hàm để track thời gian bắt đầu làm câu hỏi (sẽ được gọi từ component chính)
+  const trackQuestionStart = useCallback((questionId) => {
+    if (!isActive) return;
+    questionStartTimes.current[questionId] = Date.now();
+  }, [isActive]);
+
+  // Hàm để kiểm tra thời gian khi trả lời (sẽ được gọi từ component chính)
+  const checkAnswerTime = useCallback((questionId) => {
+    if (!isActive) return;
+    
+    const startTime = questionStartTimes.current[questionId];
+    if (!startTime) return;
+
+    const suspiciousThreshold = 5000; // 5 giây - nếu trả lời quá nhanh có thể là gian lận
+    const timeSpent = Date.now() - startTime;
+
+    // Nếu trả lời quá nhanh (< 5 giây) - có thể là đoán mò hoặc copy
+    if (timeSpent < suspiciousThreshold) {
+      logCheating(
+        "time_suspicious",
+        `Answer submitted too quickly (${Math.round(timeSpent / 1000)}s)`,
+        "high",
+        {
+          question_id: questionId,
+          time_spent_ms: timeSpent,
+          time_spent_seconds: Math.round(timeSpent / 1000),
+          threshold: suspiciousThreshold,
+        }
+      );
+    }
+
+    // Xóa thời gian đã lưu
+    delete questionStartTimes.current[questionId];
+  }, [isActive, logCheating]);
+
+  return { cheatingCount, trackQuestionStart, checkAnswerTime };
 }
 
 // Component chính
@@ -244,7 +350,7 @@ export default function TakeExam() {
   const hasInitializedRef = useRef(false);
   const initializedExamIdRef = useRef(null);
 
-  const { cheatingCount } = useCheatingDetection(session?.id, isActive);
+  const { cheatingCount, trackQuestionStart, checkAnswerTime } = useCheatingDetection(session?.id, isActive);
 
   // Khởi tạo session
   useEffect(() => {
@@ -458,6 +564,11 @@ export default function TakeExam() {
   const handleAnswer = async (questionId, answerData) => {
     if (!session || !isActive) return;
 
+    // Kiểm tra thời gian trả lời trước khi submit
+    if (checkAnswerTime) {
+      checkAnswerTime(questionId);
+    }
+
     try {
       const payload = {
         question_id: questionId,
@@ -580,6 +691,16 @@ export default function TakeExam() {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isActive, currentQuestionIndex, questions.length]);
+
+  // Track thời gian khi chuyển câu hỏi (phải đặt trước early returns)
+  useEffect(() => {
+    if (isActive && questions.length > 0 && currentQuestionIndex < questions.length) {
+      const currentQuestion = questions[currentQuestionIndex];
+      if (currentQuestion && trackQuestionStart) {
+        trackQuestionStart(currentQuestion.id);
+      }
+    }
+  }, [currentQuestionIndex, questions, isActive, trackQuestionStart]);
 
   if (loading) {
     return (

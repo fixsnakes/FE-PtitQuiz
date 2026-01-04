@@ -16,6 +16,7 @@ import {
   listQuestions,
   updateQuestion as updateQuestionApi,
 } from "../../../../services/questionService";
+import { toast } from "react-toastify";
 
 const QUESTION_METHOD_LABELS = {
   text: "Văn bản",
@@ -308,7 +309,7 @@ function ExamPreview({
                 <p className="text-sm font-semibold text-slate-600">
                   Câu {selectedQuestionIndex + 1} (Một đáp án)
                 </p>
-                {!isExisting && (
+                {/* {!isExisting && (
                   <button
                     type="button"
                     onClick={() => onSaveQuestion(selectedQuestionIndex)}
@@ -334,11 +335,11 @@ function ExamPreview({
                     ) : (
                       <>
                         <FiSave />
-                        Lưu câu hỏi
+                        Lưu câu hỏi 
                       </>
                     )}
                   </button>
-                )}
+                )} */}
                 {isExisting &&
                   (canUpdateExisting ? (
                     <button
@@ -612,12 +613,12 @@ export default function AddQuestionsByText() {
     const question = allQuestions[questionIndex];
     if (!question) return false;
     if (question.options.length < 2) {
-      alert("Mỗi câu hỏi phải có ≥ 2 lựa chọn.");
+      toast.error("Mỗi câu hỏi phải có ≥ 2 lựa chọn.", { autoClose: 3000 });
       return false;
     }
 
     if (!question.options.some((option) => option.isCorrect)) {
-      alert("Mỗi câu hỏi phải có ít nhất 1 đáp án đúng.");
+      toast.error("Mỗi câu hỏi phải có ít nhất 1 đáp án đúng.", { autoClose: 3000 });
       return false;
     }
 
@@ -643,14 +644,14 @@ export default function AddQuestionsByText() {
       // Đảm bảo payload luôn có answers khi cập nhật
       if (isExisting) {
         if (!payload.answers || !Array.isArray(payload.answers) || payload.answers.length === 0) {
-          alert("Lỗi: Không thể tạo payload cập nhật vì thiếu đáp án. Vui lòng thử lại.");
+          toast.error("Lỗi: Không thể tạo payload cập nhật vì thiếu đáp án. Vui lòng thử lại.", { autoClose: 3000 });
           return;
         }
         
         // Đảm bảo có ít nhất 1 đáp án đúng
         const correctCount = payload.answers.filter((a) => a.is_correct).length;
         if (correctCount === 0) {
-          alert("Lỗi: Phải có ít nhất 1 đáp án đúng.");
+          toast.error("Lỗi: Phải có ít nhất 1 đáp án đúng.", { autoClose: 3000 });
           return;
         }
       }
@@ -696,10 +697,11 @@ export default function AddQuestionsByText() {
       }
       
       setSavedQuestions(new Set());
+      toast.success("Đã lưu câu hỏi thành công!", { autoClose: 2000 });
     } catch (error) {
       const message =
         error?.body?.message || error?.message || "Không thể lưu câu hỏi. Vui lòng thử lại.";
-      alert(message);
+      toast.error(message, { autoClose: 3000 });
     } finally {
       setSavingQuestionIndex(null);
     }
@@ -707,7 +709,7 @@ export default function AddQuestionsByText() {
 
   const handleSaveAll = async () => {
     if (unsavedQuestionIndexes.length === 0) {
-      alert("Tất cả câu hỏi đã được lưu.");
+      toast.info("Tất cả câu hỏi đã được lưu.", { autoClose: 2000 });
       return;
     }
 
@@ -744,7 +746,7 @@ export default function AddQuestionsByText() {
       } catch (error) {
         const message =
           error?.body?.message || error?.message || `Không thể lưu câu hỏi ${questionIndex + 1}.`;
-        alert(message);
+        toast.error(message, { autoClose: 3000 });
         break;
       } finally {
         setSavingQuestionIndex(null);
@@ -752,7 +754,7 @@ export default function AddQuestionsByText() {
     }
 
     if (savedCount > 0) {
-      alert(`Đã lưu ${savedCount} câu hỏi thành công!`);
+      toast.success(`Đã lưu ${savedCount} câu hỏi thành công!`, { autoClose: 2000 });
       await refreshExistingQuestions();
       setSavedQuestions(new Set());
     }
@@ -766,16 +768,17 @@ export default function AddQuestionsByText() {
   const regenerateRawText = () => {
     const generated = buildRawTextFromQuestions(existingQuestions);
     if (!generated) {
-      alert("Hiện không có câu hỏi đã lưu để khôi phục.");
+      toast.warning("Hiện không có câu hỏi đã lưu để khôi phục.", { autoClose: 2000 });
       return;
     }
     setHasManualRawTextChange(false);
     setRawText(generated);
+    toast.success("Đã khôi phục văn bản từ câu hỏi đã lưu.", { autoClose: 2000 });
   };
 
   const handleSaveExam = () => {
     if (existingQuestions.length === 0) {
-      alert("Vui lòng lưu ít nhất một câu hỏi trước khi quay lại.");
+      toast.warning("Vui lòng lưu ít nhất một câu hỏi trước khi quay lại.", { autoClose: 3000 });
       return;
     }
     navigate("/dashboard/teacher/exams");
