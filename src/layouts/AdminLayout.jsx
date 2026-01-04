@@ -12,15 +12,21 @@ import {
   FiMenu,
   FiX,
   FiCreditCard,
+  FiFileText,
+  FiBookOpen,
 } from "react-icons/fi";
+import { getStoredUser, clearAuth } from "../utils/auth";
 
 const ADMIN_NAV_ITEMS = [
-  { label: "Tổng quan", path: "/dashboard/admin", icon: FiGrid, superAdminOnly: false },
-  { label: "Quản lý người dùng", path: "/dashboard/admin/users", icon: FiUsers, superAdminOnly: true },
-  { label: "Quản lý rút tiền", path: "/dashboard/admin/withdrawals", icon: FiCreditCard, superAdminOnly: false },
-  { label: "Báo cáo thống kê", path: "/dashboard/admin/reports", icon: FiBarChart2, superAdminOnly: false },
-  { label: "Thông báo", path: "/dashboard/admin/notifications", icon: FiBell, superAdminOnly: false },
-  { label: "Kiểm duyệt nội dung", path: "/dashboard/admin/moderation", icon: FiMessageSquare, superAdminOnly: false },
+  { label: "Tổng quan", path: "/dashboard/admin", icon: FiGrid },
+  { label: "Quản lý người dùng", path: "/dashboard/admin/users", icon: FiUsers },
+  { label: "Quản lý lớp học", path: "/dashboard/admin/classes", icon: FiBookOpen },
+  { label: "Quản lý đề thi", path: "/dashboard/admin/exams", icon: FiFileText },
+  { label: "Quản lý giao dịch", path: "/dashboard/admin/purchases", icon: FiDollarSign },
+  { label: "Quản lý rút tiền", path: "/dashboard/admin/withdrawals", icon: FiCreditCard },
+  { label: "Báo cáo thống kê", path: "/dashboard/admin/reports", icon: FiBarChart2 },
+  { label: "Thông báo", path: "/dashboard/admin/notifications", icon: FiBell },
+  { label: "Kiểm duyệt nội dung", path: "/dashboard/admin/moderation", icon: FiMessageSquare },
 ];
 
 export default function AdminLayout() {
@@ -30,19 +36,14 @@ export default function AdminLayout() {
   const [currentUser, setCurrentUser] = React.useState(null);
 
   React.useEffect(() => {
-    try {
-      const stored = localStorage.getItem("currentUser");
-      if (stored) {
-        setCurrentUser(JSON.parse(stored));
-      }
-    } catch (error) {
-      console.error("Error loading user:", error);
+    const user = getStoredUser();
+    if (user) {
+      setCurrentUser(user);
     }
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("currentUser");
+    clearAuth();
     navigate("/auth/login");
   };
 
@@ -69,13 +70,7 @@ export default function AdminLayout() {
         </div>
 
         <nav className="flex-1 space-y-1 p-4 overflow-y-auto">
-          {ADMIN_NAV_ITEMS.filter(item => {
-            // Show all items for superadmin, hide superAdminOnly items for admin
-            if (item.superAdminOnly && currentUser?.role !== 'superadmin') {
-              return false;
-            }
-            return true;
-          }).map((item) => {
+          {ADMIN_NAV_ITEMS.map((item) => {
             const isActive = location.pathname === item.path;
             const Icon = item.icon;
 
@@ -136,13 +131,7 @@ export default function AdminLayout() {
             </div>
 
             <nav className="flex-1 space-y-1 p-4 overflow-y-auto">
-              {ADMIN_NAV_ITEMS.filter(item => {
-                // Show all items for superadmin, hide superAdminOnly items for admin
-                if (item.superAdminOnly && currentUser?.role !== 'superadmin') {
-                  return false;
-                }
-                return true;
-              }).map((item) => {
+              {ADMIN_NAV_ITEMS.map((item) => {
                 const isActive = location.pathname === item.path;
                 const Icon = item.icon;
 

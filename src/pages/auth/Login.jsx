@@ -3,6 +3,7 @@ import left_image from "../../assets/undraw_true-friends_1h3v.png";
 import { FiEye, FiEyeOff } from "react-icons/fi";
 import { Link, useNavigate } from "react-router-dom";
 import { signin } from "../../services/authService";
+import { getRoleBasedPath } from "../../utils/auth";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -26,6 +27,10 @@ export default function Login() {
     setLoading(true);
     try {
       const response = await signin({ email, password });
+      
+      // Chuẩn hóa role thành lowercase
+      const normalizedRole = response.role?.toLowerCase() || "student";
+      
       localStorage.setItem("accessToken", response.accessToken);
       localStorage.setItem(
         "currentUser",
@@ -33,20 +38,12 @@ export default function Login() {
           id: response.id,
           fullName: response.fullName,
           email: response.email,
-          role: response.role,
+          role: normalizedRole,
         })
       );
-      let targetPath;
-      if (response.role === "admin" || response.role === "superadmin") {
-        targetPath = "/dashboard/admin";
-      } else if (response.role === "teacher") {
-        targetPath = "/dashboard/teacher";
-      } else {
-        targetPath = "/dashboard/student";
-      }
 
       setSuccessMessage("Đăng nhập thành công.");
-      setTimeout(() => navigate(targetPath, { replace: true }), 500);
+      setTimeout(() => navigate(getRoleBasedPath(normalizedRole), { replace: true }), 500);
     } catch (apiError) {
       const message =
         apiError.body?.message ||

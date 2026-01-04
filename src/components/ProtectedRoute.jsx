@@ -1,14 +1,6 @@
 import React from "react";
 import { Navigate } from "react-router-dom";
-
-function getStoredUser() {
-  try {
-    const raw = localStorage.getItem("currentUser");
-    return raw ? JSON.parse(raw) : null;
-  } catch {
-    return null;
-  }
-}
+import { getStoredUser, getRoleBasedPath } from "../utils/auth";
 
 export default function ProtectedRoute({ allowedRoles, children }) {
   const token = localStorage.getItem("accessToken");
@@ -23,16 +15,7 @@ export default function ProtectedRoute({ allowedRoles, children }) {
     allowedRoles.length > 0 &&
     !allowedRoles.includes(currentUser.role)
   ) {
-    const fallbackPath =
-      currentUser.role === "superadmin" || currentUser.role === "admin"
-        ? "/dashboard/admin"
-        : currentUser.role === "teacher"
-        ? "/dashboard/teacher"
-        : currentUser.role === "student"
-        ? "/dashboard/student"
-        : "/auth/login";
-
-    return <Navigate to={fallbackPath} replace />;
+    return <Navigate to={getRoleBasedPath(currentUser.role)} replace />;
   }
 
   return children;

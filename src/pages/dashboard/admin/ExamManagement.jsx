@@ -17,7 +17,6 @@ import formatDateTime from "../../../utils/format_time";
 export default function ExamManagement() {
   const [exams, setExams] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [userRole, setUserRole] = useState("");
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 10,
@@ -49,19 +48,6 @@ export default function ExamManagement() {
     fee: 0,
     is_public: true,
   });
-
-  useEffect(() => {
-    // Get user role from localStorage
-    try {
-      const storedUser = localStorage.getItem("currentUser");
-      if (storedUser) {
-        const user = JSON.parse(storedUser);
-        setUserRole(user.role || "");
-      }
-    } catch (error) {
-      console.error("Error reading user from localStorage:", error);
-    }
-  }, []);
 
   useEffect(() => {
     loadExams();
@@ -397,15 +383,13 @@ export default function ExamManagement() {
                             >
                               <FiEdit2 className="h-4 w-4" />
                             </button>
-                            {userRole === "superadmin" && (
-                              <button
-                                onClick={() => handleDeleteExam(exam)}
-                                className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
-                                title="Xóa"
-                              >
-                                <FiTrash2 className="h-4 w-4" />
-                              </button>
-                            )}
+                            <button
+                              onClick={() => handleDeleteExam(exam)}
+                              className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition"
+                              title="Xóa"
+                            >
+                              <FiTrash2 className="h-4 w-4" />
+                            </button>
                           </div>
                         </td>
                       </tr>

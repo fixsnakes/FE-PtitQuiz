@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useEffectOnce } from "../../../../hooks/useEffectOnce";
 import { useNavigate, useParams } from "react-router-dom";
+import { getStoredUser } from "../../../../utils/auth";
 import {
   FiAlertTriangle,
   FiArrowLeft,
@@ -160,15 +161,10 @@ export default function ClassDetail() {
 
   useEffectOnce(() => {
     // Get user role and id from localStorage
-    try {
-      const storedUser = localStorage.getItem("currentUser");
-      if (storedUser) {
-        const user = JSON.parse(storedUser);
-        setUserRole(user.role || "");
-        setCurrentUserId(user.id || null);
-      }
-    } catch (error) {
-      console.error("Error reading user from localStorage:", error);
+    const user = getStoredUser();
+    if (user) {
+      setUserRole(user.role || "");
+      setCurrentUserId(user.id || null);
     }
   }, []);
 

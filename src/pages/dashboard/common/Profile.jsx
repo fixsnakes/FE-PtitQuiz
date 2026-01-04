@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { useEffectOnce } from "../../../hooks/useEffectOnce";
 import DashboardLayout from "../../../layouts/DashboardLayout";
+import { getStoredUser } from "../../../utils/auth";
 import {
   FiUser,
   FiLock,
@@ -62,16 +63,9 @@ export default function Profile() {
 
   useEffectOnce(() => {
     // Lấy role từ localStorage trước để tránh flash sang student layout
-    try {
-      const storedUser = localStorage.getItem("currentUser");
-      if (storedUser) {
-        const user = JSON.parse(storedUser);
-        if (user.role) {
-          setProfileForm((prev) => ({ ...prev, role: user.role }));
-        }
-      }
-    } catch (error) {
-      console.error("Error reading user from localStorage:", error);
+    const user = getStoredUser();
+    if (user?.role) {
+      setProfileForm((prev) => ({ ...prev, role: user.role }));
     }
 
     const fetchData = async () =>{
@@ -105,20 +99,11 @@ export default function Profile() {
   }, []);
 
   const layoutRole = useMemo(() => {
-    // Ưu tiên lấy từ profileForm, nếu không có thì lấy từ localStorage, cuối cùng mới fallback
+    // Ưu tiên lấy từ profileForm, nếu không có thì lấy từ getStoredUser, cuối cùng mới fallback
     if (profileForm.role) return profileForm.role;
     
-    try {
-      const storedUser = localStorage.getItem("currentUser");
-      if (storedUser) {
-        const user = JSON.parse(storedUser);
-        if (user.role) return user.role;
-      }
-    } catch (error) {
-      console.error("Error reading user from localStorage:", error);
-    }
-    
-    return "student";
+    const user = getStoredUser();
+    return user?.role || "student";
   }, [profileForm.role]);
 
   const handleProfileChange = (field) => (event) => {
@@ -212,18 +197,13 @@ export default function Profile() {
     }));
 
     // Update localStorage
-    try {
-      const storedUser = localStorage.getItem("currentUser");
-      if (storedUser) {
-        const user = JSON.parse(storedUser);
-        user.fullName = trimmedName;
-        user.email = trimmedEmail;
-        user.avatar_url = avatarUrl;
-        localStorage.setItem("currentUser", JSON.stringify(user));
-        setCurrentUser(user);
-      }
-    } catch (error) {
-      console.error("Error updating localStorage:", error);
+    const user = getStoredUser();
+    if (user) {
+      user.fullName = trimmedName;
+      user.email = trimmedEmail;
+      user.avatar_url = avatarUrl;
+      localStorage.setItem("currentUser", JSON.stringify(user));
+      setCurrentUser(user);
     }
 
     // Reset avatar file

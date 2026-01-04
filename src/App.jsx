@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { getStoredUser } from "./utils/auth";
 import Login from "./pages/auth/Login";
 import SignUp from "./pages/auth/SignUp";
 import ForgotPassword from "./pages/auth/ForgotPassword";
@@ -39,6 +40,7 @@ import AdminDashboard from "./pages/dashboard/admin/AdminDashboard";
 import UserManagement from "./pages/dashboard/admin/UserManagement";
 import ExamManagement from "./pages/dashboard/admin/ExamManagement";
 import ClassManagement from "./pages/dashboard/admin/ClassManagement";
+import PurchaseManagement from "./pages/dashboard/admin/PurchaseManagement";
 import WithdrawalManagement from "./pages/dashboard/admin/WithdrawalManagement";
 import Reports from "./pages/dashboard/admin/Reports";
 // ...existing code...
@@ -48,8 +50,7 @@ import ContentModeration from "./pages/dashboard/admin/ContentModeration";
 import "react-toastify/dist/ReactToastify.css";
 
 function WalletRedirect() {
-  const stored = localStorage.getItem("currentUser");
-  const user = stored ? JSON.parse(stored) : null;
+  const user = getStoredUser();
   if (user?.role === "teacher") {
     return <Navigate to="/dashboard/teacher/payment" replace />;
   }
@@ -331,18 +332,18 @@ function App() {
         <Route
           path="/dashboard/admin"
           element={
-            <ProtectedRoute allowedRoles={["admin", "superadmin"]}>
+            <ProtectedRoute allowedRoles={["admin"]}>
               <AdminLayout />
             </ProtectedRoute>
           }
         >
           <Route index element={<AdminDashboard />} />
           <Route path="users" element={<UserManagement />} />
-
           <Route path="classes" element={<ClassManagement />} />
+          <Route path="exams" element={<ExamManagement />} />
+          <Route path="purchases" element={<PurchaseManagement />} />
           <Route path="withdrawals" element={<WithdrawalManagement />} />
           <Route path="reports" element={<Reports />} />
-// ...existing code...
           <Route path="notifications" element={<NotificationManagement />} />
           <Route path="moderation" element={<ContentModeration />} />
         </Route>

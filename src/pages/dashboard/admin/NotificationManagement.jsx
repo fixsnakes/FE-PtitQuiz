@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "react-toastify";
-import { FiBell, FiSend, FiX } from "react-icons/fi";
+import { FiSend, FiX } from "react-icons/fi";
 import adminService from "../../../services/adminService";
 import formatDateTime from "../../../utils/format_time";
 
