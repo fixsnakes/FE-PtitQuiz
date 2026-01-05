@@ -1,15 +1,16 @@
 import { apiClient } from "./apiClient";
 
-// Gửi OTP cho đăng ký
+// otp signup
 export function sendOTPSignup(payload) {
   return apiClient.post("/api/auth/send-otp-signup", payload);
 }
 
-// Xác thực OTP và đăng ký
+// otp verify
 export function signup(payload) {
   return apiClient.post("/api/auth/signup", payload);
 }
 
+// sign in
 export function signin(payload) {
   return apiClient.post("/api/auth/signin", payload);
 }

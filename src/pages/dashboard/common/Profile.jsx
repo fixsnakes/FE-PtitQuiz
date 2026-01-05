@@ -15,12 +15,12 @@ import {
 } from "react-icons/fi";
 
 import { toast } from "react-toastify";
-import { 
+import {
   // ... các icon cũ
-  FiActivity, 
-  FiSmartphone, 
-  FiMonitor, 
-  FiMapPin 
+  FiActivity,
+  FiSmartphone,
+  FiMonitor,
+  FiMapPin
 } from "react-icons/fi";
 
 import { getUserInformation, UpdateProfile, uploadAvatar } from "../../../services/userService";
@@ -31,7 +31,7 @@ import { ChangePassword } from "../../../services/userService";
 export default function Profile() {
   const [activeTab, setActiveTab] = useState("info");
   const [currentUser, setCurrentUser] = useState(null);
-  
+
   const [profileForm, setProfileForm] = useState({
     fullName: "",
     email: "",
@@ -41,11 +41,11 @@ export default function Profile() {
     avatar_url: null,
   });
 
-  const [lastLogins,setlastLogins] = useState(null)
+  const [lastLogins, setlastLogins] = useState(null)
   const [avatarPreview, setAvatarPreview] = useState(null);
   const [avatarFile, setAvatarFile] = useState(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
-  
+
   const [passwordForm, setPasswordForm] = useState({
     currentPassword: "",
     newPassword: "",
@@ -68,29 +68,29 @@ export default function Profile() {
       setProfileForm((prev) => ({ ...prev, role: user.role }));
     }
 
-    const fetchData = async () =>{
-        const data = await getUserInformation()
+    const fetchData = async () => {
+      const data = await getUserInformation()
 
-        console.log(data)
+      console.log(data)
 
-        setProfileForm({
-            fullName: data.fullName,
-            email: data.email,
-            role: data.role,
-            balance: data.balance,
-            join: data.created_at,
-            avatar_url: data.avatar_url || null
-        })
+      setProfileForm({
+        fullName: data.fullName,
+        email: data.email,
+        role: data.role,
+        balance: data.balance,
+        join: data.created_at,
+        avatar_url: data.avatar_url || null
+      })
 
-        setlastLogins(data.login_list)
-        
-        // Set avatar preview nếu có
-        if (data.avatar_url) {
-          const avatarUrl = data.avatar_url.startsWith('http') 
-            ? data.avatar_url 
-            : `${import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, "") || "http://localhost:5005"}${data.avatar_url}`;
-          setAvatarPreview(avatarUrl);
-        }
+      setlastLogins(data.login_list)
+
+      // Set avatar preview nếu có
+      if (data.avatar_url) {
+        const avatarUrl = data.avatar_url.startsWith('http')
+          ? data.avatar_url
+          : `${import.meta.env.VITE_API_BASE_URL?.replace(/\/$/, "") || "http://localhost:5005"}${data.avatar_url}`;
+        setAvatarPreview(avatarUrl);
+      }
 
 
     }
@@ -101,16 +101,25 @@ export default function Profile() {
   const layoutRole = useMemo(() => {
     // Ưu tiên lấy từ profileForm, nếu không có thì lấy từ getStoredUser, cuối cùng mới fallback
     if (profileForm.role) return profileForm.role;
-    
-    const user = getStoredUser();
-    return user?.role || "student";
+
+    try {
+      const storedUser = localStorage.getItem("currentUser");
+      if (storedUser) {
+        const user = JSON.parse(storedUser);
+        if (user.role) return user.role;
+      }
+    } catch (error) {
+      console.error("Error reading user from localStorage:", error);
+    }
+
+    return "student";
   }, [profileForm.role]);
 
   const handleProfileChange = (field) => (event) => {
-      const value = event.target.value;
-      setProfileForm((prev) => ({...prev, [field]: value}))
-      setProfileFeedback(null)
-  } 
+    const value = event.target.value;
+    setProfileForm((prev) => ({ ...prev, [field]: value }))
+    setProfileFeedback(null)
+  }
 
   const handlePasswordChange = (field) => (event) => {
     const value = event.target.value;
@@ -135,7 +144,7 @@ export default function Profile() {
     }
 
     setAvatarFile(file);
-    
+
     // Create preview
     const reader = new FileReader();
     reader.onloadend = () => {
@@ -181,9 +190,9 @@ export default function Profile() {
 
     const response = await UpdateProfile(trimmedName, trimmedEmail, avatarUrl);
 
-    if(!response.status){
-        toast.error("Lỗi khi cập nhật profile")
-        return;
+    if (!response.status) {
+      toast.error("Lỗi khi cập nhật profile")
+      return;
     }
 
     toast.success("Cập nhật profile thành công");
@@ -238,16 +247,16 @@ export default function Profile() {
       return;
     }
 
-    const data = await ChangePassword(currentPassword,newPassword);
+    const data = await ChangePassword(currentPassword, newPassword);
 
-    if(!data.status){
-        toast.error(data.message)
-        return
+    if (!data.status) {
+      toast.error(data.message)
+      return
     }
 
     toast.success(data.message)
 
- 
+
     setPasswordForm({
       currentPassword: "",
       newPassword: "",
@@ -262,19 +271,19 @@ export default function Profile() {
   return (
     <DashboardLayout role={layoutRole}>
       <div className="mx-auto max-w-5xl space-y-6">
-        
+
         {/* --- Header Information Card --- */}
         <div className="overflow-hidden rounded-2xl bg-white shadow-sm border border-slate-200">
-          <div className="relative bg-[#155DFC] p-6 md:p-8">
+          <div className="relative bg-gradient-to-br from-indigo-600 to-indigo-700 p-6 md:p-8">
             <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
               <div className="flex items-center gap-4">
                 {/* Avatar */}
                 <div className="relative group">
                   <div className="flex h-20 w-20 items-center justify-center rounded-full bg-white/20 text-3xl text-white backdrop-blur-sm border-2 border-white/30 overflow-hidden">
                     {avatarPreview ? (
-                      <img 
-                        src={avatarPreview} 
-                        alt="Avatar" 
+                      <img
+                        src={avatarPreview}
+                        alt="Avatar"
                         className="h-full w-full object-cover"
                       />
                     ) : (
@@ -294,7 +303,7 @@ export default function Profile() {
                 {/* Info Text */}
                 <div className="text-white">
                   <h1 className="text-2xl font-bold">{profileForm.email || "Loading..."}</h1>
-                  <div className="flex flex-col gap-1 text-blue-100 md:flex-row md:gap-4">
+                  <div className="flex flex-col gap-1 text-indigo-100 md:flex-row md:gap-4">
                     <span className="flex items-center gap-1">
                       <FiShield className="h-4 w-4" /> Vai trò: {profileForm.role === 'teacher' ? 'Giáo viên' : 'Học sinh'}
                     </span>
@@ -307,7 +316,7 @@ export default function Profile() {
               </div>
 
               {/* Join Date */}
-              <div className="flex flex-col items-start text-blue-100 md:items-end">
+              <div className="flex flex-col items-start text-indigo-100 md:items-end">
                 <span className="text-sm opacity-80">Tham gia</span>
                 <div className="flex items-center gap-2 font-medium text-white">
                   <FiClock /> {formatDateTime(profileForm.join)}
@@ -320,22 +329,20 @@ export default function Profile() {
           <div className="flex border-b border-slate-200 bg-white px-6">
             <button
               onClick={() => setActiveTab("info")}
-              className={`flex items-center gap-2 border-b-2 px-4 py-4 text-sm font-medium transition-colors ${
-                activeTab === "info"
-                  ? "border-blue-600 text-blue-600"
-                  : "border-transparent text-slate-500 hover:text-slate-700"
-              }`}
+              className={`flex items-center gap-2 border-b-2 px-4 py-4 text-sm font-medium transition-colors ${activeTab === "info"
+                ? "border-indigo-600 text-indigo-600"
+                : "border-transparent text-slate-500 hover:text-slate-700"
+                }`}
             >
               <FiUser className="h-4 w-4" />
               Thông tin cá nhân
             </button>
             <button
               onClick={() => setActiveTab("password")}
-              className={`flex items-center gap-2 border-b-2 px-4 py-4 text-sm font-medium transition-colors ${
-                activeTab === "password"
-                  ? "border-blue-600 text-blue-600"
-                  : "border-transparent text-slate-500 hover:text-slate-700"
-              }`}
+              className={`flex items-center gap-2 border-b-2 px-4 py-4 text-sm font-medium transition-colors ${activeTab === "password"
+                ? "border-indigo-600 text-indigo-600"
+                : "border-transparent text-slate-500 hover:text-slate-700"
+                }`}
             >
               <FiShield className="h-4 w-4" />
               Bảo mật
@@ -345,7 +352,7 @@ export default function Profile() {
 
         {/* --- Content Area --- */}
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm md:p-8">
-          
+
           {/* Tab 1: THÔNG TIN CÁ NHÂN */}
           {activeTab === "info" && (
             <div className="animate-fade-in">
@@ -366,9 +373,9 @@ export default function Profile() {
                     <div className="relative">
                       <div className="flex h-24 w-24 items-center justify-center rounded-full border-2 border-slate-200 bg-slate-50 overflow-hidden">
                         {avatarPreview ? (
-                          <img 
-                            src={avatarPreview} 
-                            alt="Avatar preview" 
+                          <img
+                            src={avatarPreview}
+                            alt="Avatar preview"
                             className="h-full w-full object-cover"
                           />
                         ) : (
@@ -404,7 +411,7 @@ export default function Profile() {
                       disabled
                       className="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-slate-500 cursor-not-allowed"
                     />
-                     <p className="text-xs text-slate-400">Email không thể thay đổi</p>
+                    <p className="text-xs text-slate-400">Email không thể thay đổi</p>
                   </div>
 
                   {/* Full Name Field */}
@@ -415,11 +422,11 @@ export default function Profile() {
                       value={profileForm.fullName}
                       onChange={handleProfileChange("fullName")}
                       placeholder="Nhập họ và tên"
-                      className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-slate-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none"
+                      className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-slate-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 focus:outline-none"
                     />
                   </div>
 
-                
+
 
                   {/* Role Field (Static) */}
                   <div className="space-y-2">
@@ -433,13 +440,12 @@ export default function Profile() {
                   </div>
                 </div>
 
-    
+
 
                 {/* Feedback Message */}
                 {profileFeedback && (
-                  <div className={`rounded-lg p-3 text-sm ${
-                    profileFeedback.type === "error" ? "bg-red-50 text-red-600" : "bg-green-50 text-green-600"
-                  }`}>
+                  <div className={`rounded-lg p-3 text-sm ${profileFeedback.type === "error" ? "bg-red-50 text-red-600" : "bg-green-50 text-green-600"
+                    }`}>
                     {profileFeedback.message}
                   </div>
                 )}
@@ -448,7 +454,7 @@ export default function Profile() {
                   <button
                     type="submit"
                     disabled={uploadingAvatar}
-                    className="flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700 focus:ring-4 focus:ring-blue-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="flex items-center gap-2 rounded-lg bg-indigo-600 px-6 py-2.5 text-sm font-medium text-white transition hover:bg-indigo-700 focus:ring-4 focus:ring-indigo-200 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {uploadingAvatar ? (
                       <>
@@ -476,7 +482,7 @@ export default function Profile() {
                   <p className="text-sm text-slate-500">Cập nhật mật khẩu để bảo vệ tài khoản</p>
                 </div>
                 <div className="rounded-full bg-slate-100 p-2 text-slate-400">
-                    <FiLock className="h-5 w-5"/>
+                  <FiLock className="h-5 w-5" />
                 </div>
               </div>
 
@@ -492,7 +498,7 @@ export default function Profile() {
                       value={passwordForm.currentPassword}
                       onChange={handlePasswordChange("currentPassword")}
                       placeholder="Nhập mật khẩu hiện tại"
-                      className="w-full rounded-lg border border-slate-300 px-4 py-2.5 pr-10 text-slate-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none"
+                      className="w-full rounded-lg border border-slate-300 px-4 py-2.5 pr-10 text-slate-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 focus:outline-none"
                     />
                     <button
                       type="button"
@@ -516,7 +522,7 @@ export default function Profile() {
                         value={passwordForm.newPassword}
                         onChange={handlePasswordChange("newPassword")}
                         placeholder="Nhập mật khẩu mới"
-                        className="w-full rounded-lg border border-slate-300 px-4 py-2.5 pr-10 text-slate-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none"
+                        className="w-full rounded-lg border border-slate-300 px-4 py-2.5 pr-10 text-slate-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 focus:outline-none"
                       />
                       <button
                         type="button"
@@ -540,7 +546,7 @@ export default function Profile() {
                         value={passwordForm.confirmPassword}
                         onChange={handlePasswordChange("confirmPassword")}
                         placeholder="Nhập lại mật khẩu mới"
-                        className="w-full rounded-lg border border-slate-300 px-4 py-2.5 pr-10 text-slate-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 focus:outline-none"
+                        className="w-full rounded-lg border border-slate-300 px-4 py-2.5 pr-10 text-slate-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 focus:outline-none"
                       />
                       <button
                         type="button"
@@ -555,9 +561,8 @@ export default function Profile() {
 
                 {/* Feedback Message */}
                 {passwordFeedback && (
-                  <div className={`rounded-lg p-3 text-sm ${
-                    passwordFeedback.type === "error" ? "bg-red-50 text-red-600" : "bg-green-50 text-green-600"
-                  }`}>
+                  <div className={`rounded-lg p-3 text-sm ${passwordFeedback.type === "error" ? "bg-red-50 text-red-600" : "bg-green-50 text-green-600"
+                    }`}>
                     {passwordFeedback.message}
                   </div>
                 )}
@@ -565,7 +570,7 @@ export default function Profile() {
                 <div className="flex justify-end pt-4">
                   <button
                     type="submit"
-                    className="flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-2.5 text-sm font-medium text-white transition hover:bg-blue-700 focus:ring-4 focus:ring-blue-200"
+                    className="flex items-center gap-2 rounded-lg bg-indigo-600 px-6 py-2.5 text-sm font-medium text-white transition hover:bg-indigo-700 focus:ring-4 focus:ring-indigo-200"
                   >
                     <FiSave className="h-4 w-4" />
                     Đổi mật khẩu
@@ -601,9 +606,9 @@ export default function Profile() {
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
                         <div className="flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-slate-500">
-                       
-                            <FiMonitor />
-                        
+
+                          <FiMonitor />
+
                         </div>
                         <span className="font-medium text-slate-900">{item.device}</span>
                       </div>
@@ -623,16 +628,16 @@ export default function Profile() {
                     {/* Cột Thời gian */}
                     <td className="px-6 py-4 whitespace-nowrap">{formatDateTime(item.login_time)}</td>
 
-                   
+
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-          
+
           {/* Footer của bảng (Optional) */}
           <div className="border-t border-slate-200 bg-slate-50 px-6 py-3 text-center md:text-right">
-           
+
           </div>
         </div>
       </div>

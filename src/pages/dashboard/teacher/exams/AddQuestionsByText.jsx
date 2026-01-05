@@ -147,7 +147,7 @@ function updateQuestionInRawText(rawText, questionIndex, updatedQuestion) {
     // Nếu không parse được, trả về rawText mới từ updatedQuestion
     return buildRawTextFromQuestions([updatedQuestion]);
   }
-  
+
   // Tạo danh sách câu hỏi mới, thay thế câu hỏi tại questionIndex
   const updatedQuestions = [...parsed.questions];
   if (questionIndex < updatedQuestions.length) {
@@ -165,7 +165,7 @@ function updateQuestionInRawText(rawText, questionIndex, updatedQuestion) {
       type: "MCQ",
     });
   }
-  
+
   // Tạo lại rawText từ danh sách câu hỏi đã cập nhật
   return buildRawTextFromQuestions(updatedQuestions);
 }
@@ -178,26 +178,26 @@ function buildQuestionPayload(question) {
       text: (option.text ?? "").trim(),
       is_correct: Boolean(option.isCorrect),
     }));
-  
+
   // Đảm bảo có ít nhất 2 answers
   if (answers.length < 2) {
     throw new Error("Mỗi câu hỏi phải có ≥ 2 đáp án.");
   }
-  
+
   // Đảm bảo có ít nhất 1 đáp án đúng
   const correctCount = answers.filter((answer) => answer.is_correct).length;
   if (correctCount === 0) {
     throw new Error("Mỗi câu hỏi phải có ít nhất 1 đáp án đúng.");
   }
-  
+
   const questionType = correctCount === 1 ? "single_choice" : "multiple_choice";
-  
+
   const payload = {
     question_text: (question.text ?? "").trim(),
     type: questionType,
     answers, // Luôn gửi answers array
   };
-  
+
   return payload;
 }
 
@@ -215,11 +215,11 @@ const ExamInstructions = () => (
         <code className="rounded bg-gray-200 px-1">&lt;br /&gt;</code>
       </li>
     </ul>
-    
+
     <div className="mt-4 rounded-lg border border-blue-300 bg-white p-3">
       <h5 className="mb-2 font-semibold text-gray-800">Nội dung mẫu:</h5>
       <pre className="whitespace-pre-wrap text-xs text-gray-700 font-mono bg-gray-50 p-3 rounded border border-gray-200 overflow-x-auto">
-{`Phần 1
+        {`Phần 1
 
 When we went back to the bookstore, the bookseller _ the book we wanted.
 A. sold    
@@ -281,13 +281,12 @@ function ExamPreview({
                 key={questionIndex}
                 type="button"
                 onClick={() => onSelectQuestion(questionIndex)}
-                className={`w-10 h-10 rounded-lg font-semibold text-sm transition-all ${
-                  isSelected
+                className={`w-10 h-10 rounded-lg font-semibold text-sm transition-all ${isSelected
                     ? "bg-indigo-600 text-white ring-2 ring-indigo-300"
                     : isSaved
-                    ? "bg-emerald-500 text-white hover:bg-emerald-600"
-                    : "bg-white border-2 border-slate-300 text-slate-700 hover:border-indigo-400 hover:bg-indigo-50"
-                }`}
+                      ? "bg-emerald-500 text-white hover:bg-emerald-600"
+                      : "bg-white border-2 border-slate-300 text-slate-700 hover:border-indigo-400 hover:bg-indigo-50"
+                  }`}
               >
                 {questionIndex + 1}
               </button>
@@ -316,11 +315,10 @@ function ExamPreview({
                     disabled={
                       savingQuestionIndex === selectedQuestionIndex || isNewSaved
                     }
-                    className={`inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${
-                      isNewSaved
+                    className={`inline-flex items-center gap-2 rounded-lg px-3 py-1.5 text-xs font-semibold transition ${isNewSaved
                         ? "bg-emerald-100 text-emerald-700 cursor-not-allowed"
                         : "bg-indigo-600 text-white hover:bg-indigo-700 disabled:opacity-50"
-                    }`}
+                      }`}
                   >
                     {savingQuestionIndex === selectedQuestionIndex ? (
                       <>
@@ -378,18 +376,16 @@ function ExamPreview({
             {questions[selectedQuestionIndex].options.map((option, optionIndex) => (
               <div
                 key={optionIndex}
-                className={`flex items-center gap-3 rounded-lg border-2 p-3 ${
-                  option.isCorrect
+                className={`flex items-center gap-3 rounded-lg border-2 p-3 ${option.isCorrect
                     ? "border-emerald-500 bg-emerald-50"
                     : "border-red-300 bg-red-50"
-                }`}
+                  }`}
               >
                 <div
-                  className={`flex h-8 w-8 items-center justify-center rounded-full font-semibold ${
-                    option.isCorrect
+                  className={`flex h-8 w-8 items-center justify-center rounded-full font-semibold ${option.isCorrect
                       ? "bg-emerald-500 text-white"
                       : "bg-red-500 text-white"
-                  }`}
+                    }`}
                 >
                   {option.isCorrect ? (
                     <FiCheckCircle className="h-5 w-5" />
@@ -398,11 +394,10 @@ function ExamPreview({
                   )}
                 </div>
                 <span
-                  className={`flex-1 whitespace-pre-wrap ${
-                    option.isCorrect
+                  className={`flex-1 whitespace-pre-wrap ${option.isCorrect
                       ? "font-semibold text-emerald-800"
                       : "text-red-800"
-                  }`}
+                    }`}
                 >
                   {String.fromCharCode(65 + optionIndex)}. {option.text}
                 </span>
@@ -640,14 +635,14 @@ export default function AddQuestionsByText() {
     try {
       // Tạo payload với đầy đủ thông tin bao gồm answers
       const payload = buildQuestionPayload(question);
-      
+
       // Đảm bảo payload luôn có answers khi cập nhật
       if (isExisting) {
         if (!payload.answers || !Array.isArray(payload.answers) || payload.answers.length === 0) {
           toast.error("Lỗi: Không thể tạo payload cập nhật vì thiếu đáp án. Vui lòng thử lại.", { autoClose: 3000 });
           return;
         }
-        
+
         // Đảm bảo có ít nhất 1 đáp án đúng
         const correctCount = payload.answers.filter((a) => a.is_correct).length;
         if (correctCount === 0) {
@@ -673,7 +668,7 @@ export default function AddQuestionsByText() {
 
       // Refresh questions và lấy dữ liệu đã cập nhật
       const updatedQuestions = await refreshExistingQuestions();
-      
+
       // Sau khi refresh, cập nhật rawText để đồng bộ với câu hỏi vừa cập nhật
       // Chỉ cập nhật câu hỏi tại questionIndex để không làm mất các chỉnh sửa khác
       if (isExisting && question.id && updatedQuestions) {
@@ -695,7 +690,7 @@ export default function AddQuestionsByText() {
           setHasManualRawTextChange(false);
         }
       }
-      
+
       setSavedQuestions(new Set());
       toast.success("Đã lưu câu hỏi thành công!", { autoClose: 2000 });
     } catch (error) {
@@ -724,11 +719,11 @@ export default function AddQuestionsByText() {
     let savedCount = 0;
     const baseOrder = existingQuestions.length;
     let createdCount = 0;
-    
+
     for (const questionIndex of unsavedQuestionIndexes) {
       const question = allQuestions[questionIndex];
       if (!question) continue;
-      
+
       try {
         setSavingQuestionIndex(questionIndex);
         if (question.isExisting) {
@@ -814,7 +809,7 @@ export default function AddQuestionsByText() {
                 {exam?.title || "Đề thi"}
               </h1>
               {exam?.question_creation_method && (
-                <p className="mt-1 text-xs font-semibold uppercase tracking-[0.3em] text-emerald-600">
+                <p className="mt-1 text-xs font-normal text-emerald-600">
                   Phương thức:{" "}
                   {QUESTION_METHOD_LABELS[exam.question_creation_method] || "Không xác định"}
                 </p>

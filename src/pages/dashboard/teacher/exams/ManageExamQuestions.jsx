@@ -149,11 +149,10 @@ function AnswersEditor({ type, answers, onChange, disabled }) {
             type="button"
             disabled={disabled}
             onClick={() => toggleCorrect(index)}
-            className={`mt-2 flex h-10 w-10 items-center justify-center rounded-full border text-sm font-semibold ${
-              answer.is_correct
-                ? "border-emerald-500 bg-emerald-50 text-emerald-700"
-                : "border-slate-200 bg-white text-slate-500"
-            }`}
+            className={`mt-2 flex h-10 w-10 items-center justify-center rounded-full border text-sm font-semibold ${answer.is_correct
+              ? "border-emerald-500 bg-emerald-50 text-emerald-700"
+              : "border-slate-200 bg-white text-slate-500"
+              }`}
             title="Đánh dấu đáp án đúng"
           >
             {String.fromCharCode(65 + index)}
@@ -262,7 +261,7 @@ export default function ManageExamQuestions() {
   const filteredQuestions = useMemo(() => {
     if (!searchTerm.trim()) return sortedQuestions;
     const term = searchTerm.toLowerCase();
-    return sortedQuestions.filter(q => 
+    return sortedQuestions.filter(q =>
       q.question_text?.toLowerCase().includes(term) ||
       q.answers?.some(a => a.text?.toLowerCase().includes(term))
     );
@@ -282,8 +281,8 @@ export default function ManageExamQuestions() {
     } catch (err) {
       setError(
         err?.body?.message ||
-          err?.message ||
-          "Không thể tải thông tin đề thi, vui lòng thử lại."
+        err?.message ||
+        "Không thể tải thông tin đề thi, vui lòng thử lại."
       );
     } finally {
       setLoadingExam(false);
@@ -303,8 +302,8 @@ export default function ManageExamQuestions() {
     } catch (err) {
       setError(
         err?.body?.message ||
-          err?.message ||
-          "Không thể tải danh sách câu hỏi."
+        err?.message ||
+        "Không thể tải danh sách câu hỏi."
       );
     } finally {
       setLoadingQuestions(false);
@@ -421,10 +420,10 @@ export default function ManageExamQuestions() {
       image_url: question.image_url ?? "",
       answers: requiresAnswers(question.type)
         ? question.answers?.map((answer) => ({
-            id: answer.id,
-            text: answer.text,
-            is_correct: answer.is_correct,
-          })) ?? makeBlankAnswers()
+          id: answer.id,
+          text: answer.text,
+          is_correct: answer.is_correct,
+        })) ?? makeBlankAnswers()
         : [],
     });
   };
@@ -464,7 +463,7 @@ export default function ManageExamQuestions() {
     // Xác nhận xóa với toast
     const question = questions.find(q => q.id === questionId);
     const questionText = question?.question_text?.substring(0, 50) || "câu hỏi này";
-    
+
     if (!window.confirm(`Bạn có chắc chắn muốn xóa "${questionText}..."?\n\nHành động này không thể hoàn tác.`)) {
       return;
     }
@@ -531,7 +530,7 @@ export default function ManageExamQuestions() {
       // Xóa từng câu hỏi
       const deletePromises = Array.from(selectedQuestionIds).map(id => deleteQuestionApi(id));
       await Promise.all(deletePromises);
-      
+
       toast.success(`Đã xóa ${count} câu hỏi thành công.`, { autoClose: 2000 });
       setMessage(`Đã xóa ${count} câu hỏi.`);
       setSelectedQuestionIds(new Set());
@@ -549,7 +548,7 @@ export default function ManageExamQuestions() {
     try {
       setCreating(true);
       setError("");
-      
+
       // Tạo payload từ câu hỏi hiện tại
       const payload = {
         exam_id: examId,
@@ -567,10 +566,10 @@ export default function ManageExamQuestions() {
       const response = await createQuestionApi(payload);
       const newQuestionId =
         response?.id ?? response?.question_id ?? response?.data?.id ?? null;
-      
+
       toast.success("Đã sao chép câu hỏi thành công!", { autoClose: 2000 });
       await fetchQuestions();
-      
+
       // Tự động chọn câu hỏi mới sau khi copy
       if (newQuestionId) {
         setTimeout(() => {
@@ -614,14 +613,14 @@ export default function ManageExamQuestions() {
 
     // Cập nhật state ngay lập tức để UI phản hồi ngay
     setQuestions(updatedQuestions);
-    
+
     // Giữ lại selection sau khi di chuyển
     if (wasSelected) {
       setSelectedQuestionId(question.id);
     }
-    
+
     setReorderLoading(true);
-    
+
     try {
       await reorderQuestionsApi(
         examId,
@@ -650,11 +649,8 @@ export default function ManageExamQuestions() {
       <div
         id={`question-${question.id}`}
         key={`${question.id}-${question.order}`}
-        className={`rounded-2xl border bg-white p-5 shadow-sm transition-all duration-300 ease-in-out ${
-          isSelected && !isEditing ? "ring-2 ring-indigo-300 border-indigo-400" : ""
-        } ${
-          isBulkSelected ? "ring-2 ring-blue-300 border-blue-400 bg-blue-50/30" : ""
-        }`}
+        className={`rounded-2xl border bg-white p-5 shadow-sm transition-all duration-300 ease-in-out ${isSelected && !isEditing ? "ring-2 ring-indigo-300 border-indigo-400" : ""
+          }`}
         style={{
           transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
         }}
@@ -683,11 +679,10 @@ export default function ManageExamQuestions() {
                   ?.label || "Không xác định"}
               </span>
               {question.difficulty && (
-                <span className={`text-xs px-2 py-0.5 rounded-full ${
-                  question.difficulty === "easy" ? "bg-green-100 text-green-700" :
-                  question.difficulty === "hard" ? "bg-red-100 text-red-700" :
-                  "bg-yellow-100 text-yellow-700"
-                }`}>
+                <span className={`text-xs px-2 py-0.5 rounded-full ${question.difficulty === "easy" ? "bg-green-100 text-green-700" :
+                    question.difficulty === "hard" ? "bg-red-100 text-red-700" :
+                      "bg-yellow-100 text-yellow-700"
+                  }`}>
                   {DIFFICULTY_OPTIONS.find(d => d.value === question.difficulty)?.label || question.difficulty}
                 </span>
               )}
@@ -745,12 +740,11 @@ export default function ManageExamQuestions() {
             <p className="text-xs font-semibold text-slate-500 mb-2">Đáp án:</p>
             {question.answers.map((answer, idx) => (
               <div
-                key={answer.id || idx}
-                className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm ${
-                  answer.is_correct
-                    ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-                    : "border-slate-200 bg-slate-50 text-slate-600"
-                }`}
+                key={answer.id}
+                className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm ${answer.is_correct
+                  ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                  : "border-slate-200 bg-slate-50 text-slate-600"
+                  }`}
               >
                 {answer.is_correct ? <FiCheckCircle className="text-emerald-600" /> : <FiAlertTriangle className="text-slate-400" />}
                 <span className="font-medium flex-1">{answer.text}</span>
@@ -967,7 +961,7 @@ export default function ManageExamQuestions() {
               </p>
             )}
             {exam?.question_creation_method && (
-              <p className="mt-2 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.3em] text-emerald-600">
+              <p className="mt-2 inline-flex items-center gap-2 text-xs font-normal text-emerald-600">
                 Phương thức:{" "}
                 {QUESTION_METHOD_LABELS[exam.question_creation_method] || "Không xác định"}
               </p>
@@ -990,11 +984,10 @@ export default function ManageExamQuestions() {
                 <button
                   type="button"
                   onClick={toggleBulkMode}
-                  className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition ${
-                    bulkMode
+                  className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition ${bulkMode
                       ? "border-indigo-300 bg-indigo-100 text-indigo-700"
                       : "border-slate-200 text-slate-600 hover:bg-slate-50"
-                  }`}
+                    }`}
                 >
                   <FiCheckCircle />
                   {bulkMode ? "Tắt chọn nhiều" : "Chọn nhiều"}
@@ -1115,38 +1108,30 @@ export default function ManageExamQuestions() {
                 <>
                   <div className="mb-4">
                     <h3 className="text-sm font-semibold text-slate-700 mb-3">Danh sách câu hỏi</h3>
-                    {filteredQuestions.length === 0 ? (
-                      <div className="py-8 text-center text-sm text-slate-500">
-                        {searchTerm ? "Không tìm thấy câu hỏi nào phù hợp" : "Chưa có câu hỏi nào"}
-                      </div>
-                    ) : (
-                      <div className="flex flex-wrap gap-2">
-                        {filteredQuestions.map((question) => {
-                          const isSelected = selectedQuestionId === question.id;
-                          const isEditing = editingQuestionId === question.id;
-                          const questionNumber = sortedQuestions.findIndex(q => q.id === question.id) + 1;
-                          return (
-                            <button
-                              key={`${question.id}-${question.order}`}
-                              type="button"
-                              onClick={() => {
-                                setSelectedQuestionId(question.id);
-                              }}
-                              className={`w-10 h-10 rounded-lg font-semibold text-sm transition-all duration-300 ease-in-out transform ${
-                                isSelected || isEditing
-                                  ? "bg-indigo-600 text-white ring-2 ring-indigo-300 scale-110"
-                                  : "bg-white border-2 border-slate-300 text-slate-700 hover:border-indigo-400 hover:bg-indigo-50 hover:scale-105"
+                    <div className="flex flex-wrap gap-2">
+                      {sortedQuestions.map((question, index) => {
+                        const isSelected = selectedQuestionId === question.id;
+                        const isEditing = editingQuestionId === question.id;
+                        return (
+                          <button
+                            key={`${question.id}-${question.order}`}
+                            type="button"
+                            onClick={() => {
+                              setSelectedQuestionId(question.id);
+                            }}
+                            className={`w-10 h-10 rounded-lg font-semibold text-sm transition-all duration-300 ease-in-out transform ${isSelected || isEditing
+                              ? "bg-indigo-600 text-white ring-2 ring-indigo-300 scale-110"
+                              : "bg-white border-2 border-slate-300 text-slate-700 hover:border-indigo-400 hover:bg-indigo-50 hover:scale-105"
                               }`}
-                              style={{
-                                transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-                              }}
-                            >
-                              {questionNumber}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    )}
+                            style={{
+                              transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                            }}
+                          >
+                            {index + 1}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
 
                   {/* Chỉ hiển thị câu hỏi được chọn */}

@@ -74,7 +74,11 @@ export default function StudentClassDetail() {
                     id: student.id ?? student.student_id,
                     fullName: student.fullName ?? student.name ?? "Chưa cập nhật",
                     email: student.email ?? "—",
-                    joinedAt: student.joinedAt ?? student.joined_at,
+                    joinedAt:
+                        student.Class_student?.joined_at ??
+                        student.ClassStudent?.joined_at ??
+                        student.joinedAt ??
+                        student.joined_at,
                 }))
             );
         } catch (error) {
