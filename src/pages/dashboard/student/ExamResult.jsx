@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { getSessionResult } from "../../../services/examSessionService";
 import { createOrUpdateRating, getUserRating } from "../../../services/examRatingService";
+import { getSessionCheatingLogs } from "../../../services/cheatingLogService";
 import DashboardLayout from "../../../layouts/DashboardLayout";
 import {
   CheckCircle2,
@@ -12,6 +13,7 @@ import {
   ArrowLeft,
   Star,
   BookOpen,
+  AlertTriangle,
 } from "lucide-react";
 
 export default function ExamResult() {
@@ -25,6 +27,9 @@ export default function ExamResult() {
   const [comment, setComment] = useState("");
   const [userRating, setUserRating] = useState(null);
   const [submittingRating, setSubmittingRating] = useState(false);
+  const [cheatingLogs, setCheatingLogs] = useState([]);
+  const [cheatingLogsLoading, setCheatingLogsLoading] = useState(false);
+  const [showCheatingLogs, setShowCheatingLogs] = useState(false);
 
   useEffect(() => {
     const loadResult = async () => {
@@ -48,6 +53,9 @@ export default function ExamResult() {
             // Không hiển thị lỗi nếu chưa có rating
           }
         }
+
+        // Load cheating logs
+        loadCheatingLogs();
       } catch (error) {
         console.error("Error loading result:", error);
         toast.error(error.message || "Không thể tải kết quả");
@@ -61,6 +69,20 @@ export default function ExamResult() {
       loadResult();
     }
   }, [sessionId, navigate]);
+
+  const loadCheatingLogs = async () => {
+    if (!sessionId) return;
+    try {
+      setCheatingLogsLoading(true);
+      const data = await getSessionCheatingLogs(sessionId);
+      setCheatingLogs(data.logs || []);
+    } catch (error) {
+      console.error("Error loading cheating logs:", error);
+      // Không hiển thị lỗi, chỉ log
+    } finally {
+      setCheatingLogsLoading(false);
+    }
+  };
 
   const handleSubmitRating = async () => {
     if (!rating || rating < 1 || rating > 5) {
@@ -295,6 +317,91 @@ export default function ExamResult() {
             )}
           </div>
         </section>
+
+        {/* Cheating Logs Section */}
+        {cheatingLogs.length > 0 && (
+          <section className="rounded-2xl border border-amber-200 bg-white p-6 shadow-sm">
+            <div className="mb-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <AlertTriangle className="h-6 w-6 text-amber-600" />
+                <h2 className="text-xl font-semibold text-slate-900">
+                  Lịch sử gian lận
+                </h2>
+                <span className="rounded-full bg-amber-100 px-3 py-1 text-sm font-semibold text-amber-700">
+                  {cheatingLogs.length} sự kiện
+                </span>
+              </div>
+              <button
+                onClick={() => setShowCheatingLogs(!showCheatingLogs)}
+                className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-medium text-amber-700 transition hover:bg-amber-100"
+              >
+                {showCheatingLogs ? "Ẩn" : "Xem chi tiết"}
+              </button>
+            </div>
+
+            {showCheatingLogs && (
+              <div className="space-y-3">
+                {cheatingLogs.map((log, index) => {
+                  const severityColors = {
+                    low: "bg-blue-50 border-blue-200 text-blue-700",
+                    medium: "bg-amber-50 border-amber-200 text-amber-700",
+                    high: "bg-orange-50 border-orange-200 text-orange-700",
+                    critical: "bg-red-50 border-red-200 text-red-700",
+                  };
+
+                  const typeLabels = {
+                    tab_switch: "Chuyển tab",
+                    window_blur: "Mất focus cửa sổ",
+                    fullscreen_exit: "Thoát fullscreen",
+                    copy_paste: "Copy/Paste",
+                    right_click: "Click chuột phải",
+                    keyboard_shortcut: "Phím tắt",
+                    multiple_tabs: "Nhiều tab",
+                    time_suspicious: "Thời gian trả lời bất thường",
+                    answer_pattern: "Mẫu trả lời bất thường",
+                    device_change: "Thay đổi thiết bị",
+                    ip_change: "Thay đổi IP",
+                    browser_change: "Thay đổi trình duyệt",
+                    other: "Khác",
+                  };
+
+                  return (
+                    <div
+                      key={log.id || index}
+                      className={`rounded-lg border p-4 ${severityColors[log.severity] || severityColors.medium}`}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="mb-2 flex items-center gap-2">
+                            <span className="font-semibold">
+                              {typeLabels[log.cheating_type] || log.cheating_type}
+                            </span>
+                            <span className="rounded-full bg-white px-2 py-0.5 text-xs font-medium">
+                              {log.severity || "medium"}
+                            </span>
+                          </div>
+                          {log.description && (
+                            <p className="text-sm opacity-90">{log.description}</p>
+                          )}
+                          <p className="mt-2 text-xs opacity-75">
+                            {new Date(log.detected_at).toLocaleString("vi-VN")}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {!showCheatingLogs && (
+              <p className="text-sm text-amber-700">
+                Hệ thống đã phát hiện {cheatingLogs.length} sự kiện gian lận trong quá trình làm bài.
+                Nhấn "Xem chi tiết" để xem thông tin.
+              </p>
+            )}
+          </section>
+        )}
 
         {/* Answers Review */}
         <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
