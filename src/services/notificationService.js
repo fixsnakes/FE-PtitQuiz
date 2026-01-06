@@ -10,10 +10,6 @@ function buildQueryString(params = {}) {
   return query ? `?${query}` : "";
 }
 
-/**
- * Lấy danh sách thông báo
- * @param {Object} params - { page, limit, unread_only }
- */
 export function getNotifications(params = {}) {
   const query = buildQueryString({
     page: params.page,
@@ -24,17 +20,10 @@ export function getNotifications(params = {}) {
   return apiClient.get(`/api/notifications${query}`);
 }
 
-/**
- * Lấy số lượng thông báo chưa đọc
- */
 export function getUnreadCount() {
   return apiClient.get("/api/notifications/unread-count");
 }
 
-/**
- * Đánh dấu thông báo là đã đọc
- * @param {number|string} notificationId - ID của thông báo
- */
 export function markNotificationAsRead(notificationId) {
   if (!notificationId) {
     throw new Error("notificationId là bắt buộc.");
@@ -43,17 +32,10 @@ export function markNotificationAsRead(notificationId) {
   return apiClient.put(`/api/notifications/${notificationId}/read`);
 }
 
-/**
- * Đánh dấu tất cả thông báo là đã đọc
- */
 export function markAllNotificationsAsRead() {
   return apiClient.put("/api/notifications/read-all");
 }
 
-/**
- * Xóa thông báo
- * @param {number|string} notificationId - ID của thông báo
- */
 export function deleteNotification(notificationId) {
   if (!notificationId) {
     throw new Error("notificationId là bắt buộc.");
@@ -62,11 +44,21 @@ export function deleteNotification(notificationId) {
   return apiClient.delete(`/api/notifications/${notificationId}`);
 }
 
+export function createNotification(data) {
+  return apiClient.post("/api/notifications", data);
+}
+
+export function broadcastNotification(data) {
+  return apiClient.post("/api/admin/notifications/broadcast", data);
+}
+
 export default {
   getNotifications,
   getUnreadCount,
   markNotificationAsRead,
   markAllNotificationsAsRead,
   deleteNotification,
+  createNotification,
+  broadcastNotification,
 };
 

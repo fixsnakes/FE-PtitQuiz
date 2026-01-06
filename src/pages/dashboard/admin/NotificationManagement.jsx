@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { toast } from "react-toastify";
-import { FiSend, FiX } from "react-icons/fi";
+import { FiSend, FiX, FiFilter, FiRefreshCw, FiSearch } from "react-icons/fi";
 import adminService from "../../../services/adminService";
+import notificationService from "../../../services/notificationService";
 import formatDateTime from "../../../utils/format_time";
 
 export default function NotificationManagement() {
-  const [broadcasts, setBroadcasts] = useState([]);
+  const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(false);
   const [pagination, setPagination] = useState({
     page: 1,
@@ -14,6 +15,18 @@ export default function NotificationManagement() {
     totalPages: 0,
   });
 
+  // Filters
+  const [search, setSearch] = useState("");
+  const [filters, setFilters] = useState({
+    email: "",
+    type: "",
+    is_read: "",
+    date_from: "",
+    date_to: "",
+  });
+  const [showFilters, setShowFilters] = useState(false);
+
+  // Broadcast Modal
   const [showBroadcastModal, setShowBroadcastModal] = useState(false);
   const [broadcastForm, setBroadcastForm] = useState({
     title: "",
@@ -21,13 +34,11 @@ export default function NotificationManagement() {
     target_type: "all",
     target_role: "",
     user_ids: "",
-    priority: "medium",
-    link: "",
   });
 
   useEffect(() => {
     loadNotifications();
-  }, [pagination.page]);
+  }, [pagination.page, filters.type, filters.is_read, filters.date_from, filters.date_to]);
 
   const loadNotifications = async () => {
     try {
@@ -35,11 +46,16 @@ export default function NotificationManagement() {
       const params = {
         page: pagination.page,
         limit: pagination.limit,
+        ...(search && { email: search }),
+        ...(filters.type && { type: filters.type }),
+        ...(filters.is_read !== "" && { is_read: filters.is_read === "true" }),
+        ...(filters.date_from && { date_from: filters.date_from }),
+        ...(filters.date_to && { date_to: filters.date_to }),
       };
 
       const response = await adminService.getNotificationHistory(params);
       if (response.success) {
-        setBroadcasts(response.data.broadcasts || []);
+        setNotifications(response.data.notifications || []);
         setPagination(response.data.pagination);
       }
     } catch (error) {
@@ -47,6 +63,84 @@ export default function NotificationManagement() {
       toast.error("Không thể tải lịch sử thông báo");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResetFilters = () => {
+    setSearch("");
+    setFilters({
+      email: "",
+      type: "",
+      is_read: "",
+      date_from: "",
+      date_to: "",
+    });
+    setPagination({ ...pagination, page: 1 });
+  };
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    setPagination({ ...pagination, page: 1 });
+    loadNotifications();
+  };
+
+  const getTypeBadge = (type) => {
+    switch (type) {
+      case "student_joined_class":
+        return "bg-blue-100 text-blue-700";
+      case "exam_assigned_to_class":
+        return "bg-purple-100 text-purple-700";
+      case "exam_submitted":
+        return "bg-green-100 text-green-700";
+      case "feedback_updated":
+        return "bg-orange-100 text-orange-700";
+      case "exam_reminder":
+        return "bg-yellow-100 text-yellow-700";
+      default:
+        return "bg-gray-100 text-gray-700";
+    }
+  };
+
+  const getTypeLabel = (type) => {
+    switch (type) {
+      case "student_joined_class":
+        return "Học sinh tham gia lớp";
+      case "exam_assigned_to_class":
+        return "Bài kiểm tra mới";
+      case "exam_submitted":
+        return "Học sinh nộp bài";
+      case "feedback_updated":
+        return "Feedback cập nhật";
+      case "exam_reminder":
+        return "Nhắc nhở kiểm tra";
+      default:
+        return type;
+    }
+  };
+
+  const getRoleBadge = (role) => {
+    switch (role) {
+      case "student":
+        return "bg-blue-100 text-blue-700";
+      case "teacher":
+        return "bg-green-100 text-green-700";
+      case "admin":
+        return "bg-red-100 text-red-700";
+      default:
+        return "bg-gray-100 text-gray-700";
+    }
+  };
+
+  const getRoleLabel = (role) => {
+    switch (role) {
+      case "student":
+        return "Học sinh";
+      case "teacher":
+        return "Giáo viên";
+      case "admin":
+        return "Quản trị viên";
+      default:
+        return role;
     }
   };
 
@@ -62,10 +156,10 @@ export default function NotificationManagement() {
         }),
       };
 
-      const response = await adminService.broadcastNotification(payload);
+      const response = await notificationService.broadcastNotification(payload);
       if (response.success) {
         toast.success(
-          `Đã gửi thông báo đến ${response.data.notificationsSent} người dùng`
+          `Đã gửi thông báo đến ${response.data.notificationsSent || response.data.count || 'nhiều'} người dùng`
         );
         setShowBroadcastModal(false);
         setBroadcastForm({
@@ -74,40 +168,12 @@ export default function NotificationManagement() {
           target_type: "all",
           target_role: "",
           user_ids: "",
-          priority: "medium",
-          link: "",
         });
         loadNotifications();
       }
     } catch (error) {
       console.error("Error broadcasting notification:", error);
       toast.error(error.body?.message || "Không thể gửi thông báo");
-    }
-  };
-
-  const getPriorityBadge = (priority) => {
-    switch (priority) {
-      case "high":
-        return "bg-red-100 text-red-700";
-      case "medium":
-        return "bg-yellow-100 text-yellow-700";
-      case "low":
-        return "bg-blue-100 text-blue-700";
-      default:
-        return "bg-gray-100 text-gray-700";
-    }
-  };
-
-  const getPriorityLabel = (priority) => {
-    switch (priority) {
-      case "high":
-        return "Cao";
-      case "medium":
-        return "Trung bình";
-      case "low":
-        return "Thấp";
-      default:
-        return priority;
     }
   };
 
@@ -130,17 +196,139 @@ export default function NotificationManagement() {
             Quản lý thông báo
           </h1>
           <p className="text-slate-600 mt-1">
-            Gửi thông báo hệ thống và xem lịch sử
+            Gửi thông báo hệ thống và theo dõi lịch sử
           </p>
         </div>
-        <button
-          onClick={() => setShowBroadcastModal(true)}
-          className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition"
-        >
-          <FiSend className="h-5 w-5" />
-          <span>Gửi thông báo</span>
-        </button>
+        <div className="flex gap-3">
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition ${
+              showFilters
+                ? "bg-slate-700 text-white"
+                : "bg-white border border-slate-300 text-slate-700 hover:bg-slate-50"
+            }`}
+          >
+            <FiFilter className="h-5 w-5" />
+            <span>Lọc</span>
+          </button>
+          <button
+            onClick={() => setShowBroadcastModal(true)}
+            className="flex items-center gap-2 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition"
+          >
+            <FiSend className="h-5 w-5" />
+            <span>Gửi thông báo</span>
+          </button>
+        </div>
       </div>
+
+      {/* Search Bar */}
+      <div className="bg-white rounded-xl border border-slate-200 p-4">
+        <form onSubmit={handleSearch} className="flex gap-4">
+          <div className="flex-1 relative">
+            <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Tìm kiếm theo email người nhận..."
+              className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+            />
+          </div>
+          <button
+            type="submit"
+            className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition flex items-center gap-2"
+          >
+            <FiSearch className="h-4 w-4" />
+            <span>Tìm kiếm</span>
+          </button>
+        </form>
+      </div>
+
+      {/* Filters Section */}
+      {showFilters && (
+        <div className="bg-white rounded-xl border border-slate-200 p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Loại thông báo
+              </label>
+              <select
+                value={filters.type}
+                onChange={(e) => {
+                  setFilters({ ...filters, type: e.target.value });
+                  setPagination({ ...pagination, page: 1 });
+                }}
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+              >
+                <option value="">Tất cả</option>
+                <option value="student_joined_class">Học sinh tham gia lớp</option>
+                <option value="exam_assigned_to_class">Bài kiểm tra mới</option>
+                <option value="exam_submitted">Học sinh nộp bài</option>
+                <option value="feedback_updated">Feedback cập nhật</option>
+                <option value="exam_reminder">Nhắc nhở kiểm tra</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Trạng thái đọc
+              </label>
+              <select
+                value={filters.is_read}
+                onChange={(e) => {
+                  setFilters({ ...filters, is_read: e.target.value });
+                  setPagination({ ...pagination, page: 1 });
+                }}
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+              >
+                <option value="">Tất cả</option>
+                <option value="true">Đã đọc</option>
+                <option value="false">Chưa đọc</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Từ ngày
+              </label>
+              <input
+                type="date"
+                value={filters.date_from}
+                onChange={(e) => {
+                  setFilters({ ...filters, date_from: e.target.value });
+                  setPagination({ ...pagination, page: 1 });
+                }}
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">
+                Đến ngày
+              </label>
+              <input
+                type="date"
+                value={filters.date_to}
+                onChange={(e) => {
+                  setFilters({ ...filters, date_to: e.target.value });
+                  setPagination({ ...pagination, page: 1 });
+                }}
+                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end mt-4">
+            <button
+              onClick={handleResetFilters}
+              className="flex items-center gap-2 px-4 py-2 text-slate-600 hover:text-slate-800 transition"
+            >
+              <FiRefreshCw className="h-4 w-4" />
+              <span>Đặt lại bộ lọc</span>
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Notifications History */}
       <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
@@ -148,9 +336,9 @@ export default function NotificationManagement() {
           <div className="flex items-center justify-center py-12">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
           </div>
-        ) : broadcasts.length === 0 ? (
+        ) : notifications.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-slate-500">Chưa có thông báo broadcast nào</p>
+            <p className="text-slate-500">Không tìm thấy thông báo nào</p>
           </div>
         ) : (
           <>
@@ -159,22 +347,19 @@ export default function NotificationManagement() {
                 <thead className="bg-slate-50 border-b border-slate-200">
                   <tr>
                     <th className="text-left py-3 px-4 text-sm font-semibold text-slate-600">
+                      Loại
+                    </th>
+                    <th className="text-left py-3 px-4 text-sm font-semibold text-slate-600">
                       Tiêu đề
                     </th>
                     <th className="text-left py-3 px-4 text-sm font-semibold text-slate-600">
                       Nội dung
                     </th>
                     <th className="text-left py-3 px-4 text-sm font-semibold text-slate-600">
-                      Đối tượng
+                      Người nhận
                     </th>
                     <th className="text-center py-3 px-4 text-sm font-semibold text-slate-600">
-                      Số người nhận
-                    </th>
-                    <th className="text-center py-3 px-4 text-sm font-semibold text-slate-600">
-                      Độ ưu tiên
-                    </th>
-                    <th className="text-left py-3 px-4 text-sm font-semibold text-slate-600">
-                      Người gửi
+                      Trạng thái
                     </th>
                     <th className="text-left py-3 px-4 text-sm font-semibold text-slate-600">
                       Thời gian
@@ -182,50 +367,69 @@ export default function NotificationManagement() {
                   </tr>
                 </thead>
                 <tbody>
-                  {broadcasts.map((broadcast) => (
+                  {notifications.map((notification) => (
                     <tr
-                      key={broadcast.id}
-                      className="border-b border-slate-100 hover:bg-slate-50"
+                      key={notification.id}
+                      className={`border-b border-slate-100 hover:bg-slate-50 ${
+                        !notification.is_read ? "bg-blue-50" : ""
+                      }`}
                     >
                       <td className="py-3 px-4">
-                        <p className="text-sm font-medium text-slate-800 truncate max-w-xs" title={broadcast.title}>
-                          {broadcast.title}
-                        </p>
-                      </td>
-                      <td className="py-3 px-4">
-                        <p className="text-sm text-slate-600 line-clamp-2 max-w-md" title={broadcast.message}>
-                          {broadcast.message}
-                        </p>
-                      </td>
-                      <td className="py-3 px-4">
-                        <span className="text-sm text-slate-700">
-                          {getTargetLabel(broadcast.target_type, broadcast.target_role)}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 text-center">
-                        <span className="text-sm font-semibold text-slate-800">
-                          {broadcast.recipients_count}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4 text-center">
                         <span
-                          className={`inline-block px-2 py-1 text-xs font-medium rounded ${getPriorityBadge(
-                            broadcast.priority
+                          className={`inline-block px-2 py-1 text-xs font-medium rounded ${getTypeBadge(
+                            notification.type
                           )}`}
                         >
-                          {getPriorityLabel(broadcast.priority)}
+                          {getTypeLabel(notification.type)}
                         </span>
                       </td>
                       <td className="py-3 px-4">
-                        <p className="text-sm font-medium text-slate-800">
-                          {broadcast.sender?.fullName || "N/A"}
-                        </p>
-                        <p className="text-xs text-slate-500">
-                          {broadcast.sender?.email || ""}
+                        <p className="text-sm font-medium text-slate-800 truncate max-w-xs" title={notification.title}>
+                          {notification.title}
                         </p>
                       </td>
+                      <td className="py-3 px-4">
+                        <p className="text-sm text-slate-600 line-clamp-2 max-w-md" title={notification.message}>
+                          {notification.message}
+                        </p>
+                      </td>
+                      <td className="py-3 px-4">
+                        <div>
+                          <p className="text-sm font-medium text-slate-800">
+                            {notification.recipient?.fullName || "N/A"}
+                          </p>
+                          <p className="text-xs text-slate-500">
+                            {notification.recipient?.email || ""}
+                          </p>
+                          <span
+                            className={`inline-block px-2 py-1 text-xs font-medium rounded mt-1 ${getRoleBadge(
+                              notification.recipient?.role
+                            )}`}
+                          >
+                            {getRoleLabel(notification.recipient?.role)}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 text-center">
+                        {notification.is_read ? (
+                          <div>
+                            <span className="inline-block px-2 py-1 text-xs font-medium rounded bg-green-100 text-green-700">
+                              Đã đọc
+                            </span>
+                            {notification.read_at && (
+                              <p className="text-xs text-slate-500 mt-1">
+                                {formatDateTime(notification.read_at)}
+                              </p>
+                            )}
+                          </div>
+                        ) : (
+                          <span className="inline-block px-2 py-1 text-xs font-medium rounded bg-yellow-100 text-yellow-700">
+                            Chưa đọc
+                          </span>
+                        )}
+                      </td>
                       <td className="py-3 px-4 text-sm text-slate-600">
-                        {formatDateTime(broadcast.created_at)}
+                        {formatDateTime(notification.created_at)}
                       </td>
                     </tr>
                   ))}
@@ -386,41 +590,6 @@ export default function NotificationManagement() {
                   />
                 </div>
               )}
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Độ ưu tiên <span className="text-red-500">*</span>
-                </label>
-                <select
-                  value={broadcastForm.priority}
-                  onChange={(e) =>
-                    setBroadcastForm({
-                      ...broadcastForm,
-                      priority: e.target.value,
-                    })
-                  }
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
-                >
-                  <option value="low">Thấp</option>
-                  <option value="medium">Trung bình</option>
-                  <option value="high">Cao</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-2">
-                  Link (tùy chọn)
-                </label>
-                <input
-                  type="text"
-                  value={broadcastForm.link}
-                  onChange={(e) =>
-                    setBroadcastForm({ ...broadcastForm, link: e.target.value })
-                  }
-                  placeholder="/path/to/page"
-                  className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
-                />
-              </div>
 
               <div className="flex gap-3 pt-4">
                 <button
