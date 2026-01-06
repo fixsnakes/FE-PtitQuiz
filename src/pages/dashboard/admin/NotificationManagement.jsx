@@ -188,12 +188,12 @@ export default function NotificationManagement() {
                       className="border-b border-slate-100 hover:bg-slate-50"
                     >
                       <td className="py-3 px-4">
-                        <p className="text-sm font-medium text-slate-800">
+                        <p className="text-sm font-medium text-slate-800 truncate max-w-xs" title={broadcast.title}>
                           {broadcast.title}
                         </p>
                       </td>
                       <td className="py-3 px-4">
-                        <p className="text-sm text-slate-600 line-clamp-2">
+                        <p className="text-sm text-slate-600 line-clamp-2 max-w-md" title={broadcast.message}>
                           {broadcast.message}
                         </p>
                       </td>
@@ -288,12 +288,16 @@ export default function NotificationManagement() {
                 <input
                   type="text"
                   required
+                  maxLength={200}
                   value={broadcastForm.title}
                   onChange={(e) =>
                     setBroadcastForm({ ...broadcastForm, title: e.target.value })
                   }
                   className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
                 />
+                <div className="text-right text-xs text-slate-500 mt-1">
+                  {broadcastForm.title.length}/200
+                </div>
               </div>
 
               <div>
@@ -302,6 +306,7 @@ export default function NotificationManagement() {
                 </label>
                 <textarea
                   required
+                  maxLength={500}
                   value={broadcastForm.message}
                   onChange={(e) =>
                     setBroadcastForm({
@@ -312,6 +317,9 @@ export default function NotificationManagement() {
                   rows="4"
                   className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
                 />
+                <div className="text-right text-xs text-slate-500 mt-1">
+                  {broadcastForm.message.length}/500
+                </div>
               </div>
 
               <div>
