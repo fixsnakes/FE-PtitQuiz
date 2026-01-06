@@ -86,11 +86,11 @@ export default function AdminDashboard() {
       detail: `${summary.totalStudents || 0} Học sinh, ${summary.totalTeachers || 0} Giáo viên`,
     },
     {
-      label: "Doanh thu",
-      value: formatCurrency(summary.totalRevenue || 0),
+      label: "Tổng doanh thu",
+      value: formatCurrency(summary.totalDeposit || 0),
       icon: FiDollarSign,
       color: "bg-yellow-500",
-      detail: `${summary.totalPurchases || 0} Giao dịch`,
+      detail: `${summary.totalTransactions || 0} Giao dịch nạp tiền`,
     },
     {
       label: "Tổng đề thi",
