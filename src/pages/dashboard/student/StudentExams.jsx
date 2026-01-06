@@ -8,6 +8,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Search,
+  MessageSquare,
 } from "lucide-react";
 import { getStudentResults } from "../../../services/examResultService";
 import { toast } from "react-toastify";
@@ -52,6 +53,8 @@ export default function StudentExams() {
             completedAt: result.submitted_at || session.submitted_at,
             endTime: session.end_time,
             sessionId: session.id || result.session_id,
+            feedback: result.feedback || null,
+            hasFeedback: !!result.feedback,
           };
         });
         console.log("Mapped exams:", mappedExams); // Debug log
@@ -228,8 +231,16 @@ export default function StudentExams() {
                             </div>
                           </td>
                           <td className="px-6 py-4">
-                            <div className="text-sm font-medium text-slate-900">
-                              {item.examTitle}
+                            <div className="flex items-center gap-2">
+                              <div className="text-sm font-medium text-slate-900">
+                                {item.examTitle}
+                              </div>
+                              {item.hasFeedback && (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-indigo-100 px-2 py-1 text-xs font-semibold text-indigo-700">
+                                  <MessageSquare className="h-3 w-3" />
+                                  Có feedback
+                                </span>
+                              )}
                             </div>
                           </td>
                           <td className="px-6 py-4 text-center">

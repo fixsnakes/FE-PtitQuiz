@@ -870,6 +870,12 @@ export default function ExamDetail() {
                               <span className="text-sm text-slate-500">
                                 ({parseFloat(result.percentage || 0).toFixed(1)}%)
                               </span>
+                              {result.feedback && (
+                                <span className="inline-flex items-center gap-1 rounded-full bg-indigo-100 px-2 py-1 text-xs font-semibold text-indigo-700">
+                                  <MessageSquare className="h-3 w-3" />
+                                  Có feedback
+                                </span>
+                              )}
                             </div>
                             <div className="flex items-center gap-4 text-sm text-slate-600">
                               <span>Đúng: {result.correct_count || 0}</span>
