@@ -5,7 +5,7 @@ import adminService from "../../../services/adminService";
 import formatDateTime from "../../../utils/format_time";
 
 export default function NotificationManagement() {
-  const [notifications, setNotifications] = useState([]);
+  const [broadcasts, setBroadcasts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [pagination, setPagination] = useState({
     page: 1,
@@ -39,7 +39,7 @@ export default function NotificationManagement() {
 
       const response = await adminService.getNotificationHistory(params);
       if (response.success) {
-        setNotifications(response.data.notifications);
+        setBroadcasts(response.data.broadcasts || []);
         setPagination(response.data.pagination);
       }
     } catch (error) {
@@ -111,6 +111,17 @@ export default function NotificationManagement() {
     }
   };
 
+  const getTargetLabel = (targetType, targetRole) => {
+    if (targetType === "all") return "Tất cả người dùng";
+    if (targetType === "role") {
+      if (targetRole === "student") return "Học sinh";
+      if (targetRole === "teacher") return "Giáo viên";
+      if (targetRole === "admin") return "Quản trị viên";
+    }
+    if (targetType === "specific_users") return "Người dùng cụ thể";
+    return "N/A";
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -137,9 +148,9 @@ export default function NotificationManagement() {
           <div className="flex items-center justify-center py-12">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600"></div>
           </div>
-        ) : notifications.length === 0 ? (
+        ) : broadcasts.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-slate-500">Chưa có thông báo nào</p>
+            <p className="text-slate-500">Chưa có thông báo broadcast nào</p>
           </div>
         ) : (
           <>
@@ -148,22 +159,22 @@ export default function NotificationManagement() {
                 <thead className="bg-slate-50 border-b border-slate-200">
                   <tr>
                     <th className="text-left py-3 px-4 text-sm font-semibold text-slate-600">
-                      ID
-                    </th>
-                    <th className="text-left py-3 px-4 text-sm font-semibold text-slate-600">
-                      Người nhận
-                    </th>
-                    <th className="text-left py-3 px-4 text-sm font-semibold text-slate-600">
                       Tiêu đề
                     </th>
                     <th className="text-left py-3 px-4 text-sm font-semibold text-slate-600">
                       Nội dung
                     </th>
+                    <th className="text-left py-3 px-4 text-sm font-semibold text-slate-600">
+                      Đối tượng
+                    </th>
+                    <th className="text-center py-3 px-4 text-sm font-semibold text-slate-600">
+                      Số người nhận
+                    </th>
                     <th className="text-center py-3 px-4 text-sm font-semibold text-slate-600">
                       Độ ưu tiên
                     </th>
-                    <th className="text-center py-3 px-4 text-sm font-semibold text-slate-600">
-                      Đã đọc
+                    <th className="text-left py-3 px-4 text-sm font-semibold text-slate-600">
+                      Người gửi
                     </th>
                     <th className="text-left py-3 px-4 text-sm font-semibold text-slate-600">
                       Thời gian
@@ -171,50 +182,50 @@ export default function NotificationManagement() {
                   </tr>
                 </thead>
                 <tbody>
-                  {notifications.map((notif) => (
+                  {broadcasts.map((broadcast) => (
                     <tr
-                      key={notif.id}
+                      key={broadcast.id}
                       className="border-b border-slate-100 hover:bg-slate-50"
                     >
-                      <td className="py-3 px-4 text-sm text-slate-600">
-                        #{notif.id}
-                      </td>
                       <td className="py-3 px-4">
                         <p className="text-sm font-medium text-slate-800">
-                          {notif.recipient?.fullName}
-                        </p>
-                        <p className="text-xs text-slate-500">
-                          {notif.recipient?.email}
-                        </p>
-                      </td>
-                      <td className="py-3 px-4">
-                        <p className="text-sm font-medium text-slate-800">
-                          {notif.title}
+                          {broadcast.title}
                         </p>
                       </td>
                       <td className="py-3 px-4">
                         <p className="text-sm text-slate-600 line-clamp-2">
-                          {notif.message}
+                          {broadcast.message}
                         </p>
+                      </td>
+                      <td className="py-3 px-4">
+                        <span className="text-sm text-slate-700">
+                          {getTargetLabel(broadcast.target_type, broadcast.target_role)}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-center">
+                        <span className="text-sm font-semibold text-slate-800">
+                          {broadcast.recipients_count}
+                        </span>
                       </td>
                       <td className="py-3 px-4 text-center">
                         <span
                           className={`inline-block px-2 py-1 text-xs font-medium rounded ${getPriorityBadge(
-                            notif.priority
+                            broadcast.priority
                           )}`}
                         >
-                          {getPriorityLabel(notif.priority)}
+                          {getPriorityLabel(broadcast.priority)}
                         </span>
                       </td>
-                      <td className="py-3 px-4 text-center">
-                        {notif.is_read ? (
-                          <span className="text-green-600">✓</span>
-                        ) : (
-                          <span className="text-slate-400">—</span>
-                        )}
+                      <td className="py-3 px-4">
+                        <p className="text-sm font-medium text-slate-800">
+                          {broadcast.sender?.fullName || "N/A"}
+                        </p>
+                        <p className="text-xs text-slate-500">
+                          {broadcast.sender?.email || ""}
+                        </p>
                       </td>
                       <td className="py-3 px-4 text-sm text-slate-600">
-                        {formatDateTime(notif.created_at)}
+                        {formatDateTime(broadcast.created_at)}
                       </td>
                     </tr>
                   ))}
