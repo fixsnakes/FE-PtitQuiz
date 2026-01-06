@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { toast } from "react-toastify";
 import DashboardLayout from "../../../layouts/DashboardLayout";
 import { getDepositHistory } from "../../../services/walletservice";
@@ -12,6 +12,7 @@ import {
     FiCheck,
     FiChevronLeft,
     FiChevronRight,
+    FiLoader,
 } from "react-icons/fi";
 
 export default function StudentPayment() {
@@ -34,6 +35,7 @@ export default function StudentPayment() {
     const [copiedField, setCopiedField] = useState(null);
     const [qrImageUrl, setQrImageUrl] = useState("");
     const [loading, setLoading] = useState(false);
+    const previousOrdersRef = useRef([]);
 
     // fetch history data 
     const fetchDepositHistory = useCallback(async () => {
@@ -41,15 +43,45 @@ export default function StudentPayment() {
         try {
             const response = await getDepositHistory(currentPage, pageSize);
             if (response?.data && response?.message) {
-                setPaymentOrders(response.data.deposits || []);
+                const newOrders = response.data.deposits || [];
+                const previousOrders = previousOrdersRef.current;
+
+                // Check for status changes from pending to success
+                if (previousOrders.length > 0) {
+                    newOrders.forEach((newDeposit) => {
+                        const oldDeposit = previousOrders.find(
+                            (old) => (old.id && old.id === newDeposit.id) ||
+                                (old.deposit_code && old.deposit_code === newDeposit.deposit_code)
+                        );
+
+                        if (
+                            oldDeposit &&
+                            oldDeposit.deposit_status === "pending" &&
+                            newDeposit.deposit_status === "success"
+                        ) {
+                            toast.success(
+                                `Mã nạp tiền ${newDeposit.deposit_code} đã được cộng vào tài khoản của bạn`,
+                                {
+                                    autoClose: 5000,
+                                }
+                            );
+                        }
+                    });
+                }
+
+                setPaymentOrders(newOrders);
                 setPagination(response.data.pagination || {
                     total: 0,
                     page: 1,
                     limit: 10,
                     totalPages: 1,
                 });
+
+                // Update previous orders ref for next comparison
+                previousOrdersRef.current = newOrders;
             } else {
                 setPaymentOrders([]);
+                previousOrdersRef.current = [];
             }
         } catch (error) {
             console.error("Error fetching deposit history:", error);
@@ -59,6 +91,22 @@ export default function StudentPayment() {
             setLoading(false);
         }
     }, [currentPage, pageSize]);
+
+    // Auto refresh when there are pending deposits
+    useEffect(() => {
+        const hasPendingDeposits = paymentOrders.some(
+            (deposit) => deposit.deposit_status === "pending"
+        );
+
+        if (hasPendingDeposits) {
+            // Poll every 10 seconds if there are pending deposits
+            const intervalId = setInterval(() => {
+                fetchDepositHistory();
+            }, 10000);
+
+            return () => clearInterval(intervalId);
+        }
+    }, [paymentOrders, fetchDepositHistory]);
 
 
     useEffect(() => {
@@ -170,7 +218,9 @@ export default function StudentPayment() {
     const getStatusBadge = (deposit) => {
         if (deposit.deposit_status === "pending") {
             return (
-                <span className="text-sm font-semibold text-amber-600">Đang chờ</span>
+                <span className="inline-flex items-center justify-center">
+                    <FiLoader className="h-5 w-5 animate-spin text-amber-600" />
+                </span>
             );
         }
         if (deposit.deposit_status === "success") {

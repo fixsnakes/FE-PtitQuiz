@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { FiUser } from "react-icons/fi";
+import { FiUser, FiHelpCircle } from "react-icons/fi";
 import { Moon, Sun, Wallet } from "lucide-react";
 import { useTheme } from "../contexts/ThemeContext";
 import { getUserInformation } from "../services/userService";
@@ -52,6 +52,18 @@ export default function DashboardHeader({ role = "student", onLogout }) {
             {loading ? "..." : formatCurrency(balance || 0)}
           </span>
         </div>
+
+        {/* Button Hỗ trợ */}
+        <a
+          href="https://www.facebook.com/noaa.aaon"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 rounded-full border border-indigo-200 dark:border-indigo-700 bg-white dark:bg-slate-700 px-4 py-2 text-sm font-semibold text-indigo-600 dark:text-indigo-400 shadow-sm hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors"
+          aria-label="Hỗ trợ"
+        >
+          <FiHelpCircle className="h-4 w-4" />
+          <span className="hidden sm:inline">Hỗ trợ</span>
+        </a>
 
         <Link
           to="/dashboard/profile"
