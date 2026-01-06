@@ -38,7 +38,7 @@ export default function Reports() {
   const [activeTab, setActiveTab] = useState("revenue");
   const [loading, setLoading] = useState(false);
   const [period, setPeriod] = useState("30days");
-  const [yearFilter, setYearFilter] = useState(2025);
+  const [yearFilter, setYearFilter] = useState(new Date().getFullYear());
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [searchYear, setSearchYear] = useState("");
   const [revenueReport, setRevenueReport] = useState(null);
