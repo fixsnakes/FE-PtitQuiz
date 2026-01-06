@@ -37,6 +37,8 @@ export default function ExamManagement() {
   const [showResultsModal, setShowResultsModal] = useState(false);
   const [selectedExam, setSelectedExam] = useState(null);
   const [examResults, setExamResults] = useState([]);
+  const [resultsPagination, setResultsPagination] = useState({ page: 1, limit: 10, total: 0, totalPages: 0 });
+  const [questionsPagination, setQuestionsPagination] = useState({ page: 1, limit: 5, total: 0, totalPages: 0 });
 
   // Edit form
   const [editForm, setEditForm] = useState({
@@ -98,17 +100,21 @@ export default function ExamManagement() {
     }
   };
 
-  const handleViewResults = async (exam) => {
+  const handleViewResults = async (exam, page = 1) => {
     try {
-      const response = await adminService.getExamResults(exam.id);
+      const params = { page, limit: resultsPagination.limit };
+      const response = await adminService.getExamResults(exam.id, params);
       if (response.success) {
-        setExamResults(response.data.results);
+        // Backend có thể trả về response.data.results hoặc response.data
+        const results = response.data.results || response.data || [];
+        setExamResults(Array.isArray(results) ? results : []);
+        setResultsPagination(response.data.pagination || { page, limit: 10, total: results.length, totalPages: 1 });
         setSelectedExam(exam);
         setShowResultsModal(true);
       }
     } catch (error) {
       console.error("Error loading exam results:", error);
-      toast.error("Không thể tải kết quả thi");
+      toast.error(error.body?.message || "Không thể tải kết quả thi");
     }
   };
 
@@ -537,16 +543,23 @@ export default function ExamManagement() {
               )}
 
               {/* Questions */}
-              {selectedExam.exam.questions && (
+              {selectedExam.exam.questions && (() => {
+                const totalQuestions = selectedExam.exam.questions.length;
+                const startIdx = (questionsPagination.page - 1) * questionsPagination.limit;
+                const endIdx = startIdx + questionsPagination.limit;
+                const paginatedQuestions = selectedExam.exam.questions.slice(startIdx, endIdx);
+                const totalPages = Math.ceil(totalQuestions / questionsPagination.limit);
+                
+                return (
                 <div className="border-t pt-6">
                   <h3 className="font-semibold text-slate-800 mb-4">
-                    Câu hỏi ({selectedExam.exam.questions.length})
+                    Câu hỏi ({totalQuestions})
                   </h3>
-                  <div className="space-y-4 max-h-96 overflow-y-auto">
-                    {selectedExam.exam.questions.map((q, index) => (
+                  <div className="space-y-4">
+                    {paginatedQuestions.map((q, idx) => (
                       <div key={q.id} className="bg-slate-50 p-4 rounded-lg">
                         <p className="font-medium text-slate-800">
-                          Câu {index + 1}: {q.question_text}
+                          Câu {startIdx + idx + 1}: {q.question_text}
                         </p>
                         {q.answers && q.answers.length > 0 && (
                           <div className="mt-2 space-y-1">
@@ -567,8 +580,37 @@ export default function ExamManagement() {
                       </div>
                     ))}
                   </div>
+                  
+                  {/* Questions Pagination */}
+                  {totalPages > 1 && (
+                    <div className="flex items-center justify-between mt-4 pt-4 border-t border-slate-200">
+                      <p className="text-sm text-slate-600">
+                        Hiển thị câu hỏi {startIdx + 1} - {Math.min(endIdx, totalQuestions)} / {totalQuestions}
+                      </p>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => setQuestionsPagination({ ...questionsPagination, page: questionsPagination.page - 1 })}
+                          disabled={questionsPagination.page === 1}
+                          className="px-4 py-2 border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                        >
+                          Trước
+                        </button>
+                        <span className="px-4 py-2 text-sm text-slate-600">
+                          Trang {questionsPagination.page} / {totalPages}
+                        </span>
+                        <button
+                          onClick={() => setQuestionsPagination({ ...questionsPagination, page: questionsPagination.page + 1 })}
+                          disabled={questionsPagination.page >= totalPages}
+                          className="px-4 py-2 border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                        >
+                          Sau
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
-              )}
+                );
+              })()}
             </div>
 
             <div className="flex justify-end mt-6">
@@ -754,6 +796,7 @@ export default function ExamManagement() {
                 Chưa có kết quả nào
               </p>
             ) : (
+              <>
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead className="bg-slate-50 border-b border-slate-200">
@@ -776,50 +819,95 @@ export default function ExamManagement() {
                     </tr>
                   </thead>
                   <tbody>
-                    {examResults.map((result) => (
-                      <tr
-                        key={result.id}
-                        className="border-b border-slate-100 hover:bg-slate-50"
-                      >
-                        <td className="py-3 px-4">
-                          <p className="font-medium text-slate-800">
-                            {result.student?.fullName}
-                          </p>
-                          <p className="text-xs text-slate-500">
-                            {result.student?.email}
-                          </p>
-                        </td>
-                        <td className="py-3 px-4 text-center">
-                          <span className="font-bold text-lg text-slate-800">
-                            {result.total_score}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4 text-center">
-                          <span className="text-sm text-slate-600">
-                            {result.correct_count} / {result.wrong_count}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4 text-center">
-                          <span
-                            className={`font-semibold ${
-                              result.percentage >= 80
-                                ? "text-green-600"
-                                : result.percentage >= 50
-                                ? "text-yellow-600"
-                                : "text-red-600"
-                            }`}
-                          >
-                            {result.percentage.toFixed(1)}%
-                          </span>
-                        </td>
-                        <td className="py-3 px-4 text-sm text-slate-600">
-                          {formatDateTime(result.submitted_at)}
-                        </td>
-                      </tr>
-                    ))}
+                    {examResults.map((result) => {
+                      // Parse dữ liệu an toàn
+                      const totalScore = parseFloat(result.total_score) || 0;
+                      const correctCount = result.correct_count || 0;
+                      const wrongCount = result.wrong_count || 0;
+                      const totalQuestions = correctCount + wrongCount;
+                      
+                      // Tính percentage an toàn
+                      let percentage = 0;
+                      if (result.percentage !== undefined && result.percentage !== null) {
+                        percentage = parseFloat(result.percentage) || 0;
+                      } else if (totalQuestions > 0) {
+                        percentage = (correctCount / totalQuestions) * 100;
+                      }
+                      
+                      return (
+                        <tr
+                          key={result.id}
+                          className="border-b border-slate-100 hover:bg-slate-50"
+                        >
+                          <td className="py-3 px-4">
+                            <p className="font-medium text-slate-800">
+                              {result.student?.fullName || `Student #${result.student_id}`}
+                            </p>
+                            <p className="text-xs text-slate-500">
+                              {result.student?.email || ""}
+                            </p>
+                          </td>
+                          <td className="py-3 px-4 text-center">
+                            <span className="font-bold text-lg text-slate-800">
+                              {totalScore.toFixed(2)}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4 text-center">
+                            <span className="text-sm text-slate-600">
+                              {correctCount} / {wrongCount}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4 text-center">
+                            <span
+                              className={`font-semibold ${
+                                percentage >= 80
+                                  ? "text-green-600"
+                                  : percentage >= 50
+                                  ? "text-yellow-600"
+                                  : "text-red-600"
+                              }`}
+                            >
+                              {percentage.toFixed(1)}%
+                            </span>
+                          </td>
+                          <td className="py-3 px-4 text-sm text-slate-600">
+                            {result.submitted_at ? formatDateTime(result.submitted_at) : "N/A"}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
+              
+              {/* Results Pagination */}
+              {resultsPagination.totalPages > 1 && (
+                <div className="flex items-center justify-between mt-4 pt-4 border-t border-slate-200">
+                  <p className="text-sm text-slate-600">
+                    Hiển thị {((resultsPagination.page - 1) * resultsPagination.limit) + 1} - {Math.min(resultsPagination.page * resultsPagination.limit, resultsPagination.total)} trong tổng số {resultsPagination.total} kết quả
+                  </p>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleViewResults(selectedExam, resultsPagination.page - 1)}
+                      disabled={resultsPagination.page === 1}
+                      className="px-4 py-2 border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                    >
+                      Trước
+                    </button>
+                    <span className="px-4 py-2 text-sm text-slate-600">
+                      Trang {resultsPagination.page} / {resultsPagination.totalPages}
+                    </span>
+                    <button
+                      onClick={() => handleViewResults(selectedExam, resultsPagination.page + 1)}
+                      disabled={resultsPagination.page >= resultsPagination.totalPages}
+                      className="px-4 py-2 border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                    >
+                      Sau
+                    </button>
+                  </div>
+                </div>
+              )}
+              </>
             )}
 
             <div className="flex justify-end mt-6">

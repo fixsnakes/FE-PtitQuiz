@@ -18,6 +18,7 @@ export default function ClassManagement() {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedClass, setSelectedClass] = useState(null);
   const [classStudents, setClassStudents] = useState([]);
+  const [studentsPagination, setStudentsPagination] = useState({ page: 1, limit: 10, total: 0, totalPages: 0 });
 
   useEffect(() => {
     loadClasses();
@@ -51,12 +52,15 @@ export default function ClassManagement() {
     loadClasses();
   };
 
-  const handleViewDetail = async (classItem) => {
+  const handleViewDetail = async (classItem, page = 1) => {
     try {
-      const response = await adminService.getClassById(classItem.id);
+      const params = { page, limit: studentsPagination.limit };
+      const response = await adminService.getClassStudents(classItem.id, params);
       if (response.success) {
-        setSelectedClass(response.data);
-        setClassStudents(response.data.students || []);
+        setSelectedClass(classItem);
+        const students = response.data.students || response.data || [];
+        setClassStudents(Array.isArray(students) ? students : []);
+        setStudentsPagination(response.data.pagination || { page, limit: 10, total: students.length, totalPages: 1 });
         setShowDetailModal(true);
       }
     } catch (error) {
@@ -289,13 +293,14 @@ export default function ClassManagement() {
 
               <div className="border-t pt-6">
                 <h3 className="font-semibold text-slate-800 mb-4">
-                  Danh sách học sinh ({classStudents.length})
+                  Danh sách học sinh ({studentsPagination.total || classStudents.length})
                 </h3>
                 {classStudents.length === 0 ? (
                   <p className="text-center text-slate-500 py-4">
                     Chưa có học sinh nào
                   </p>
                 ) : (
+                  <>
                   <div className="overflow-x-auto">
                     <table className="w-full">
                       <thead className="bg-slate-50 border-b">
@@ -333,6 +338,35 @@ export default function ClassManagement() {
                       </tbody>
                     </table>
                   </div>
+                  
+                  {/* Students Pagination */}
+                  {studentsPagination.totalPages > 1 && (
+                    <div className="flex items-center justify-between mt-4 pt-4 border-t border-slate-200">
+                      <p className="text-sm text-slate-600">
+                        Hiển thị {((studentsPagination.page - 1) * studentsPagination.limit) + 1} - {Math.min(studentsPagination.page * studentsPagination.limit, studentsPagination.total)} / {studentsPagination.total} học sinh
+                      </p>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => handleViewDetail(selectedClass, studentsPagination.page - 1)}
+                          disabled={studentsPagination.page === 1}
+                          className="px-4 py-2 border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                        >
+                          Trước
+                        </button>
+                        <span className="px-4 py-2 text-sm text-slate-600">
+                          Trang {studentsPagination.page} / {studentsPagination.totalPages}
+                        </span>
+                        <button
+                          onClick={() => handleViewDetail(selectedClass, studentsPagination.page + 1)}
+                          disabled={studentsPagination.page >= studentsPagination.totalPages}
+                          className="px-4 py-2 border border-slate-300 rounded-lg hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed text-sm"
+                        >
+                          Sau
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  </>
                 )}
               </div>
             </div>

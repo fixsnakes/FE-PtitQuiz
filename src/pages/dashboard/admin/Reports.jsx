@@ -6,7 +6,6 @@ import formatCurrency from "../../../utils/format_currentcy";
 import BarChart from "../../../components/charts/BarChart";
 import LineChart from "../../../components/charts/LineChart";
 
-// Constants
 const PERIOD_OPTIONS = [
   { value: "today", label: "Hôm nay" },
   { value: "7days", label: "7 ngày qua" },
@@ -20,10 +19,9 @@ const COLOR_MAP = {
   blue: "text-blue-600"
 };
 
-// Helper function
+
 const getColorClass = (color) => COLOR_MAP[color] || "text-slate-600";
 
-// Transaction type constants
 const TRANSACTION_TYPES = {
   DEPOSIT: "deposit",
   WITHDRAW: "withdraw",

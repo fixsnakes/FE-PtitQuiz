@@ -51,12 +51,10 @@ export default function AdminDashboard() {
   const popularExams = dashboardData?.popularExams || [];
   const dailyStats = dashboardData?.charts?.dailyStats || [];
 
-  // Tính toán số đề thi miễn phí và trả phí từ API
   const totalExams = summary.totalExams || 0;
   const freeExams = summary.freeExams || 0;
   const paidExams = summary.paidExams || (totalExams - freeExams);
 
-  // Format dữ liệu cho biểu đồ
   const chartCategories = dailyStats.map(item => {
     const date = new Date(item.date);
     return date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
