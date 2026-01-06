@@ -13,17 +13,6 @@ import {
     FiChevronLeft,
     FiChevronRight,
 } from "react-icons/fi";
-import { Search } from "lucide-react";
-
-// Hàm tạo mã giao dịch random
-const generateTransactionCode = () => {
-    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-    let result = "";
-    for (let i = 0; i < 8; i++) {
-        result += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return result;
-};
 
 export default function StudentPayment() {
     const [amount, setAmount] = useState(50000);
@@ -46,7 +35,7 @@ export default function StudentPayment() {
     const [qrImageUrl, setQrImageUrl] = useState("");
     const [loading, setLoading] = useState(false);
 
-    // fetch history data function
+    // fetch history data 
     const fetchDepositHistory = useCallback(async () => {
         setLoading(true);
         try {
@@ -71,36 +60,10 @@ export default function StudentPayment() {
         }
     }, [currentPage, pageSize]);
 
-    // Initial fetch and refetch when page/pageSize changes
+
     useEffect(() => {
         fetchDepositHistory();
     }, [fetchDepositHistory]);
-
-    // Auto-refresh every 10 seconds if there are pending deposits
-    useEffect(() => {
-        // Check if there are any pending deposits
-        const hasPendingDeposits = paymentOrders.some(
-            (deposit) => deposit.deposit_status === "pending"
-        );
-
-        // Only set up interval if there are pending deposits
-        if (!hasPendingDeposits) {
-            return;
-        }
-
-        // Set up interval to refresh every 10 seconds
-        const intervalId = setInterval(() => {
-            fetchDepositHistory();
-        }, 10000); // 10 seconds
-
-        // Cleanup interval on unmount or when no more pending deposits
-        return () => {
-            clearInterval(intervalId);
-        };
-    }, [paymentOrders, fetchDepositHistory]);
-
-
-
 
     const handleAmountChange = (delta) => {
         setAmount((prev) => Math.max(10000, prev + delta));
@@ -114,13 +77,9 @@ export default function StudentPayment() {
 
         try {
             setLoading(true);
-            // Parse payment method to get bank name (assuming format like "ACB" or "Vietcombank")
             const bankName = paymentMethod === "Chuyển khoản ngân hàng";
 
             const payload = {
-                bankName: "ACB",
-                bankAccountName: "DAO TUNG LAM",
-                bankAccountNumber: "22929031",
                 amount: amount,
             };
 

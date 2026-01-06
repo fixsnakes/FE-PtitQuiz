@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useEffectOnce } from "../../../hooks/useEffectOnce";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
@@ -22,7 +22,8 @@ import formatCurrency from "../../../utils/format_currentcy";
 export default function StudentDashboard() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchTerm, setSearchTerm] = useState(""); // Search term đang nhập
+  const [activeSearchTerm, setActiveSearchTerm] = useState(""); // Search term đang được query
   const [exams, setExams] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [pagination, setPagination] = useState({
@@ -62,7 +63,7 @@ export default function StudentDashboard() {
     loadClasses();
   }, []);
 
-  // Load exams when filters or page change
+  // Load exams when filters, activeSearchTerm, or page change
   useEffect(() => {
     const loadExams = async () => {
       try {
@@ -71,6 +72,11 @@ export default function StudentDashboard() {
           page: currentPage,
           limit: pageSize,
         };
+
+        // Thêm search vào params nếu có
+        if (activeSearchTerm && activeSearchTerm.trim()) {
+          params.search = activeSearchTerm.trim();
+        }
 
         if (filters.is_paid !== "") {
           params.is_paid = filters.is_paid;
@@ -122,29 +128,25 @@ export default function StudentDashboard() {
     };
 
     loadExams();
-  }, [currentPage, filters.is_paid, filters.class_id, pageSize]);
+  }, [currentPage, filters.is_paid, filters.class_id, activeSearchTerm, pageSize]);
 
-  // Filter by search term on client side (since backend doesn't support search)
-  const filteredExams = useMemo(() => {
-    if (!searchTerm.trim()) {
-      return exams;
-    }
-    const term = searchTerm.toLowerCase().trim();
-    return exams.filter(
-      (exam) => {
-        const titleMatch = exam.title?.toLowerCase().includes(term);
-        const descMatch = exam.des?.toLowerCase().includes(term);
-        const classMatch = exam.classes?.some(c => c.className?.toLowerCase().includes(term)) ||
-                         exam.class?.className?.toLowerCase().includes(term);
-        return titleMatch || descMatch || classMatch;
-      }
-    );
-  }, [exams, searchTerm]);
-
-  // Reset to page 1 when filters change
+  // Reset to page 1 when filters or search change
   useEffect(() => {
     setCurrentPage(1);
-  }, [filters.is_paid, filters.class_id]);
+  }, [filters.is_paid, filters.class_id, activeSearchTerm]);
+
+  // Handle search button click
+  const handleSearch = () => {
+    setActiveSearchTerm(searchTerm);
+    setCurrentPage(1);
+  };
+
+  // Handle Enter key in search input
+  const handleSearchKeyPress = (e) => {
+    if (e.key === "Enter") {
+      handleSearch();
+    }
+  };
 
   const handleFilterChange = (key, value) => {
     setFilters((prev) => ({
@@ -159,17 +161,18 @@ export default function StudentDashboard() {
       class_id: "",
     });
     setSearchTerm("");
+    setActiveSearchTerm("");
   };
 
   const hasActiveFilters =
     filters.is_paid !== "" ||
     filters.class_id !== "" ||
-    searchTerm.trim();
+    activeSearchTerm.trim();
 
   const activeFilterCount = [
     filters.is_paid !== "" && "1",
     filters.class_id !== "" && "1",
-    searchTerm.trim() && "1",
+    activeSearchTerm.trim() && "1",
   ].filter(Boolean).length;
 
   const handleExamClick = (examId) => {
@@ -346,15 +349,25 @@ export default function StudentDashboard() {
         <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:p-6">
           <div className="flex flex-col gap-3">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex w-full items-center gap-3 rounded-full border border-slate-200 px-4 py-2 shadow-sm focus-within:border-indigo-400 focus-within:ring-1 focus-within:ring-indigo-200">
-                <Search className="h-5 w-5 text-slate-400" />
-                <input
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  type="text"
-                  placeholder="Nhập từ khóa tên bài thi, môn học, tác giả..."
-                  className="w-full border-none bg-transparent text-sm text-slate-700 outline-none focus:ring-0"
-                />
+              <div className="flex w-full items-center gap-3">
+                <div className="flex flex-1 items-center gap-2 rounded-full border border-slate-200 px-4 py-2 shadow-sm focus-within:border-indigo-400 focus-within:ring-1 focus-within:ring-indigo-200">
+                  <Search className="h-5 w-5 text-slate-400" />
+                  <input
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    onKeyPress={handleSearchKeyPress}
+                    type="text"
+                    placeholder="Nhập từ khóa tên bài thi"
+                    className="w-full border-none bg-transparent text-sm text-slate-700 outline-none focus:ring-0"
+                  />
+                </div>
+                <button
+                  onClick={handleSearch}
+                  className="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+                >
+                  <Search className="h-4 w-4" />
+                  Tìm kiếm
+                </button>
               </div>
               <button
                 onClick={() => setShowFilters(!showFilters)}
@@ -436,11 +449,11 @@ export default function StudentDashboard() {
               <div className="mx-auto h-10 w-10 animate-spin rounded-full border-4 border-indigo-600 border-r-transparent" />
               <p className="mt-3 text-sm font-medium text-slate-600">Đang tải danh sách đề thi...</p>
             </div>
-          ) : filteredExams.length === 0 ? (
+          ) : exams.length === 0 ? (
             <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center shadow-sm">
               <p className="text-base font-semibold text-slate-800">Không tìm thấy đề thi phù hợp</p>
               <p className="mt-1 text-sm text-slate-500">
-                {searchTerm.trim()
+                {activeSearchTerm.trim()
                   ? "Thử đổi từ khóa khác hoặc kiểm tra chính tả."
                   : "Không có đề thi nào phù hợp với bộ lọc của bạn."}
               </p>
@@ -448,11 +461,11 @@ export default function StudentDashboard() {
           ) : (
             <div className="space-y-6">
               <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                {filteredExams.map(renderCard)}
+                {exams.map(renderCard)}
               </div>
 
               {/* Pagination - Luôn hiển thị khi có dữ liệu */}
-              {!loading && filteredExams.length > 0 && (
+              {!loading && exams.length > 0 && (
                 <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
                   <div className="text-sm text-slate-600">
                     Hiển thị
@@ -511,3 +524,4 @@ export default function StudentDashboard() {
     </DashboardLayout>
   );
 }
+

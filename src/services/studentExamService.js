@@ -2,10 +2,13 @@ import { apiClient } from "./apiClient";
 
 /**
  * Lấy danh sách tất cả bài thi mà student có thể truy cập
- * @param {Object} params - { class_id, is_paid, page, limit }
+ * @param {Object} params - { search, class_id, is_paid, page, limit }
  */
 export function getStudentExams(params = {}) {
   const queryParams = new URLSearchParams();
+  if (params.search && params.search.trim()) {
+    queryParams.set("search", params.search.trim());
+  }
   if (params.class_id) queryParams.set("class_id", params.class_id);
   if (params.is_paid !== undefined && params.is_paid !== "") {
     queryParams.set("is_paid", params.is_paid);

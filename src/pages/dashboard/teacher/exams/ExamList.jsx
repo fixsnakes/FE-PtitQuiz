@@ -13,6 +13,7 @@ import {
   FiX,
   FiMessageSquare,
   FiTrash2,
+  FiCopy,
 } from "react-icons/fi";
 import { toast } from "react-toastify";
 import DashboardLayout from "../../../../layouts/DashboardLayout";
@@ -69,7 +70,7 @@ function statusBadge(status) {
 
 function normalizeExam(exam) {
   const status = computeStatus(exam);
-  
+
   // Lấy danh sách classes (many-to-many)
   let classes = [];
   if (exam.classes && Array.isArray(exam.classes)) {
@@ -78,12 +79,12 @@ function normalizeExam(exam) {
     // Backward compatibility: nếu vẫn có class cũ
     classes = [exam.class];
   }
-  
+
   // Tạo chuỗi hiển thị classes
-  const classesDisplay = classes.length > 0 
+  const classesDisplay = classes.length > 0
     ? classes.map(cls => cls.className ?? cls.name ?? "Không tên").join(", ")
     : null;
-  
+
   return {
     id: exam.id ?? exam.exam_id ?? exam._id,
     title: exam.title ?? "Không tiêu đề",
@@ -122,7 +123,7 @@ export default function ExamListPage() {
   const [classes, setClasses] = useState([]);
   const [loadingClasses, setLoadingClasses] = useState(true);
   const [showFilters, setShowFilters] = useState(false);
-  
+
   // Comments management state
   const [selectedExamId, setSelectedExamId] = useState(null);
   const [comments, setComments] = useState([]);
@@ -161,16 +162,16 @@ export default function ExamListPage() {
       const items = Array.isArray(response)
         ? response
         : Array.isArray(response?.data)
-        ? response.data
-        : Array.isArray(response?.exams)
-        ? response.exams
-        : [];
+          ? response.data
+          : Array.isArray(response?.exams)
+            ? response.exams
+            : [];
       setExams(items.map(normalizeExam));
     } catch (err) {
       setError(
         err?.body?.message ||
-          err?.message ||
-          "Không thể tải danh sách đề thi. Vui lòng thử lại."
+        err?.message ||
+        "Không thể tải danh sách đề thi. Vui lòng thử lại."
       );
     } finally {
       setLoading(false);
@@ -301,6 +302,32 @@ export default function ExamListPage() {
     }
     return "Đã áp dụng bộ lọc";
   }, [filters]);
+
+  // Handle copy exam link
+  const handleCopyLink = (examId) => {
+    const originUrl = window.location.origin;
+    const examLink = `${originUrl}/dashboard/student/exams/${examId}`;
+
+    navigator.clipboard.writeText(examLink).then(() => {
+      toast.success("Đã sao chép link đề thi!");
+    }).catch(() => {
+      // Fallback for older browsers
+      const textArea = document.createElement("textarea");
+      textArea.value = examLink;
+      textArea.style.position = "fixed";
+      textArea.style.left = "-999999px";
+      document.body.appendChild(textArea);
+      textArea.focus();
+      textArea.select();
+      try {
+        document.execCommand("copy");
+        toast.success("Đã sao chép link đề thi!");
+      } catch (err) {
+        toast.error("Không thể sao chép link");
+      }
+      document.body.removeChild(textArea);
+    });
+  };
 
   return (
     <DashboardLayout role="teacher">
@@ -484,7 +511,7 @@ export default function ExamListPage() {
               </div>
               <h3 className="mb-2 text-lg font-semibold text-slate-700">Không tìm thấy đề thi nào</h3>
               <p className="mb-6 text-sm text-slate-500">
-                {Object.values(filters).some(v => v) 
+                {Object.values(filters).some(v => v)
                   ? "Thử điều chỉnh bộ lọc để tìm thấy đề thi phù hợp."
                   : "Bắt đầu tạo đề thi đầu tiên của bạn."}
               </p>
@@ -559,23 +586,23 @@ export default function ExamListPage() {
                             <p className="font-medium text-slate-700">
                               {exam.startTime
                                 ? new Date(exam.startTime).toLocaleDateString("vi-VN", {
-                                    day: "2-digit",
-                                    month: "2-digit",
-                                    year: "numeric",
-                                    hour: "2-digit",
-                                    minute: "2-digit"
-                                  })
+                                  day: "2-digit",
+                                  month: "2-digit",
+                                  year: "numeric",
+                                  hour: "2-digit",
+                                  minute: "2-digit"
+                                })
                                 : "Không đặt lịch"}
                             </p>
                             <p className="text-xs text-slate-500">
                               → {exam.endTime
                                 ? new Date(exam.endTime).toLocaleDateString("vi-VN", {
-                                    day: "2-digit",
-                                    month: "2-digit",
-                                    year: "numeric",
-                                    hour: "2-digit",
-                                    minute: "2-digit"
-                                  })
+                                  day: "2-digit",
+                                  month: "2-digit",
+                                  year: "numeric",
+                                  hour: "2-digit",
+                                  minute: "2-digit"
+                                })
                                 : "Không giới hạn"}
                             </p>
                           </div>
@@ -586,9 +613,8 @@ export default function ExamListPage() {
                       {(() => {
                         const method = exam.questionMethod;
                         const targetPath = method
-                          ? `/dashboard/teacher/exams/${exam.id}/questions/${
-                              method === "text" ? "text" : "editor"
-                            }`
+                          ? `/dashboard/teacher/exams/${exam.id}/questions/${method === "text" ? "text" : "editor"
+                          }`
                           : `/dashboard/teacher/exams/${exam.id}/questions`;
                         return (
                           <Link
@@ -599,6 +625,14 @@ export default function ExamListPage() {
                           </Link>
                         );
                       })()}
+                      <button
+                        type="button"
+                        onClick={() => handleCopyLink(exam.id)}
+                        className="inline-flex items-center gap-2 rounded-lg border border-blue-200 bg-white px-4 py-2 text-xs font-semibold text-blue-600 shadow-sm transition-all hover:bg-blue-50 hover:shadow-md hover:-translate-y-0.5"
+                      >
+                        <FiCopy />
+                        Sao chép link
+                      </button>
                       <Link
                         to={`/dashboard/teacher/exams/${exam.id}/edit`}
                         className="inline-flex items-center gap-2 rounded-lg border border-indigo-200 bg-white px-4 py-2 text-xs font-semibold text-indigo-600 shadow-sm transition-all hover:bg-indigo-50 hover:shadow-md hover:-translate-y-0.5"

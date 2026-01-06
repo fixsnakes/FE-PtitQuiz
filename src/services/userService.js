@@ -69,11 +69,26 @@ export const UpdateProfile = async (newfullName, email, avatar_url = null) => {
 };
 
 
-export const ChangePassword = async (currentPassword, newPassword) => {
+// Gửi OTP cho đổi mật khẩu
+export const sendOTPForChangePassword = async () => {
+  try {
+    const data = await apiClient.post("/api/user/changepassword/send-otp");
+    return data;
+  } catch (error) {
+    return {
+      status: false,
+      message: error.body?.message || error.message,
+    };
+  }
+};
+
+// Đổi mật khẩu với OTP
+export const ChangePassword = async (currentPassword, newPassword, otp) => {
   try {
     const data = await apiClient.post("/api/user/changepassword", {
       currentPassword: currentPassword,
       newPassword: newPassword,
+      otp: otp,
     });
     return data;
   } catch (error) {

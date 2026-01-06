@@ -23,11 +23,10 @@ import {
   FiMapPin
 } from "react-icons/fi";
 
-import { getUserInformation, UpdateProfile, uploadAvatar } from "../../../services/userService";
+import { getUserInformation, UpdateProfile, uploadAvatar, ChangePassword, sendOTPForChangePassword } from "../../../services/userService";
 import formatDateTime from "../../../utils/format_time";
 import { data } from "react-router-dom";
 import formatCurrency from "../../../utils/format_currentcy";
-import { ChangePassword } from "../../../services/userService";
 export default function Profile() {
   const [activeTab, setActiveTab] = useState("info");
   const [currentUser, setCurrentUser] = useState(null);
@@ -59,6 +58,12 @@ export default function Profile() {
   const [showCurrentPass, setShowCurrentPass] = useState(false);
   const [showNewPass, setShowNewPass] = useState(false);
   const [showConfirmPass, setShowConfirmPass] = useState(false);
+
+  // OTP popup state
+  const [showOTPPopup, setShowOTPPopup] = useState(false);
+  const [otpValue, setOtpValue] = useState("");
+  const [sendingOTP, setSendingOTP] = useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
 
 
   useEffectOnce(() => {
@@ -231,10 +236,10 @@ export default function Profile() {
       return;
     }
 
-    if (newPassword.length < 8) {
+    if (newPassword.length < 6) {
       setPasswordFeedback({
         type: "error",
-        message: "Mật khẩu mới phải có ít nhất 8 ký tự.",
+        message: "Mật khẩu mới phải có ít nhất 6 ký tự.",
       });
       return;
     }
@@ -247,23 +252,52 @@ export default function Profile() {
       return;
     }
 
-    const data = await ChangePassword(currentPassword, newPassword);
+    // Gửi OTP
+    setSendingOTP(true);
+    const otpResponse = await sendOTPForChangePassword();
+    setSendingOTP(false);
 
-    if (!data.status) {
-      toast.error(data.message)
-      return
+    if (!otpResponse.status) {
+      toast.error(otpResponse.message || "Lỗi khi gửi mã OTP");
+      return;
     }
 
-    toast.success(data.message)
+    toast.success(otpResponse.message || "Mã OTP đã được gửi đến email của bạn");
+    setShowOTPPopup(true);
+  };
 
+  const handleOTPSubmit = async () => {
+    if (!otpValue || otpValue.length !== 6) {
+      toast.error("Vui lòng nhập mã OTP 6 số");
+      return;
+    }
 
+    const { currentPassword, newPassword } = passwordForm;
+    setChangingPassword(true);
+
+    const data = await ChangePassword(currentPassword, newPassword, otpValue);
+    setChangingPassword(false);
+
+    if (!data.status) {
+      toast.error(data.message || "Đổi mật khẩu thất bại");
+      return;
+    }
+
+    toast.success(data.message || "Đổi mật khẩu thành công");
+
+    // Reset form và đóng popup
     setPasswordForm({
       currentPassword: "",
       newPassword: "",
       confirmPassword: "",
     });
+    setOtpValue("");
+    setShowOTPPopup(false);
+  };
 
-    return
+  const handleCloseOTPPopup = () => {
+    setShowOTPPopup(false);
+    setOtpValue("");
   };
 
   // --- 2. GIAO DIỆN MỚI (DỰA TRÊN CODE BẠN VỪA TẠO) ---
@@ -570,10 +604,20 @@ export default function Profile() {
                 <div className="flex justify-end pt-4">
                   <button
                     type="submit"
-                    className="flex items-center gap-2 rounded-lg bg-indigo-600 px-6 py-2.5 text-sm font-medium text-white transition hover:bg-indigo-700 focus:ring-4 focus:ring-indigo-200"
+                    disabled={sendingOTP}
+                    className="flex items-center gap-2 rounded-lg bg-indigo-600 px-6 py-2.5 text-sm font-medium text-white transition hover:bg-indigo-700 focus:ring-4 focus:ring-indigo-200 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <FiSave className="h-4 w-4" />
-                    Đổi mật khẩu
+                    {sendingOTP ? (
+                      <>
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-r-transparent"></div>
+                        Đang gửi OTP...
+                      </>
+                    ) : (
+                      <>
+                        <FiSave className="h-4 w-4" />
+                        Gửi OTP
+                      </>
+                    )}
                   </button>
                 </div>
               </form>
@@ -641,6 +685,72 @@ export default function Profile() {
           </div>
         </div>
       </div>
+
+      {/* OTP Popup */}
+      {showOTPPopup && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white shadow-xl">
+            <div className="border-b border-slate-200 px-6 py-4">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-bold text-slate-900">Nhập mã OTP</h3>
+                <button
+                  onClick={handleCloseOTPPopup}
+                  className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+                >
+                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <div className="px-6 py-6">
+              <p className="mb-4 text-sm text-slate-600">
+                Mã OTP đã được gửi đến email của bạn. Vui lòng nhập mã OTP 6 số để xác thực đổi mật khẩu.
+              </p>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-slate-700">
+                    Mã OTP <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={otpValue}
+                    onChange={(e) => {
+                      const value = e.target.value.replace(/\D/g, "").slice(0, 6);
+                      setOtpValue(value);
+                    }}
+                    placeholder="Nhập mã OTP 6 số"
+                    className="w-full rounded-lg border border-slate-300 px-4 py-2.5 text-center text-2xl font-mono tracking-widest text-slate-900 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-200 focus:outline-none"
+                    maxLength={6}
+                    autoFocus
+                  />
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    onClick={handleCloseOTPPopup}
+                    className="flex-1 rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    onClick={handleOTPSubmit}
+                    disabled={changingPassword || otpValue.length !== 6}
+                    className="flex-1 rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-indigo-700 focus:ring-4 focus:ring-indigo-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {changingPassword ? (
+                      <>
+                        <div className="mx-auto h-4 w-4 animate-spin rounded-full border-2 border-white border-r-transparent"></div>
+                      </>
+                    ) : (
+                      "Xác nhận"
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </DashboardLayout>
   );
 }
