@@ -97,7 +97,7 @@ export default function PurchaseManagement() {
             </p>
           </div>
           <div className="bg-white rounded-xl border border-slate-200 p-6">
-            <p className="text-sm font-medium text-slate-600">Tổng doanh thu</p>
+            <p className="text-sm font-medium text-slate-600">Tổng số tiền giao dịch</p>
             <p className="text-2xl font-bold text-green-600 mt-2">
               {formatCurrency(summary.totalRevenue)}
             </p>

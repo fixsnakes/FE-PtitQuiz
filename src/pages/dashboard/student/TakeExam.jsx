@@ -16,7 +16,8 @@ import { Clock, AlertTriangle, CheckCircle2 } from "lucide-react";
 function useCheatingDetection(sessionId, isActive) {
   const [cheatingCount, setCheatingCount] = useState(0);
   const warningShown = useRef(false);
-  const questionStartTimes = useRef({});
+  const autoSubmitCallbackRef = useRef(null);
+  const MAX_WARNINGS = 5; // Tối đa 5 lần cảnh báo, lần thứ 6 sẽ tự động nộp bài
 
   const logCheating = useCallback(
     async (type, description, severity = "medium", metadata = {}) => {
@@ -38,13 +39,39 @@ function useCheatingDetection(sessionId, isActive) {
         setCheatingCount((prev) => {
           const newCount = prev + 1;
           
-          // Hiển thị cảnh báo nếu chưa hiển thị và đạt ngưỡng
-          if (!warningShown.current && newCount >= 2) {
+          // Hiển thị cảnh báo khi đạt ngưỡng
+          if (newCount === 2) {
             toast.warning(
               "Hệ thống đã phát hiện nhiều hành vi bất thường. Vui lòng làm bài nghiêm túc!",
               { autoClose: 5000 }
             );
-            warningShown.current = true;
+          } else if (newCount === 3) {
+            toast.warning(
+              "Cảnh báo lần 3: Bạn đã vi phạm quy định 3 lần. Vui lòng làm bài nghiêm túc!",
+              { autoClose: 5000 }
+            );
+          } else if (newCount === 4) {
+            toast.warning(
+              "Cảnh báo lần 4: Bạn đã vi phạm quy định 4 lần. Còn 1 lần nữa sẽ tự động nộp bài!",
+              { autoClose: 6000 }
+            );
+          } else if (newCount === 5) {
+            toast.warning(
+              "Cảnh báo lần 5: Bạn đã vi phạm quy định 5 lần. Lần vi phạm tiếp theo sẽ tự động nộp bài!",
+              { autoClose: 6000 }
+            );
+          } else if (newCount >= 6) {
+            // Tự động nộp bài khi đạt 6 lần cảnh báo
+            toast.error(
+              "Bạn đã vi phạm quy định quá nhiều lần. Bài thi sẽ được tự động nộp ngay bây giờ!",
+              { autoClose: 3000 }
+            );
+            // Gọi callback để tự động nộp bài
+            if (autoSubmitCallbackRef.current && typeof autoSubmitCallbackRef.current === 'function') {
+              setTimeout(() => {
+                autoSubmitCallbackRef.current();
+              }, 1000); // Đợi 1 giây để toast hiển thị
+            }
           }
           
           return newCount;
@@ -291,42 +318,12 @@ function useCheatingDetection(sessionId, isActive) {
     };
   }, [isActive, logCheating]);
 
-  // Hàm để track thời gian bắt đầu làm câu hỏi (sẽ được gọi từ component chính)
-  const trackQuestionStart = useCallback((questionId) => {
-    if (!isActive) return;
-    questionStartTimes.current[questionId] = Date.now();
-  }, [isActive]);
-
-  // Hàm để kiểm tra thời gian khi trả lời (sẽ được gọi từ component chính)
-  const checkAnswerTime = useCallback((questionId) => {
-    if (!isActive) return;
-    
-    const startTime = questionStartTimes.current[questionId];
-    if (!startTime) return;
-
-    const suspiciousThreshold = 5000; // 5 giây - nếu trả lời quá nhanh có thể là gian lận
-    const timeSpent = Date.now() - startTime;
-
-    // Nếu trả lời quá nhanh (< 5 giây) - có thể là đoán mò hoặc copy
-    if (timeSpent < suspiciousThreshold) {
-      logCheating(
-        "time_suspicious",
-        `Answer submitted too quickly (${Math.round(timeSpent / 1000)}s)`,
-        "high",
-        {
-          question_id: questionId,
-          time_spent_ms: timeSpent,
-          time_spent_seconds: Math.round(timeSpent / 1000),
-          threshold: suspiciousThreshold,
-        }
-      );
+  return { 
+    cheatingCount,
+    setAutoSubmitCallback: (callback) => {
+      autoSubmitCallbackRef.current = callback;
     }
-
-    // Xóa thời gian đã lưu
-    delete questionStartTimes.current[questionId];
-  }, [isActive, logCheating]);
-
-  return { cheatingCount, trackQuestionStart, checkAnswerTime };
+  };
 }
 
 // Component chính
@@ -350,7 +347,37 @@ export default function TakeExam() {
   const hasInitializedRef = useRef(false);
   const initializedExamIdRef = useRef(null);
 
-  const { cheatingCount, trackQuestionStart, checkAnswerTime } = useCheatingDetection(session?.id, isActive);
+  const { cheatingCount, setAutoSubmitCallback } = useCheatingDetection(session?.id, isActive);
+
+  // Tự động nộp khi hết thời gian hoặc vi phạm quá nhiều
+  const handleAutoSubmit = useCallback(async () => {
+    if (!session || isSubmitting) return;
+
+    setIsSubmitting(true);
+    setIsActive(false);
+
+    try {
+      await submitExam(session.id);
+      setIsAutoSubmitted(true);
+      toast.success("Bài thi đã được tự động nộp. Bạn có thể xem kết quả bằng cách nhấn nút 'Xem kết quả' bên dưới.", {
+        autoClose: 7000
+      });
+    } catch (error) {
+      console.error("Error auto-submitting exam:", error);
+      toast.error("Không thể nộp bài tự động. Vui lòng thử lại.", {
+        autoClose: 5000
+      });
+      setIsSubmitting(false);
+      setIsActive(true);
+    }
+  }, [session, isSubmitting]);
+
+  // Set callback cho auto submit
+  useEffect(() => {
+    if (setAutoSubmitCallback && handleAutoSubmit) {
+      setAutoSubmitCallback(handleAutoSubmit);
+    }
+  }, [setAutoSubmitCallback, handleAutoSubmit]);
 
   // Khởi tạo session
   useEffect(() => {
@@ -379,6 +406,7 @@ export default function TakeExam() {
           const sessionData = await getCurrentSession(examId);
           currentSession = sessionData;
         } catch (error) {
+          
           // Xử lý khi session expired
           if (error.status === 400) {
             const errorMessage = error.body?.message || error.message || "";
@@ -564,11 +592,6 @@ export default function TakeExam() {
   const handleAnswer = async (questionId, answerData) => {
     if (!session || !isActive) return;
 
-    // Kiểm tra thời gian trả lời trước khi submit
-    if (checkAnswerTime) {
-      checkAnswerTime(questionId);
-    }
-
     try {
       const payload = {
         question_id: questionId,
@@ -628,30 +651,6 @@ export default function TakeExam() {
     }
   };
 
-  // Tự động nộp khi hết thời gian
-  const handleAutoSubmit = async () => {
-    if (!session || isSubmitting) return;
-
-    setIsSubmitting(true);
-    setIsActive(false);
-
-    try {
-      await submitExam(session.id);
-      setIsAutoSubmitted(true);
-      toast.success("Đã hết thời gian! Bài thi đã được tự động nộp. Bạn có thể xem kết quả bằng cách nhấn nút 'Xem kết quả' bên dưới.", {
-        autoClose: 7000
-      });
-      // Không navigate tự động, ở lại trang hiện tại
-      // Người dùng có thể click nút để xem kết quả
-    } catch (error) {
-      console.error("Error auto-submitting exam:", error);
-      toast.error("Đã hết thời gian nhưng không thể nộp bài tự động. Vui lòng thử lại.", {
-        autoClose: 5000
-      });
-      setIsSubmitting(false);
-      setIsActive(true);
-    }
-  };
 
   // Tính toán progress
   const answeredCount = Object.keys(answers).length;
@@ -692,15 +691,6 @@ export default function TakeExam() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isActive, currentQuestionIndex, questions.length]);
 
-  // Track thời gian khi chuyển câu hỏi (phải đặt trước early returns)
-  useEffect(() => {
-    if (isActive && questions.length > 0 && currentQuestionIndex < questions.length) {
-      const currentQuestion = questions[currentQuestionIndex];
-      if (currentQuestion && trackQuestionStart) {
-        trackQuestionStart(currentQuestion.id);
-      }
-    }
-  }, [currentQuestionIndex, questions, isActive, trackQuestionStart]);
 
   if (loading) {
     return (
@@ -833,7 +823,7 @@ export default function TakeExam() {
             </div>
 
             {/* Legend */}
-            <div className="space-y-3 rounded-lg border border-slate-200 bg-slate-50 p-4">
+            <div className="space-y-3 rounded-lg border border-slate-200 bg-slate-50 p-4 mb-6">
               <div className="text-xs font-semibold text-slate-700 mb-2">Chú thích:</div>
               <div className="flex items-center gap-2 text-xs">
                 <div className="h-4 w-4 rounded border-2 border-indigo-500 bg-gradient-to-br from-indigo-500 to-blue-500"></div>
@@ -846,6 +836,84 @@ export default function TakeExam() {
               <div className="flex items-center gap-2 text-xs">
                 <div className="h-4 w-4 rounded border-2 border-slate-200 bg-white"></div>
                 <span className="text-slate-600">Chưa trả lời</span>
+              </div>
+            </div>
+
+            {/* Warning Box */}
+            <div className={`rounded-xl border-2 p-4 mb-6 ${
+              cheatingCount >= 5
+                ? "border-red-500 bg-red-50"
+                : cheatingCount >= 3
+                ? "border-orange-500 bg-orange-50"
+                : "border-amber-500 bg-amber-50"
+            }`}>
+              <div className="flex items-start gap-3">
+                <AlertTriangle className={`h-6 w-6 flex-shrink-0 mt-0.5 ${
+                  cheatingCount >= 5
+                    ? "text-red-600"
+                    : cheatingCount >= 3
+                    ? "text-orange-600"
+                    : "text-amber-600"
+                }`} />
+                <div className="flex-1">
+                  <h3 className="font-bold text-slate-900 mb-2">Cảnh báo quy định thi</h3>
+                  <div className="space-y-2 text-sm text-slate-700">
+                    <p className="font-semibold">Các hành động bị cấm:</p>
+                    <ul className="list-disc list-inside space-y-1 ml-2">
+                      <li>Chuyển tab hoặc cửa sổ khác</li>
+                      <li>Copy, Paste, Cut nội dung</li>
+                      <li>Click chuột phải</li>
+                      <li>Sử dụng phím tắt (Ctrl+C, Ctrl+V, F12, ...)</li>
+                      <li>Mở nhiều tab cùng lúc</li>
+                      <li>Thoát chế độ fullscreen</li>
+                      <li>Mất focus cửa sổ làm bài</li>
+                    </ul>
+                  </div>
+                  
+                  {cheatingCount > 0 && (
+                    <div className={`mt-4 rounded-lg p-3 ${
+                      cheatingCount >= 6
+                        ? "bg-red-100 border border-red-300"
+                        : cheatingCount >= 5
+                        ? "bg-red-100 border border-red-300"
+                        : cheatingCount >= 3
+                        ? "bg-orange-100 border border-orange-300"
+                        : "bg-amber-100 border border-amber-300"
+                    }`}>
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold text-slate-900">
+                          Số lần vi phạm: 
+                        </span>
+                        <span className={`text-lg font-bold ${
+                          cheatingCount >= 6
+                            ? "text-red-700"
+                            : cheatingCount >= 5
+                            ? "text-red-700"
+                            : cheatingCount >= 3
+                            ? "text-orange-700"
+                            : "text-amber-700"
+                        }`}>
+                          {cheatingCount} / 5
+                        </span>
+                      </div>
+                      {cheatingCount >= 6 && (
+                        <p className="mt-2 text-sm font-semibold text-red-700">
+                          ⚠️ Bài thi đang được tự động nộp do vi phạm quá nhiều lần!
+                        </p>
+                      )}
+                      {cheatingCount === 5 && (
+                        <p className="mt-2 text-sm font-semibold text-red-700">
+                          ⚠️ Cảnh báo cuối cùng! Lần vi phạm tiếp theo sẽ tự động nộp bài!
+                        </p>
+                      )}
+                      {cheatingCount >= 3 && cheatingCount < 5 && (
+                        <p className="mt-2 text-sm text-orange-700">
+                          ⚠️ Còn {6 - cheatingCount} lần nữa sẽ tự động nộp bài!
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
 

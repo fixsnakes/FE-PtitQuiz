@@ -51,12 +51,10 @@ export default function AdminDashboard() {
   const popularExams = dashboardData?.popularExams || [];
   const dailyStats = dashboardData?.charts?.dailyStats || [];
 
-  // Tính toán số đề thi miễn phí và trả phí từ API
   const totalExams = summary.totalExams || 0;
   const freeExams = summary.freeExams || 0;
   const paidExams = summary.paidExams || (totalExams - freeExams);
 
-  // Format dữ liệu cho biểu đồ
   const chartCategories = dailyStats.map(item => {
     const date = new Date(item.date);
     return date.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
@@ -86,11 +84,11 @@ export default function AdminDashboard() {
       detail: `${summary.totalStudents || 0} Học sinh, ${summary.totalTeachers || 0} Giáo viên`,
     },
     {
-      label: "Doanh thu",
-      value: formatCurrency(summary.totalRevenue || 0),
+      label: "Tổng doanh thu",
+      value: formatCurrency(summary.totalDeposit || 0),
       icon: FiDollarSign,
       color: "bg-yellow-500",
-      detail: `${summary.totalPurchases || 0} Giao dịch`,
+      detail: `${summary.totalTransactions || 0} Giao dịch nạp tiền`,
     },
     {
       label: "Tổng đề thi",

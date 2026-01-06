@@ -15,13 +15,27 @@ export function startExamSession(examId) {
 /**
  * Lấy thông tin exam session hiện tại đang diễn ra
  * @param {number|string} examId - ID của bài thi
+ * @returns {Promise} Resolves với session data hoặc throws error với status 404 nếu không có session
  */
-export function getCurrentSession(examId) {
+export async function getCurrentSession(examId) {
   if (!examId) {
     throw new Error("examId là bắt buộc.");
   }
 
-  return apiClient.get(`/api/exams/${examId}/session`);
+  try {
+    return await apiClient.get(`/api/exams/${examId}/session`);
+  } catch (error) {
+    // 404 là expected behavior khi chưa có session, không cần log như error
+    if (error.status === 404) {
+      // Tạo error object với flag để biết đây là expected 404
+      const expectedError = new Error(error.message || "No active exam session found");
+      expectedError.status = 404;
+      expectedError.body = error.body;
+      expectedError.isExpected = true; // Flag để biết đây là expected 404
+      throw expectedError;
+    }
+    throw error;
+  }
 }
 
 /**

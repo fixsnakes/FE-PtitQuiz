@@ -12,6 +12,7 @@ import {
   FiShield,
   FiCreditCard,
   FiClock,
+  FiAlertTriangle,
 } from "react-icons/fi";
 
 import { toast } from "react-toastify";
@@ -25,9 +26,10 @@ import {
 
 import { getUserInformation, UpdateProfile, uploadAvatar, ChangePassword, sendOTPForChangePassword } from "../../../services/userService";
 import formatDateTime from "../../../utils/format_time";
-import { data } from "react-router-dom";
+import { data, useNavigate } from "react-router-dom";
 import formatCurrency from "../../../utils/format_currentcy";
 export default function Profile() {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("info");
   const [currentUser, setCurrentUser] = useState(null);
 
@@ -381,6 +383,18 @@ export default function Profile() {
               <FiShield className="h-4 w-4" />
               Bảo mật
             </button>
+            {layoutRole === "student" && (
+              <button
+                onClick={() => setActiveTab("cheating")}
+                className={`flex items-center gap-2 border-b-2 px-4 py-4 text-sm font-medium transition-colors ${activeTab === "cheating"
+                  ? "border-indigo-600 text-indigo-600"
+                  : "border-transparent text-slate-500 hover:text-slate-700"
+                  }`}
+              >
+                <FiAlertTriangle className="h-4 w-4" />
+                Lịch sử gian lận
+              </button>
+            )}
           </div>
         </div>
 
@@ -621,6 +635,43 @@ export default function Profile() {
                   </button>
                 </div>
               </form>
+            </div>
+          )}
+
+          {/* Tab 3: LỊCH SỬ GIAN LẬN (chỉ cho student) */}
+          {activeTab === "cheating" && layoutRole === "student" && (
+            <div className="animate-fade-in">
+              <div className="mb-6 flex items-center justify-between">
+                <div>
+                  <h2 className="text-lg font-bold text-slate-900">Lịch sử gian lận</h2>
+                  <p className="text-sm text-slate-500">
+                    Xem tất cả lịch sử gian lận của bạn trong các bài thi
+                  </p>
+                </div>
+                {/* <button
+                  onClick={() => navigate("/dashboard/student/cheating-history")}
+                  className="flex items-center gap-2 rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-2 text-sm font-medium text-indigo-700 transition hover:bg-indigo-100"
+                >
+                  <FiAlertTriangle className="h-4 w-4" />
+                  Xem chi tiết
+                </button> */}
+              </div>
+
+              <div className="rounded-lg border border-amber-200 bg-amber-50 p-6 text-center">
+                <FiAlertTriangle className="mx-auto mb-3 h-12 w-12 text-amber-600" />
+                <h3 className="mb-2 text-lg font-semibold text-amber-900">
+                  Lịch sử gian lận
+                </h3>
+                <p className="mb-4 text-sm text-amber-700">
+                  Bạn có thể xem tất cả lịch sử gian lận của mình trong các bài thi đã làm.
+                </p>
+                <button
+                  onClick={() => navigate("/dashboard/student/cheating-history")}
+                  className="rounded-lg bg-amber-600 px-6 py-2.5 text-sm font-medium text-white transition hover:bg-amber-700"
+                >
+                  Xem lịch sử gian lận
+                </button>
+              </div>
             </div>
           )}
         </div>

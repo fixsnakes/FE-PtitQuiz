@@ -28,6 +28,7 @@ import StudentExams from "./pages/dashboard/student/StudentExams";
 import ExamDetail from "./pages/dashboard/student/ExamDetail";
 import TakeExam from "./pages/dashboard/student/TakeExam";
 import ExamResult from "./pages/dashboard/student/ExamResult";
+import CheatingHistory from "./pages/dashboard/student/CheatingHistory";
 import RecentExams from "./pages/dashboard/student/RecentExams";
 import FavoriteExams from "./pages/dashboard/student/FavoriteExams";
 import StudentPayment from "./pages/dashboard/student/StudentPayment";
@@ -324,6 +325,14 @@ function App() {
           element={
             <ProtectedRoute allowedRoles={["student"]}>
               <StudentNotifications />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/student/cheating-history"
+          element={
+            <ProtectedRoute allowedRoles={["student"]}>
+              <CheatingHistory />
             </ProtectedRoute>
           }
         />

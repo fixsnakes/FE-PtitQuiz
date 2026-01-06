@@ -6,7 +6,6 @@ import formatCurrency from "../../../utils/format_currentcy";
 import BarChart from "../../../components/charts/BarChart";
 import LineChart from "../../../components/charts/LineChart";
 
-// Constants
 const PERIOD_OPTIONS = [
   { value: "today", label: "Hôm nay" },
   { value: "7days", label: "7 ngày qua" },
@@ -20,10 +19,9 @@ const COLOR_MAP = {
   blue: "text-blue-600"
 };
 
-// Helper function
+
 const getColorClass = (color) => COLOR_MAP[color] || "text-slate-600";
 
-// Transaction type constants
 const TRANSACTION_TYPES = {
   DEPOSIT: "deposit",
   WITHDRAW: "withdraw",
@@ -38,7 +36,7 @@ export default function Reports() {
   const [activeTab, setActiveTab] = useState("revenue");
   const [loading, setLoading] = useState(false);
   const [period, setPeriod] = useState("30days");
-  const [yearFilter, setYearFilter] = useState(2025);
+  const [yearFilter, setYearFilter] = useState(new Date().getFullYear());
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [searchYear, setSearchYear] = useState("");
   const [revenueReport, setRevenueReport] = useState(null);
@@ -262,7 +260,7 @@ export default function Reports() {
                       { label: "Tổng tiền nạp", value: summary.current.deposit, color: "green", percent: summary.percentChange.deposit },
                       { label: "Tổng tiền rút", value: summary.current.withdrawal, color: "red", percent: summary.percentChange.withdrawal },
                       { label: "Tiền mua đề", value: summary.current.purchase, color: "purple", percent: summary.percentChange.purchase },
-                      { label: "Doanh thu", value: summary.current.revenue, color: "blue", percent: summary.percentChange.revenue }
+                      { label: "Tổng lợi nhuận", value: summary.current.revenue, color: "blue", percent: summary.percentChange.revenue }
                     ].map((item, idx) => (
                       <div key={idx} className="bg-white rounded-xl border border-slate-200 p-6">
                         <p className="text-sm font-medium text-slate-600">{item.label}</p>
@@ -286,7 +284,7 @@ export default function Reports() {
               <div className="bg-white rounded-xl border border-slate-200 p-6">
                 <div className="flex items-center justify-between mb-6">
                   <h3 className="text-base font-semibold text-slate-900">
-                    Biến động doanh thu theo tháng ({yearFilter})
+                    Biến động lợi nhuận theo tháng ({yearFilter})
                   </h3>
                   <div className="flex items-center gap-2">
                     <label className="text-sm text-slate-600">Năm:</label>
