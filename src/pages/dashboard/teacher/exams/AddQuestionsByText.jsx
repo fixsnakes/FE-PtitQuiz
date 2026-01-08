@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   FiInfo,
@@ -8,6 +8,8 @@ import {
   FiLoader,
   FiArrowLeft,
   FiSave,
+  FiUpload,
+  FiFile,
 } from "react-icons/fi";
 import DashboardLayout from "../../../../layouts/DashboardLayout";
 import { getExamDetail } from "../../../../services/examService";
@@ -17,6 +19,7 @@ import {
   updateQuestion as updateQuestionApi,
 } from "../../../../services/questionService";
 import { toast } from "react-toastify";
+import { parseFile, formatTextForQuestions } from "../../../../utils/fileParser";
 
 const QUESTION_METHOD_LABELS = {
   text: "Văn bản",
@@ -213,6 +216,11 @@ const ExamInstructions = () => (
       <li>
         Xuống dòng trong câu hỏi/đáp án hãy dùng{" "}
         <code className="rounded bg-gray-200 px-1">&lt;br /&gt;</code>
+      </li>
+      <li>
+        Bạn có thể import file Word (.docx) bằng nút{" "}
+        <span className="font-semibold text-indigo-600">Import Word</span>.
+        Sau khi import, vui lòng thêm dấu <span className="font-semibold text-blue-600">*</span> vào đáp án đúng.
       </li>
     </ul>
 
@@ -459,6 +467,8 @@ export default function AddQuestionsByText() {
   const [selectedQuestionIndex, setSelectedQuestionIndex] = useState(null);
   const [savedQuestions, setSavedQuestions] = useState(new Set());
   const [savingQuestionIndex, setSavingQuestionIndex] = useState(null);
+  const [uploadingFile, setUploadingFile] = useState(false);
+  const fileInputRef = useRef(null);
 
   const refreshExistingQuestions = useCallback(async () => {
     if (!examId) return;
@@ -760,6 +770,86 @@ export default function AddQuestionsByText() {
     setHasManualRawTextChange(true);
   };
 
+  const handleFileUpload = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // Validate file type - only Word (.docx) is supported
+    const fileName = file.name.toLowerCase();
+    const isValidFile =
+      fileName.endsWith(".docx") ||
+      file.type ===
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+
+    if (!isValidFile) {
+      toast.error(
+        "Định dạng file không được hỗ trợ. Vui lòng chọn file Word (.docx).",
+        { autoClose: 3000 }
+      );
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+      return;
+    }
+
+    setUploadingFile(true);
+    try {
+      // Parse file
+      const extractedText = await parseFile(file);
+      
+      // Format text for questions
+      const formattedText = formatTextForQuestions(extractedText);
+      
+      if (!formattedText || formattedText.trim().length === 0) {
+        toast.warning(
+          "Không thể trích xuất nội dung từ file. Vui lòng kiểm tra lại file.",
+          { autoClose: 3000 }
+        );
+        return;
+      }
+
+      // Append to existing text or replace
+      if (rawText.trim().length > 0) {
+        const shouldAppend = window.confirm(
+          "Bạn có muốn thêm nội dung từ file vào văn bản hiện tại? "
+        );
+        if (shouldAppend) {
+          setRawText((prev) => {
+            const separator = prev.trim().endsWith("\n") ? "" : "\n\n";
+            return prev + separator + formattedText;
+          });
+        } else {
+          setRawText(formattedText);
+        }
+      } else {
+        setRawText(formattedText);
+      }
+
+      setHasManualRawTextChange(true);
+      toast.success(
+        `Đã import thành công từ file ${file.name}. Vui lòng kiểm tra và thêm dấu * vào đáp án đúng.`,
+        { autoClose: 4000 }
+      );
+    } catch (error) {
+      console.error("Error uploading file:", error);
+      toast.error(
+        error.message || "Không thể đọc file. Vui lòng thử lại.",
+        { autoClose: 3000 }
+      );
+    } finally {
+      setUploadingFile(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
+  const handleFileButtonClick = () => {
+    fileInputRef.current?.click();
+  };
+
   const regenerateRawText = () => {
     const generated = buildRawTextFromQuestions(existingQuestions);
     if (!generated) {
@@ -883,9 +973,36 @@ export default function AddQuestionsByText() {
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-medium text-gray-700">
-                Soạn câu hỏi
-              </label>
+              <div className="mb-2 flex items-center justify-between">
+                <label className="block text-sm font-medium text-gray-700">
+                  Soạn câu hỏi
+                </label>
+                <button
+                  type="button"
+                  onClick={handleFileButtonClick}
+                  disabled={uploadingFile}
+                  className="inline-flex items-center gap-2 rounded-lg border border-indigo-300 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-700 hover:bg-indigo-100 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {uploadingFile ? (
+                    <>
+                      <FiLoader className="animate-spin" />
+                      Đang xử lý...
+                    </>
+                  ) : (
+                    <>
+                      <FiUpload />
+                      Import Word
+                    </>
+                  )}
+                </button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                  onChange={handleFileUpload}
+                  className="hidden"
+                />
+              </div>
               <textarea
                 value={rawText}
                 onChange={(event) => handleRawTextChange(event.target.value)}

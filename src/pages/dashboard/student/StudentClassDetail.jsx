@@ -9,6 +9,9 @@ import {
     FiPlus,
     FiUsers,
     FiLogOut,
+    FiFileText,
+    FiClock,
+    FiPlay,
 } from "react-icons/fi";
 import {
     getClassPosts,
@@ -16,6 +19,7 @@ import {
     addPostComment,
 } from "../../../services/postService";
 import { getClassStudents } from "../../../services/classService";
+import { getStudentExams } from "../../../services/studentExamService";
 import formatDateTime from "../../../utils/format_time";
 
 export default function StudentClassDetail() {
@@ -33,6 +37,8 @@ export default function StudentClassDetail() {
     const [expandedPosts, setExpandedPosts] = useState(new Set());
     const [commentForms, setCommentForms] = useState({});
     const [searchTerm, setSearchTerm] = useState("");
+    const [exams, setExams] = useState([]);
+    const [loadingExams, setLoadingExams] = useState(false);
 
     useEffect(() => {
         loadClassDetail();
@@ -40,6 +46,8 @@ export default function StudentClassDetail() {
             loadPosts();
         } else if (activeTab === "students") {
             loadStudents();
+        } else if (activeTab === "exams") {
+            loadExams();
         }
     }, [classId, activeTab]);
 
@@ -97,6 +105,21 @@ export default function StudentClassDetail() {
             toast.error(error?.body?.message || error?.message || "Không thể tải bài đăng.");
         } finally {
             setLoadingPosts(false);
+        }
+    };
+
+    const loadExams = async () => {
+        if (!classId) return;
+        setLoadingExams(true);
+        try {
+            const response = await getStudentExams({ class_id: classId });
+            const examsData = response?.data || response || [];
+            const examsList = Array.isArray(examsData) ? examsData : [];
+            setExams(examsList);
+        } catch (error) {
+            toast.error(error?.body?.message || error?.message || "Không thể tải danh sách bài thi.");
+        } finally {
+            setLoadingExams(false);
         }
     };
 
@@ -360,6 +383,110 @@ export default function StudentClassDetail() {
         </div>
     );
 
+    const renderExamsTab = () => {
+        const getExamStatus = (exam) => {
+            const now = new Date();
+            const startTime = exam.start_time ? new Date(exam.start_time) : null;
+            const endTime = exam.end_time ? new Date(exam.end_time) : null;
+
+            if (startTime && now < startTime) {
+                return { status: "upcoming", label: "Sắp diễn ra", color: "blue" };
+            }
+            if (endTime && now > endTime) {
+                return { status: "ended", label: "Đã kết thúc", color: "gray" };
+            }
+            if (startTime && now >= startTime && (!endTime || now <= endTime)) {
+                return { status: "active", label: "Đang diễn ra", color: "green" };
+            }
+            return { status: "available", label: "Có sẵn", color: "indigo" };
+        };
+
+        return (
+            <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold text-slate-900">Bài thi trong lớp</h3>
+                </div>
+
+                {loadingExams ? (
+                    <div className="flex items-center justify-center py-10 text-slate-500">
+                        <FiLoader className="mr-2 animate-spin" />
+                        Đang tải danh sách bài thi...
+                    </div>
+                ) : exams.length === 0 ? (
+                    <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/60 p-10 text-center text-sm text-slate-500">
+                        Chưa có bài thi nào được gắn cho lớp này.
+                    </div>
+                ) : (
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                        {exams.map((exam) => {
+                            const examStatus = getExamStatus(exam);
+                            const examId = exam.id ?? exam.exam_id;
+                            
+                            return (
+                                <div
+                                    key={examId}
+                                    className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:shadow-md"
+                                >
+                                    <div className="flex items-start justify-between mb-3">
+                                        <h4 className="text-lg font-semibold text-slate-900 line-clamp-2">
+                                            {exam.title || exam.name || "Bài thi không có tiêu đề"}
+                                        </h4>
+                                        <span
+                                            className={`ml-2 flex-shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                                                examStatus.color === "blue"
+                                                    ? "bg-blue-100 text-blue-700"
+                                                    : examStatus.color === "green"
+                                                    ? "bg-green-100 text-green-700"
+                                                    : examStatus.color === "gray"
+                                                    ? "bg-gray-100 text-gray-700"
+                                                    : "bg-indigo-100 text-indigo-700"
+                                            }`}
+                                        >
+                                            {examStatus.label}
+                                        </span>
+                                    </div>
+
+                                    {exam.description && (
+                                        <p className="mb-4 text-sm text-slate-600 line-clamp-2">
+                                            {exam.description}
+                                        </p>
+                                    )}
+
+                                    <div className="mb-4 space-y-2 text-sm text-slate-500">
+                                        {exam.minutes && (
+                                            <div className="flex items-center gap-2">
+                                                <FiClock className="h-4 w-4" />
+                                                <span>Thời gian: {exam.minutes} phút</span>
+                                            </div>
+                                        )}
+                                        {exam.start_time && (
+                                            <div className="text-xs">
+                                                Bắt đầu: {formatDateTime(exam.start_time)}
+                                            </div>
+                                        )}
+                                        {exam.end_time && (
+                                            <div className="text-xs">
+                                                Kết thúc: {formatDateTime(exam.end_time)}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <button
+                                        onClick={() => navigate(`/dashboard/student/exams/${examId}`)}
+                                        className="w-full inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700"
+                                    >
+                                        <FiFileText />
+                                        Xem chi tiết
+                                    </button>
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
+            </div>
+        );
+    };
+
     if (loading) {
         return (
             <DashboardLayout role="student">
@@ -417,6 +544,15 @@ export default function StudentClassDetail() {
                             Bài đăng
                         </button>
                         <button
+                            onClick={() => setActiveTab("exams")}
+                            className={`px-4 py-2 text-sm font-semibold transition ${activeTab === "exams"
+                                ? "border-b-2 border-indigo-600 text-indigo-600"
+                                : "text-slate-600 hover:text-indigo-600"
+                                }`}
+                        >
+                            Bài thi
+                        </button>
+                        <button
                             onClick={() => setActiveTab("students")}
                             className={`px-4 py-2 text-sm font-semibold transition ${activeTab === "students"
                                 ? "border-b-2 border-indigo-600 text-indigo-600"
@@ -427,7 +563,11 @@ export default function StudentClassDetail() {
                         </button>
                     </div>
 
-                    {activeTab === "posts" ? renderPostsTab() : renderStudentsTab()}
+                    {activeTab === "posts" 
+                        ? renderPostsTab() 
+                        : activeTab === "exams" 
+                        ? renderExamsTab() 
+                        : renderStudentsTab()}
                 </div>
             </div>
         </DashboardLayout>
