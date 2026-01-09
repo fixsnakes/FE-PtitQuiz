@@ -22,7 +22,24 @@ function getAuthHeaders() {
 }
 
 async function request(path, options = {}) {
-  const url = `${API_BASE_URL}${path}`;
+  // Xử lý params để convert thành query string
+  let url = `${API_BASE_URL}${path}`;
+  if (options.params) {
+    const searchParams = new URLSearchParams();
+    Object.entries(options.params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        searchParams.append(key, String(value));
+      }
+    });
+    const queryString = searchParams.toString();
+    if (queryString) {
+      url += `?${queryString}`;
+    }
+    // Xóa params khỏi options để không truyền vào fetch
+    const { params, ...restOptions } = options;
+    options = restOptions;
+  }
+
   const response = await fetch(url, {
     headers: {
       ...defaultHeaders,

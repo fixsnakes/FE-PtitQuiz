@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useEffectOnce } from "../../../../hooks/useEffectOnce";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { getStoredUser } from "../../../../utils/auth";
 import {
   FiAlertTriangle,
@@ -17,6 +17,10 @@ import {
   FiMessageSquare,
   FiFileText,
   FiExternalLink,
+  FiVideo,
+  FiPlay,
+  FiClock,
+  FiX,
 } from "react-icons/fi";
 import { toast } from "react-toastify";
 import DashboardLayout from "../../../../layouts/DashboardLayout";
@@ -36,6 +40,12 @@ import {
   deletePostComment,
 } from "../../../../services/postService";
 import { listExams } from "../../../../services/examService";
+import {
+  createLiveKitRoom,
+  getClassLiveKitRooms,
+  updateRoomStatus as updateLiveKitRoomStatus,
+  deleteLiveKitRoom,
+} from "../../../../services/livekitRoomService";
 import formatDateTime from "../../../../utils/format_time";
 
 const PAGE_SIZE = 10;
@@ -117,6 +127,19 @@ export default function ClassDetail() {
   const [isEditingClassName, setIsEditingClassName] = useState(false); // Edit class name mode
   const [classNameInput, setClassNameInput] = useState(""); // Input for class name
   const [updatingClassName, setUpdatingClassName] = useState(false); // Loading state for update
+  const [meetings, setMeetings] = useState([]); // Legacy Zoom meetings (không dùng nữa)
+  const [loadingMeetings, setLoadingMeetings] = useState(false); // Legacy Zoom loading (không dùng nữa)
+  const [livekitRooms, setLivekitRooms] = useState([]); // List of LiveKit rooms
+  const [loadingLivekitRooms, setLoadingLivekitRooms] = useState(false); // Loading state for LiveKit rooms
+  const [showLivekitForm, setShowLivekitForm] = useState(false); // Show LiveKit room form
+  const [livekitForm, setLivekitForm] = useState({
+    title: "",
+    description: "",
+    max_participants: 50,
+    scheduled_start_time: null,
+  }); // LiveKit room form data
+
+  const location = useLocation();
 
   const filteredStudents = useMemo(() => {
     const keyword = searchTerm.trim().toLowerCase();
@@ -178,6 +201,10 @@ export default function ClassDetail() {
     }
     if (activeTab === "exams" && classInfo?.id) {
       loadExams();
+    }
+    if (activeTab === "meetings" && classInfo?.id) {
+      loadMeetings();
+      loadLivekitRooms();
     }
   }, [activeTab, classInfo?.id]);
 
@@ -917,6 +944,334 @@ export default function ClassDetail() {
     </div>
   );
 
+  // Zoom Meetings (đã bỏ Zoom, giữ stub để không phá code cũ nếu dùng)
+  const loadMeetings = async () => {
+    setMeetings([]);
+    setLoadingMeetings(false);
+  };
+
+  // LiveKit Rooms functions
+  const loadLivekitRooms = async () => {
+    if (!classInfo?.id) return;
+    setLoadingLivekitRooms(true);
+    try {
+      const response = await getClassLiveKitRooms(classInfo.id);
+      const roomsList = Array.isArray(response?.data) 
+        ? response.data 
+        : Array.isArray(response) 
+        ? response 
+        : [];
+      setLivekitRooms(roomsList);
+    } catch (err) {
+      toast.error(err?.body?.message || err?.message || "Không thể tải danh sách cuộc gọi.");
+    } finally {
+      setLoadingLivekitRooms(false);
+    }
+  };
+
+  const handleCreateLivekitRoom = async (e) => {
+    e.preventDefault();
+    if (!classInfo?.id) return;
+
+    if (!livekitForm.title.trim()) {
+      toast.error("Vui lòng nhập tiêu đề cuộc gọi.");
+      return;
+    }
+
+    try {
+      const response = await createLiveKitRoom(classInfo.id, {
+        title: livekitForm.title.trim(),
+        description: livekitForm.description || null,
+        max_participants: parseInt(livekitForm.max_participants) || 50,
+        scheduled_start_time: livekitForm.scheduled_start_time || null,
+      });
+
+      if (response?.status || response?.data) {
+        toast.success("Tạo cuộc gọi LiveKit thành công!");
+        setShowLivekitForm(false);
+        setLivekitForm({
+          title: "",
+          description: "",
+          max_participants: 50,
+          scheduled_start_time: null,
+        });
+        await loadLivekitRooms();
+      }
+    } catch (err) {
+      toast.error(
+        err?.body?.message || err?.message || "Không thể tạo cuộc gọi LiveKit."
+      );
+    }
+  };
+
+  const handleJoinLivekitRoom = (room) => {
+    if (!room?.id) {
+      toast.error("Không tìm thấy thông tin phòng gọi.");
+      return;
+    }
+    navigate(`/livecall/${room.id}`, {
+      state: {
+        room,
+        className: classInfo?.className,
+        from: location.pathname,
+      },
+    });
+  };
+
+  const handleDeleteLivekitRoom = async (roomId) => {
+    if (!window.confirm("Bạn chắc chắn muốn xóa cuộc gọi này?")) return;
+
+    try {
+      await deleteLiveKitRoom(roomId);
+      toast.success("Đã xóa cuộc gọi thành công.");
+      loadLivekitRooms();
+    } catch (err) {
+      toast.error(err?.body?.message || err?.message || "Không thể xóa cuộc gọi.");
+    }
+  };
+
+  const renderMeetingsTab = () => {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h3 className="text-lg font-semibold text-slate-900">Cuộc gọi Video </h3>
+          {userRole === "teacher" && !showLivekitForm && (
+            <button
+              type="button"
+              onClick={() => setShowLivekitForm(true)}
+              className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-500"
+            >
+              <FiPlus />
+              Tạo cuộc gọi mới
+            </button>
+          )}
+        </div>
+
+        {showLivekitForm && userRole === "teacher" && (
+          <div className="rounded-2xl border border-indigo-200 bg-indigo-50/60 p-6">
+            <div className="mb-4 flex items-center justify-between">
+              <h4 className="text-lg font-semibold text-indigo-900">Tạo cuộc gọi Video mới</h4>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowLivekitForm(false);
+                  setLivekitForm({
+                    title: "",
+                    description: "",
+                    max_participants: 50,
+                    scheduled_start_time: null,
+                  });
+                }}
+                className="rounded-lg p-1 text-indigo-600 hover:bg-indigo-100"
+              >
+                <FiX className="h-5 w-5" />
+              </button>
+            </div>
+            <form onSubmit={handleCreateLivekitRoom} className="space-y-4">
+              <div>
+                <label className="mb-1 block text-sm font-medium text-slate-700">
+                  Tiêu đề cuộc gọi <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={livekitForm.title}
+                  onChange={(e) =>
+                    setLivekitForm({ ...livekitForm, title: e.target.value })
+                  }
+                  placeholder="Ví dụ: Buổi học chương 1"
+                  className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
+                  required
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-slate-700">
+                  Mô tả (tùy chọn)
+                </label>
+                <textarea
+                  value={livekitForm.description}
+                  onChange={(e) =>
+                    setLivekitForm({ ...livekitForm, description: e.target.value })
+                  }
+                  placeholder="Mô tả nội dung cuộc gọi..."
+                  rows={3}
+                  className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-slate-700">
+                    Số người tham gia tối đa
+                  </label>
+                  <input
+                    type="number"
+                    value={livekitForm.max_participants}
+                    onChange={(e) =>
+                      setLivekitForm({
+                        ...livekitForm,
+                        max_participants: parseInt(e.target.value) || 50,
+                      })
+                    }
+                    min="2"
+                    max="100"
+                    className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-slate-700">
+                    Thời gian bắt đầu (tùy chọn - để trống = ngay lập tức)
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={
+                      livekitForm.scheduled_start_time
+                        ? new Date(livekitForm.scheduled_start_time)
+                            .toISOString()
+                            .slice(0, 16)
+                        : ""
+                    }
+                    onChange={(e) =>
+                      setLivekitForm({
+                        ...livekitForm,
+                        scheduled_start_time: e.target.value
+                          ? new Date(e.target.value).toISOString()
+                          : null,
+                      })
+                    }
+                    className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
+                  />
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  type="submit"
+                  className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-500"
+                >
+                  <FiVideo />
+                  Tạo cuộc gọi
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowLivekitForm(false);
+                    setLivekitForm({
+                      title: "",
+                      description: "",
+                      max_participants: 50,
+                      scheduled_start_time: null,
+                    });
+                  }}
+                  className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+                >
+                  Hủy
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {loadingLivekitRooms ? (
+          <div className="flex items-center justify-center py-10 text-slate-500">
+            <FiLoader className="mr-2 animate-spin" />
+            Đang tải danh sách cuộc gọi...
+          </div>
+        ) : livekitRooms.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/60 p-10 text-center text-sm text-slate-500">
+            Chưa có cuộc gọi nào. Hãy tạo cuộc gọi đầu tiên.
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {livekitRooms.map((room) => (
+              <div
+                key={room.id}
+                className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:shadow-md"
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3">
+                      <FiVideo className="text-indigo-600 text-xl" />
+                      <h4 className="text-lg font-semibold text-slate-900">
+                        {room.title}
+                      </h4>
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
+                          room.status === "active"
+                            ? "bg-green-100 text-green-700"
+                            : room.status === "ended"
+                            ? "bg-red-100 text-red-700"
+                            : room.status === "cancelled"
+                            ? "bg-gray-100 text-gray-700"
+                            : "bg-blue-100 text-blue-700"
+                        }`}
+                      >
+                        {room.status === "active"
+                          ? "Đang diễn ra"
+                          : room.status === "ended"
+                          ? "Đã kết thúc"
+                          : room.status === "cancelled"
+                          ? "Đã hủy"
+                          : "Đã lên lịch"}
+                      </span>
+                    </div>
+                    {room.description && (
+                      <p className="mt-2 text-sm text-slate-600">
+                        {room.description}
+                      </p>
+                    )}
+                    <div className="mt-3 flex flex-wrap gap-4 text-xs text-slate-500">
+                      {room.scheduled_start_time && (
+                        <span className="flex items-center gap-1">
+                          <FiClock />
+                          {formatDateTime(room.scheduled_start_time)}
+                        </span>
+                      )}
+                      <span>Số người tối đa: {room.max_participants}</span>
+                      {room.created_at && (
+                        <span>Tạo lúc: {formatDateTime(room.created_at)}</span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="ml-4 flex flex-col gap-2">
+                    {userRole === "teacher" ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => handleJoinLivekitRoom(room)}
+                          disabled={room.status === "ended" || room.status === "cancelled"}
+                          className="inline-flex items-center gap-2 rounded-xl bg-green-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-green-500 disabled:cursor-not-allowed disabled:bg-slate-300"
+                        >
+                          <FiPlay />
+                          Tham gia
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteLivekitRoom(room.id)}
+                          className="inline-flex items-center gap-2 rounded-xl border border-red-200 px-4 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50"
+                        >
+                          <FiTrash2 />
+                          Xóa
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => handleJoinLivekitRoom(room)}
+                        disabled={room.status === "ended" || room.status === "cancelled"}
+                        className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:bg-slate-300"
+                      >
+                        <FiExternalLink />
+                        Tham gia
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const renderPlaceholderTab = (title) => (
     <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/60 p-10 text-center text-sm text-slate-500">
       Nội dung {title} sẽ được tích hợp sau khi hoàn thiện phần API tương ứng.
@@ -927,6 +1282,7 @@ export default function ClassDetail() {
     students: renderStudentsTab(),
     posts: renderPostsTab(),
     exams: renderExamsTab(),
+    meetings: renderMeetingsTab(),
   };
 
   return (
@@ -1073,6 +1429,7 @@ export default function ClassDetail() {
                 { key: "students", label: "Danh sách học sinh" },
                 { key: "posts", label: "Bài đăng" },
                 { key: "exams", label: "Đề thi" },
+                { key: "meetings", label: "Cuộc gọi Video" },
               ].map((tab) => (
                 <button
                   key={tab.key}

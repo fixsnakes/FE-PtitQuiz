@@ -27,6 +27,7 @@ const ADMIN_NAV_ITEMS = [
   { label: "Báo cáo thống kê", path: "/dashboard/admin/reports", icon: FiBarChart2 },
   { label: "Thông báo", path: "/dashboard/admin/notifications", icon: FiBell },
   { label: "Kiểm duyệt nội dung", path: "/dashboard/admin/moderation", icon: FiMessageSquare },
+  { label: "Chat hỗ trợ", path: "/dashboard/admin/support-chat", icon: FiTrendingUp },
 ];
 
 export default function AdminLayout() {

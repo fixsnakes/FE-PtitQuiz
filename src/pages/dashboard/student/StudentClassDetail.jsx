@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { toast } from "react-toastify";
 import DashboardLayout from "../../../layouts/DashboardLayout";
 import {
@@ -12,6 +12,8 @@ import {
     FiFileText,
     FiClock,
     FiPlay,
+    FiVideo,
+    FiExternalLink,
 } from "react-icons/fi";
 import {
     getClassPosts,
@@ -20,11 +22,15 @@ import {
 } from "../../../services/postService";
 import { getClassStudents } from "../../../services/classService";
 import { getStudentExams } from "../../../services/studentExamService";
+import {
+  getClassLiveKitRooms,
+} from "../../../services/livekitRoomService";
 import formatDateTime from "../../../utils/format_time";
 
 export default function StudentClassDetail() {
     const { classId } = useParams();
     const navigate = useNavigate();
+    const location = useLocation();
 
     const [classInfo, setClassInfo] = useState(null);
     const [students, setStudents] = useState([]);
@@ -39,6 +45,10 @@ export default function StudentClassDetail() {
     const [searchTerm, setSearchTerm] = useState("");
     const [exams, setExams] = useState([]);
     const [loadingExams, setLoadingExams] = useState(false);
+    const [meetings, setMeetings] = useState([]);
+    const [loadingMeetings, setLoadingMeetings] = useState(false);
+    const [livekitRooms, setLivekitRooms] = useState([]);
+    const [loadingLivekitRooms, setLoadingLivekitRooms] = useState(false);
 
     useEffect(() => {
         loadClassDetail();
@@ -48,6 +58,9 @@ export default function StudentClassDetail() {
             loadStudents();
         } else if (activeTab === "exams") {
             loadExams();
+        } else if (activeTab === "meetings") {
+            loadMeetings();
+            loadLivekitRooms();
         }
     }, [classId, activeTab]);
 
@@ -186,6 +199,133 @@ export default function StudentClassDetail() {
         } catch (error) {
             toast.error(error?.body?.message || error?.message || "Không thể rời khỏi lớp học.");
         }
+    };
+
+    // Zoom Meetings (đã bỏ Zoom, giữ state để không phá UI cũ nếu dùng)
+    const loadMeetings = async () => {
+        setMeetings([]);
+        setLoadingMeetings(false);
+    };
+
+    // LiveKit Rooms functions
+    const loadLivekitRooms = async () => {
+        if (!classId) return;
+        setLoadingLivekitRooms(true);
+        try {
+            const response = await getClassLiveKitRooms(classId);
+            const roomsList = Array.isArray(response?.data)
+                ? response.data
+                : Array.isArray(response)
+                ? response
+                : [];
+            setLivekitRooms(roomsList);
+        } catch (error) {
+            toast.error(error?.body?.message || error?.message || "Không thể tải danh sách cuộc gọi.");
+        } finally {
+            setLoadingLivekitRooms(false);
+        }
+    };
+
+    const handleJoinLivekitRoom = (room) => {
+        if (!room?.id) {
+            toast.error("Không tìm thấy thông tin phòng gọi.");
+            return;
+        }
+        navigate(`/livecall/${room.id}`, {
+            state: {
+                room,
+                className: classInfo?.className,
+                from: location.pathname,
+            },
+        });
+    };
+
+    const renderMeetingsTab = () => {
+        return (
+            <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold text-slate-900">Cuộc gọi Video </h3>
+                </div>
+
+                {loadingLivekitRooms ? (
+                    <div className="flex items-center justify-center py-10 text-slate-500">
+                        <FiLoader className="mr-2 animate-spin" />
+                        Đang tải danh sách cuộc gọi...
+                    </div>
+                ) : livekitRooms.length === 0 ? (
+                    <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50/60 p-10 text-center text-sm text-slate-500">
+                        Chưa có cuộc gọi nào được tạo cho lớp này.
+                    </div>
+                ) : (
+                    <div className="space-y-3">
+                        {livekitRooms.map((room) => (
+                            <div
+                                key={room.id}
+                                className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm transition hover:shadow-md"
+                            >
+                                <div className="flex items-start justify-between">
+                                    <div className="flex-1">
+                                        <div className="flex items-center gap-3">
+                                            <FiVideo className="text-indigo-600 text-xl" />
+                                            <h4 className="text-lg font-semibold text-slate-900">
+                                                {room.title}
+                                            </h4>
+                                            <span
+                                                className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
+                                                    room.status === "active"
+                                                        ? "bg-green-100 text-green-700"
+                                                        : room.status === "ended"
+                                                        ? "bg-red-100 text-red-700"
+                                                        : room.status === "cancelled"
+                                                        ? "bg-gray-100 text-gray-700"
+                                                        : "bg-blue-100 text-blue-700"
+                                                }`}
+                                            >
+                                                {room.status === "active"
+                                                    ? "Đang diễn ra"
+                                                    : room.status === "ended"
+                                                    ? "Đã kết thúc"
+                                                    : room.status === "cancelled"
+                                                    ? "Đã hủy"
+                                                    : "Đã lên lịch"}
+                                            </span>
+                                        </div>
+                                        {room.description && (
+                                            <p className="mt-2 text-sm text-slate-600">
+                                                {room.description}
+                                            </p>
+                                        )}
+                                        <div className="mt-3 flex flex-wrap gap-4 text-xs text-slate-500">
+                                            {room.scheduled_start_time && (
+                                                <span className="flex items-center gap-1">
+                                                    <FiClock />
+                                                    {formatDateTime(room.scheduled_start_time)}
+                                                </span>
+                                            )}
+                                            <span>Số người tối đa: {room.max_participants}</span>
+                                            {room.created_at && (
+                                                <span>Tạo lúc: {formatDateTime(room.created_at)}</span>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div className="ml-4">
+                                        <button
+                                            type="button"
+                                            onClick={() => handleJoinLivekitRoom(room)}
+                                            disabled={room.status === "ended" || room.status === "cancelled"}
+                                            className="inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-500 disabled:cursor-not-allowed disabled:bg-slate-300"
+                                        >
+                                            <FiExternalLink />
+                                            Tham gia
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+        );
     };
 
     const filteredStudents = students.filter(
@@ -561,12 +701,23 @@ export default function StudentClassDetail() {
                         >
                             Danh sách sinh viên
                         </button>
+                        <button
+                            onClick={() => setActiveTab("meetings")}
+                            className={`px-4 py-2 text-sm font-semibold transition ${activeTab === "meetings"
+                                ? "border-b-2 border-indigo-600 text-indigo-600"
+                                : "text-slate-600 hover:text-indigo-600"
+                                }`}
+                        >
+                            Cuộc gọi Video
+                        </button>
                     </div>
 
                     {activeTab === "posts" 
                         ? renderPostsTab() 
                         : activeTab === "exams" 
-                        ? renderExamsTab() 
+                        ? renderExamsTab()
+                        : activeTab === "meetings"
+                        ? renderMeetingsTab()
                         : renderStudentsTab()}
                 </div>
             </div>

@@ -35,6 +35,8 @@ import StudentPayment from "./pages/dashboard/student/StudentPayment";
 import StudentNotifications from "./pages/dashboard/student/Notifications";
 import TransactionHistory from "./pages/dashboard/common/TransactionHistory";
 import TeacherPayment from "./pages/dashboard/teacher/TeacherPayment";
+import SupportChat from "./pages/dashboard/common/SupportChat";
+import LiveKitCallPage from "./pages/call/LiveKitCallPage";
 // Admin imports
 import AdminLayout from "./layouts/AdminLayout";
 import AdminDashboard from "./pages/dashboard/admin/AdminDashboard";
@@ -47,6 +49,7 @@ import Reports from "./pages/dashboard/admin/Reports";
 // ...existing code...
 import NotificationManagement from "./pages/dashboard/admin/NotificationManagement";
 import ContentModeration from "./pages/dashboard/admin/ContentModeration";
+import SupportChatAdmin from "./pages/dashboard/admin/SupportChatAdmin";
 
 import "react-toastify/dist/ReactToastify.css";
 
@@ -232,6 +235,23 @@ function App() {
           }
         />
         <Route
+          path="/dashboard/support"
+          element={
+            <ProtectedRoute allowedRoles={["teacher", "student"]}>
+              <SupportChat />
+            </ProtectedRoute>
+          }
+        />
+        {/* LiveKit full-screen call */}
+        <Route
+          path="/livecall/:roomId"
+          element={
+            <ProtectedRoute allowedRoles={["teacher", "student"]}>
+              <LiveKitCallPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/dashboard/wallet"
           element={
             <ProtectedRoute allowedRoles={["teacher", "student"]}>
@@ -355,6 +375,7 @@ function App() {
           <Route path="reports" element={<Reports />} />
           <Route path="notifications" element={<NotificationManagement />} />
           <Route path="moderation" element={<ContentModeration />} />
+          <Route path="support-chat" element={<SupportChatAdmin />} />
         </Route>
 
         {/* Root redirect based on role */}

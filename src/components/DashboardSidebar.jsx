@@ -11,6 +11,7 @@ import {
   FiClock,
   FiBarChart2,
   FiDollarSign,
+  FiMessageCircle,
 } from "react-icons/fi";
 
 import { SiGoogleclassroom } from "react-icons/si";
@@ -24,6 +25,7 @@ const SIDEBAR_ITEMS = {
     { label: "Bài thi", path: "/dashboard/teacher/exams", icon: FiFileText },
     { label: "Lớp học", path: "/dashboard/teacher/classes", icon: FiUsers },
     { label: "Thông báo", path: "/dashboard/teacher/notifications", icon: FiBell },
+    { label: "Chat hỗ trợ", path: "/dashboard/support", icon: FiMessageCircle },
     { label: "Thống kê mua đề thi", path: "/dashboard/teacher/exam-purchases", icon: FiDollarSign },
     { label: "Lịch sử giao dịch", path: "/dashboard/teacher/transactions", icon: FiClock },
     { label: "Ví", path: "/dashboard/wallet", icon: MdPayment },
@@ -36,6 +38,7 @@ const SIDEBAR_ITEMS = {
     { label: "Truy cập gần đây", path: "/dashboard/student/recent", icon: FiClock },
     { label: "Lớp học", path: "/dashboard/student/classes", icon: FiUsers },
     { label: "Thông báo", path: "/dashboard/student/notifications", icon: FiBell },
+    { label: "Chat hỗ trợ", path: "/dashboard/support", icon: FiMessageCircle },
     { label: "Ví", path: "/dashboard/student/payment", icon: MdPayment },
     { label: "Lịch sử giao dịch", path: "/dashboard/student/transactions", icon: FiDollarSign },
     { label: "Tài Khoản", path: "/dashboard/profile", icon: CiUser },
