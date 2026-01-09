@@ -118,9 +118,6 @@ export default function TeacherExamPurchases() {
               <FiArrowLeft />
               Quay lại
             </button>
-            <p className="mt-3 text-xs font-semibold uppercase tracking-[0.3em] text-indigo-500">
-              Thống kê mua đề thi
-            </p>
             <h1 className="mt-2 text-3xl font-bold text-slate-900">
               Doanh thu từ đề thi trả phí
             </h1>

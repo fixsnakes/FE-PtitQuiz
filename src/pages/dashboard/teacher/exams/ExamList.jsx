@@ -332,12 +332,9 @@ export default function ExamListPage() {
   return (
     <DashboardLayout role="teacher">
       <div className="space-y-6">
-        <header className="relative overflow-hidden rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50 via-white to-purple-50 p-6 shadow-sm">
+        <header className="relative overflow-hidden rounded-2xl border border-indigo-100 bg-indigo-50 p-6 shadow-sm">
           <div className="relative z-10 flex flex-wrap items-center justify-between gap-4">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-indigo-500">
-                Bài thi
-              </p>
               <h1 className="mt-2 text-3xl font-bold text-slate-900">Danh sách đề thi</h1>
               <p className="mt-1 text-sm text-slate-600">{filteredCountLabel}</p>
             </div>
@@ -506,7 +503,7 @@ export default function ExamListPage() {
             </div>
           ) : exams.length === 0 ? (
             <div className="py-16 text-center">
-              <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-slate-100 to-slate-50">
+              <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-slate-100">
                 <FiFileText className="text-4xl text-slate-400" />
               </div>
               <h3 className="mb-2 text-lg font-semibold text-slate-700">Không tìm thấy đề thi nào</h3>
@@ -560,28 +557,28 @@ export default function ExamListPage() {
                           {exam.description || "Chưa có mô tả."}
                         </p>
                         <div className="flex flex-wrap gap-3 text-sm">
-                          <span className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-slate-50 to-white px-3 py-1.5 text-slate-700 shadow-sm transition-all hover:shadow-md">
-                            <FiClock className="text-indigo-500" />
+                          <span className="inline-flex items-center gap-1.5 rounded-lg bg-slate-50 px-3 py-1.5 text-slate-700 shadow-sm transition-all hover:shadow-md">
+                            <FiClock />
                             {exam.minutes ? `${exam.minutes} phút` : "Không giới hạn"}
                           </span>
-                          <span className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-slate-50 to-white px-3 py-1.5 text-slate-700 shadow-sm transition-all hover:shadow-md">
-                            <FiFileText className="text-indigo-500" />
+                          <span className="inline-flex items-center gap-1.5 rounded-lg bg-slate-50 px-3 py-1.5 text-slate-700 shadow-sm transition-all hover:shadow-md">
+                            <FiFileText />
                             {exam.questionCount} câu hỏi
                           </span>
-                          <span className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-slate-50 to-white px-3 py-1.5 text-slate-700 shadow-sm transition-all hover:shadow-md">
-                            <FiUsers className="text-indigo-500" />
+                          <span className="inline-flex items-center gap-1.5 rounded-lg bg-slate-50 px-3 py-1.5 text-slate-700 shadow-sm transition-all hover:shadow-md">
+                            <FiUsers />
                             {exam.submissionCount} lượt làm
                           </span>
                           {exam.totalScore && (
-                            <span className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-indigo-50 to-indigo-100 px-3 py-1.5 font-semibold text-indigo-700 shadow-sm">
+                            <span className="inline-flex items-center gap-1.5 rounded-lg bg-indigo-50 px-3 py-1.5 font-semibold text-indigo-700 shadow-sm">
                               {exam.totalScore} điểm
                             </span>
                           )}
                         </div>
                       </div>
-                      <div className="rounded-lg border border-slate-100 bg-gradient-to-br from-slate-50 to-white p-4 text-sm shadow-sm">
+                      <div className="rounded-lg border border-slate-100 bg-slate-50 p-4 text-sm shadow-sm">
                         <div className="flex items-start gap-2 text-slate-600">
-                          <FiCalendar className="mt-0.5 text-indigo-500" />
+                          <FiCalendar className="mt-0.5" />
                           <div className="space-y-1">
                             <p className="font-medium text-slate-700">
                               {exam.startTime

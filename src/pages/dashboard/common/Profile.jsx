@@ -310,7 +310,7 @@ export default function Profile() {
 
         {/* --- Header Information Card --- */}
         <div className="overflow-hidden rounded-2xl bg-white shadow-sm border border-slate-200">
-          <div className="relative bg-gradient-to-br from-indigo-600 to-indigo-700 p-6 md:p-8">
+          <div className="relative bg-indigo-600 p-6 md:p-8">
             <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
               <div className="flex items-center gap-4">
                 {/* Avatar */}

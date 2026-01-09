@@ -171,9 +171,6 @@ export default function ExamResult() {
               </button>
             )}
           </div>
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-indigo-500">
-            Kết quả thi
-          </p>
           <h1 className="mt-2 text-3xl font-bold text-slate-900">
             Kết quả bài thi
           </h1>

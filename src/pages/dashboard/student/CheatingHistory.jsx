@@ -153,9 +153,6 @@ export default function CheatingHistory() {
           <div className="flex items-center gap-3">
             <AlertTriangle className="h-8 w-8 text-amber-600" />
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-indigo-500">
-                Lịch sử gian lận
-              </p>
               <h1 className="mt-2 text-3xl font-bold text-slate-900">
                 Lịch sử gian lận của tôi
               </h1>

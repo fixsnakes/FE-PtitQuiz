@@ -150,9 +150,6 @@ function ExamResultsPage() {
               <FiArrowLeft />
               Quay lại
             </button>
-            <p className="mt-3 text-xs font-semibold uppercase tracking-[0.3em] text-indigo-500">
-              Kết quả thi
-            </p>
             <h1 className="mt-2 text-3xl font-bold text-slate-900">
               {exam?.title || "Đề thi"}
             </h1>

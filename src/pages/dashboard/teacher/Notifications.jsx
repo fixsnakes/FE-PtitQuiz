@@ -184,12 +184,9 @@ function NotificationsPage() {
   return (
     <DashboardLayout role="teacher">
       <div className="space-y-6">
-        <header className="relative overflow-hidden rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50 via-white to-purple-50 p-6 shadow-sm">
+        <header className="relative overflow-hidden rounded-2xl border border-indigo-100 bg-indigo-50 p-6 shadow-sm">
           <div className="relative z-10 flex flex-wrap items-center justify-between gap-4">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-indigo-500">
-                Thông báo
-              </p>
               <h1 className="mt-2 text-3xl font-bold text-slate-900">Quản lý thông báo</h1>
               {unreadCount > 0 && (
                 <div className="mt-2 flex items-center gap-2">
@@ -257,7 +254,7 @@ function NotificationsPage() {
               <p className="text-sm font-medium text-slate-600">Đang tải thông báo...</p>
             </div>
           ) : notifications.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-slate-200 bg-gradient-to-br from-slate-50 to-white p-12 text-center">
+            <div className="rounded-2xl border border-dashed border-slate-200 bg-slate-50 p-12 text-center">
               <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-slate-100">
                 <FiBell className="text-3xl text-slate-400" />
               </div>
@@ -285,7 +282,7 @@ function NotificationsPage() {
                       className={`rounded-xl border p-4 transition-all duration-200 ${
                         notification.is_read
                           ? "border-slate-200 bg-white"
-                          : "border-indigo-200 bg-gradient-to-r from-indigo-50/50 to-white"
+                          : "border-indigo-200 bg-indigo-50/50"
                       } ${hasLink ? "cursor-pointer hover:shadow-lg hover:-translate-y-0.5" : ""}`}
                       onClick={hasLink ? () => handleNotificationClick(notification) : undefined}
                       style={{ animationDelay: `${index * 30}ms` }}

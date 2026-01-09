@@ -651,9 +651,6 @@ export default function StudentClassDetail() {
                                 <FiArrowLeft />
                                 Quay lại
                             </button>
-                            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-indigo-500">
-                                Chi tiết lớp học
-                            </p>
                             <h1 className="mt-2 text-3xl font-bold text-slate-900">
                                 {classInfo?.className || "Lớp học"}
                             </h1>

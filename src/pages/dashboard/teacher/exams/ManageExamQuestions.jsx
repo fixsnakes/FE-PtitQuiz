@@ -848,9 +848,6 @@ export default function ManageExamQuestions() {
     <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-indigo-500">
-            Thêm câu hỏi
-          </p>
           <h2 className="mt-1 text-xl font-semibold text-slate-900">
             Xây dựng ngân hàng câu hỏi cho đề thi
           </h2>
@@ -943,9 +940,6 @@ export default function ManageExamQuestions() {
             >
               <FiArrowLeft /> Quay lại
             </button>
-            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-indigo-500">
-              Quản lý câu hỏi
-            </p>
             {loadingExam ? (
               <h1 className="mt-2 text-2xl font-bold text-slate-900">
                 Đang tải...

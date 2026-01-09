@@ -694,7 +694,7 @@ export default function TakeExam() {
 
   if (loading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-gradient-to-br from-indigo-50 to-blue-50">
+      <div className="flex h-screen items-center justify-center bg-indigo-50">
         <div className="text-center">
           <div className="mb-4 inline-block h-12 w-12 animate-spin rounded-full border-4 border-solid border-indigo-600 border-r-transparent"></div>
           <p className="text-lg font-semibold text-gray-700">Đang tải bài thi...</p>
@@ -706,7 +706,7 @@ export default function TakeExam() {
 
   if (!session || !exam || questions.length === 0) {
     return (
-      <div className="flex h-screen items-center justify-center bg-gradient-to-br from-red-50 to-pink-50">
+      <div className="flex h-screen items-center justify-center bg-red-50">
         <div className="text-center">
           <AlertTriangle className="mx-auto mb-4 h-16 w-16 text-red-500" />
           <p className="text-xl font-semibold text-red-600">Không tìm thấy bài thi hoặc câu hỏi</p>
@@ -725,7 +725,7 @@ export default function TakeExam() {
   const currentAnswer = answers[currentQuestion.id];
 
   return (
-    <div className="flex h-screen flex-col bg-gradient-to-br from-slate-50 to-blue-50">
+    <div className="flex h-screen flex-col bg-slate-50">
       {/* Header cố định */}
       <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/95 backdrop-blur-sm shadow-lg">
         <div className="mx-auto max-w-[1920px] px-6 py-4">
@@ -745,7 +745,7 @@ export default function TakeExam() {
                 </div>
                 <div className="h-2 w-full overflow-hidden rounded-full bg-slate-200">
                   <div
-                    className="h-full bg-gradient-to-r from-indigo-500 to-blue-500 transition-all duration-300"
+                    className="h-full bg-indigo-500 transition-all duration-300"
                     style={{ width: `${progress}%` }}
                   />
                 </div>
@@ -765,10 +765,10 @@ export default function TakeExam() {
               <div
                 className={`flex items-center gap-3 rounded-xl border-2 px-5 py-3 shadow-md transition-all ${
                   remainingTime < 300000
-                    ? "border-red-400 bg-gradient-to-r from-red-50 to-red-100 text-red-700 animate-pulse"
+                    ? "border-red-400 bg-red-50 text-red-700 animate-pulse"
                     : remainingTime < 600000
-                    ? "border-orange-400 bg-gradient-to-r from-orange-50 to-orange-100 text-orange-700"
-                    : "border-indigo-400 bg-gradient-to-r from-indigo-50 to-blue-50 text-indigo-700"
+                    ? "border-orange-400 bg-orange-50 text-orange-700"
+                    : "border-indigo-400 bg-indigo-50 text-indigo-700"
                 }`}
               >
                 <Clock className={`h-6 w-6 ${remainingTime < 300000 ? "animate-pulse" : ""}`} />
@@ -807,9 +807,9 @@ export default function TakeExam() {
                     onClick={() => setCurrentQuestionIndex(index)}
                     className={`relative h-12 rounded-lg border-2 font-semibold transition-all transform hover:scale-105 ${
                       isCurrent
-                        ? "border-indigo-500 bg-gradient-to-br from-indigo-500 to-blue-500 text-white shadow-lg scale-110 z-10"
+                        ? "border-indigo-500 bg-indigo-500 text-white shadow-lg scale-110 z-10"
                         : isAnswered
-                        ? "border-emerald-400 bg-gradient-to-br from-emerald-50 to-green-50 text-emerald-700 hover:border-emerald-500"
+                        ? "border-emerald-400 bg-emerald-50 text-emerald-700 hover:border-emerald-500"
                         : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50"
                     }`}
                   >
@@ -826,11 +826,11 @@ export default function TakeExam() {
             <div className="space-y-3 rounded-lg border border-slate-200 bg-slate-50 p-4 mb-6">
               <div className="text-xs font-semibold text-slate-700 mb-2">Chú thích:</div>
               <div className="flex items-center gap-2 text-xs">
-                <div className="h-4 w-4 rounded border-2 border-indigo-500 bg-gradient-to-br from-indigo-500 to-blue-500"></div>
+                <div className="h-4 w-4 rounded border-2 border-indigo-500 bg-indigo-500"></div>
                 <span className="text-slate-600">Đang làm</span>
               </div>
               <div className="flex items-center gap-2 text-xs">
-                <div className="h-4 w-4 rounded border-2 border-emerald-400 bg-gradient-to-br from-emerald-50 to-green-50"></div>
+                <div className="h-4 w-4 rounded border-2 border-emerald-400 bg-emerald-50"></div>
                 <span className="text-slate-600">Đã trả lời</span>
               </div>
               <div className="flex items-center gap-2 text-xs">
@@ -928,7 +928,7 @@ export default function TakeExam() {
                 </div>
                 <button
                   onClick={() => navigate(`/student/exams/${examId}/result/${session.id}`)}
-                  className="w-full rounded-xl bg-gradient-to-r from-indigo-500 to-blue-600 px-6 py-3 font-bold text-white shadow-lg transition-all hover:from-indigo-600 hover:to-blue-700 hover:shadow-xl"
+                  className="w-full rounded-xl bg-indigo-500 px-6 py-3 font-bold text-white shadow-lg transition-all hover:bg-indigo-600 hover:shadow-xl"
                 >
                   Xem kết quả
                 </button>
@@ -937,7 +937,7 @@ export default function TakeExam() {
               <button
                 onClick={handleSubmit}
                 disabled={isSubmitting || !isActive}
-                className="mt-6 w-full rounded-xl bg-gradient-to-r from-emerald-500 to-green-600 px-6 py-3 font-bold text-white shadow-lg transition-all hover:from-emerald-600 hover:to-green-700 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:shadow-lg"
+                className="mt-6 w-full rounded-xl bg-emerald-500 px-6 py-3 font-bold text-white shadow-lg transition-all hover:bg-emerald-600 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:shadow-lg"
               >
                 {isSubmitting ? (
                   <span className="flex items-center justify-center gap-2">
@@ -957,10 +957,10 @@ export default function TakeExam() {
           <div className="mx-auto max-w-4xl px-6 py-8">
             {/* Question card */}
             <div className="rounded-2xl border border-slate-200 bg-white shadow-xl">
-              <div className="border-b border-slate-200 bg-gradient-to-r from-slate-50 to-blue-50 px-8 py-6">
+              <div className="border-b border-slate-200 bg-slate-50 px-8 py-6">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-blue-500 text-lg font-bold text-white shadow-md">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-500 text-lg font-bold text-white shadow-md">
                       {currentQuestionIndex + 1}
                     </div>
                     <div>
@@ -1015,14 +1015,14 @@ export default function TakeExam() {
                           key={answer.id}
                           className={`group flex cursor-pointer items-center gap-4 rounded-xl border-2 p-5 transition-all hover:shadow-md ${
                             isSelected
-                              ? "border-indigo-500 bg-gradient-to-r from-indigo-50 to-blue-50 shadow-md"
+                              ? "border-indigo-500 bg-indigo-50 shadow-md"
                               : "border-slate-200 bg-white hover:border-slate-300"
                           }`}
                         >
                           <div
                             className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg font-bold transition-all ${
                               isSelected
-                                ? "bg-gradient-to-br from-indigo-500 to-blue-500 text-white shadow-md"
+                                ? "bg-indigo-500 text-white shadow-md"
                                 : "bg-slate-100 text-slate-600 group-hover:bg-slate-200"
                             }`}
                           >
@@ -1060,14 +1060,14 @@ export default function TakeExam() {
                           key={answer.id}
                           className={`group flex cursor-pointer items-center gap-4 rounded-xl border-2 p-5 transition-all hover:shadow-md ${
                             isSelected
-                              ? "border-indigo-500 bg-gradient-to-r from-indigo-50 to-blue-50 shadow-md"
+                              ? "border-indigo-500 bg-indigo-50 shadow-md"
                               : "border-slate-200 bg-white hover:border-slate-300"
                           }`}
                         >
                           <div
                             className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg font-bold transition-all ${
                               isSelected
-                                ? "bg-gradient-to-br from-indigo-500 to-blue-500 text-white shadow-md"
+                                ? "bg-indigo-500 text-white shadow-md"
                                 : "bg-slate-100 text-slate-600 group-hover:bg-slate-200"
                             }`}
                           >
@@ -1152,7 +1152,7 @@ export default function TakeExam() {
               <button
                 onClick={handleSubmit}
                 disabled={isSubmitting || !isActive}
-                className="w-full rounded-xl bg-gradient-to-r from-emerald-500 to-green-600 px-6 py-4 font-bold text-white shadow-lg transition-all hover:from-emerald-600 hover:to-green-700 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-50"
+                className="w-full rounded-xl bg-emerald-500 px-6 py-4 font-bold text-white shadow-lg transition-all hover:bg-emerald-600 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isSubmitting ? "Đang nộp bài..." : "Nộp bài"}
               </button>

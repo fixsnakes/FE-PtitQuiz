@@ -144,7 +144,7 @@ export default function FavoriteExams() {
                                     e.target.nextElementSibling.style.display = 'block';
                                 }}
                             />
-                            <div className="hidden h-full w-full bg-gradient-to-br from-indigo-50 via-white to-amber-50 p-4">
+                            <div className="hidden h-full w-full bg-indigo-50 p-4">
                                 <div className="flex items-center justify-between">
                                     <span className="inline-flex items-center gap-1 rounded-full bg-indigo-100 px-3 py-1 text-xs font-semibold text-indigo-700">
                                         <GraduationCap className="h-3.5 w-3.5" />
@@ -165,7 +165,7 @@ export default function FavoriteExams() {
                             </div>
 
                             {/* Overlay info on image */}
-                            <div className="absolute inset-0 z-[5] flex flex-col justify-between bg-gradient-to-t from-black/60 via-transparent to-transparent p-4">
+                            <div className="absolute inset-0 z-[5] flex flex-col justify-between bg-black/60 p-4">
                                 <div className="flex items-center justify-between">
                                     <span className="inline-flex items-center gap-1 rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-indigo-700">
                                         <GraduationCap className="h-3.5 w-3.5" />
@@ -186,7 +186,7 @@ export default function FavoriteExams() {
                             </div>
                         </div>
                     ) : (
-                        <div className="bg-gradient-to-br from-indigo-50 via-white to-amber-50 p-4">
+                        <div className="bg-indigo-50 p-4">
                             <div className="flex items-center justify-between">
                                 <span className="inline-flex items-center gap-1 rounded-full bg-indigo-100 px-3 py-1 text-xs font-semibold text-indigo-700">
                                     <GraduationCap className="h-3.5 w-3.5" />

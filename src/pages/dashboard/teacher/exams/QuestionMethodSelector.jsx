@@ -28,7 +28,7 @@ const METHOD_TARGETS = {
     description: "Tạo đề thi nhanh bằng cách soạn thảo văn bản",
     pathSuffix: "text",
     accentClasses:
-      "bg-gradient-to-r from-pink-500 to-orange-500 text-white hover:shadow-xl hover:-translate-y-1",
+      "bg-pink-500 text-white hover:shadow-xl hover:-translate-y-1",
     iconAccent: "text-white",
   },
   editor: {

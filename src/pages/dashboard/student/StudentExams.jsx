@@ -190,7 +190,7 @@ export default function StudentExams() {
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
-                    <tr className="border-b-2 border-slate-200 bg-gradient-to-r from-slate-50 to-white">
+                    <tr className="border-b-2 border-slate-200 bg-slate-50">
                       <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider text-slate-700">
                         Mã bài thi
                       </th>

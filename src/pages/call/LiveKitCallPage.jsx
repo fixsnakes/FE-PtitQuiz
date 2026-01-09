@@ -78,9 +78,6 @@ export default function LiveKitCallPage() {
               Quay lại
             </button>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.25em] text-indigo-500">
-                Cuộc gọi video trực tuyến
-              </p>
               <h1 className="text-2xl font-bold text-slate-900 mt-1">
                 {location.state?.room?.title || "LiveKit Call"}
               </h1>

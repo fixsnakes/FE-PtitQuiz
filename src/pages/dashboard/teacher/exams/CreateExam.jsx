@@ -417,12 +417,9 @@ function CreateExamPage() {
   return (
     <DashboardLayout role="teacher">
       <div className="space-y-6">
-        <header className="relative overflow-hidden rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50 via-white to-purple-50 p-6 shadow-sm">
+        <header className="relative overflow-hidden rounded-2xl border border-indigo-100 bg-indigo-50 p-6 shadow-sm">
           <div className="relative z-10 flex flex-wrap items-center justify-between gap-4">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-indigo-500">
-                Tạo đề thi
-              </p>
               <h1 className="mt-2 text-3xl font-bold text-slate-900">
                 {config.title || "Chưa đặt tên"}
               </h1>

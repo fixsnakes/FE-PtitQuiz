@@ -439,7 +439,7 @@ function ExamMonitoringPage() {
   return (
     <DashboardLayout role="teacher">
       <div className="space-y-6">
-        <header className="relative overflow-hidden rounded-2xl border border-red-100 bg-gradient-to-br from-red-50 via-white to-orange-50 p-6 shadow-sm">
+        <header className="relative overflow-hidden rounded-2xl border border-red-100 bg-red-50 p-6 shadow-sm">
           <div className="relative z-10 flex flex-wrap items-center justify-between gap-4">
             <div className="flex-1">
               <div className="flex items-center gap-3 mb-3">

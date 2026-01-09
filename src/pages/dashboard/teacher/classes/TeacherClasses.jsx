@@ -20,11 +20,6 @@ import {
 } from "../../../../services/classService";
 
 const PAGE_SIZE = 6;
-const CARD_GRADIENTS = [
-  "from-[#fef2ff] via-[#f6e8ff] to-[#eef2ff]",
-  "from-[#fff4ec] via-[#ffe6d8] to-[#fff0f5]",
-  "from-[#e9f9ff] via-[#eaf3ff] to-[#f5f1ff]",
-];
 
 function normalizeClasses(payload) {
   // Xử lý các format response khác nhau
@@ -144,12 +139,9 @@ export default function TeacherClasses() {
   return (
     <DashboardLayout role="teacher">
       <div className="space-y-6">
-        <header className="relative overflow-hidden rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50 via-white to-purple-50 p-6 shadow-sm">
+        <header className="relative overflow-hidden rounded-2xl border border-indigo-100 bg-indigo-50 p-6 shadow-sm">
           <div className="relative z-10 flex flex-wrap items-center justify-between gap-4">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-indigo-500">
-                Quản lý lớp học
-              </p>
               <h1 className="mt-2 text-3xl font-bold text-slate-900">
                 Danh sách lớp và hoạt động
               </h1>
@@ -180,7 +172,7 @@ export default function TeacherClasses() {
                   <FiUsers className="text-2xl text-violet-600" />
                 </div>
               </div>
-              <div className="absolute bottom-0 left-0 h-1 w-full bg-gradient-to-r from-violet-500 to-purple-500 opacity-0 transition-opacity group-hover:opacity-100"></div>
+              <div className="absolute bottom-0 left-0 h-1 w-full bg-violet-500 opacity-0 transition-opacity group-hover:opacity-100"></div>
             </div>
             <div className="group relative overflow-hidden rounded-xl border border-sky-200 bg-white p-6 shadow-sm transition-all hover:border-sky-300 hover:shadow-md">
               <div className="flex items-start justify-between">
@@ -199,7 +191,7 @@ export default function TeacherClasses() {
                   <FiUsers className="text-2xl text-sky-600" />
                 </div>
               </div>
-              <div className="absolute bottom-0 left-0 h-1 w-full bg-gradient-to-r from-sky-500 to-cyan-500 opacity-0 transition-opacity group-hover:opacity-100"></div>
+              <div className="absolute bottom-0 left-0 h-1 w-full bg-sky-500 opacity-0 transition-opacity group-hover:opacity-100"></div>
             </div>
             <div className="group relative overflow-hidden rounded-xl border border-emerald-200 bg-white p-6 shadow-sm transition-all hover:border-emerald-300 hover:shadow-md">
               <div className="flex items-start justify-between">
@@ -218,7 +210,7 @@ export default function TeacherClasses() {
                   <FiBookOpen className="text-2xl text-emerald-600" />
                 </div>
               </div>
-              <div className="absolute bottom-0 left-0 h-1 w-full bg-gradient-to-r from-emerald-500 to-teal-500 opacity-0 transition-opacity group-hover:opacity-100"></div>
+              <div className="absolute bottom-0 left-0 h-1 w-full bg-emerald-500 opacity-0 transition-opacity group-hover:opacity-100"></div>
             </div>
           </div>
         </header>
@@ -285,7 +277,7 @@ export default function TeacherClasses() {
                     className="group flex flex-col rounded-xl border border-slate-200 bg-white shadow-sm transition-all hover:-translate-y-1 hover:border-indigo-200 hover:shadow-lg"
                   >
                     <div
-                      className={`relative h-32 w-full rounded-t-xl bg-gradient-to-r ${CARD_GRADIENTS[index % CARD_GRADIENTS.length]} px-5 py-4`}
+                      className={`relative h-32 w-full rounded-t-xl bg-indigo-50 px-5 py-4`}
                     >
                       <div className="flex items-start justify-between">
                         <div className="space-y-2">

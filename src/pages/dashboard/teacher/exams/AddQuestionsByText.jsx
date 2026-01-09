@@ -892,9 +892,6 @@ export default function AddQuestionsByText() {
               <FiArrowLeft className="h-5 w-5 text-slate-600" />
             </button>
             <div className="min-w-0 flex-1">
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-indigo-500">
-                Thêm câu hỏi bằng văn bản
-              </p>
               <h1 className="mt-2 text-2xl lg:text-3xl font-bold text-slate-900 break-words">
                 {exam?.title || "Đề thi"}
               </h1>

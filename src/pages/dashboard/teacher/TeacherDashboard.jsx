@@ -105,11 +105,11 @@ export default function TeacherDashboard() {
                   {summary.examsByStatus?.ongoing || 0} đang diễn ra
                 </p>
               </div>
-              <div className="rounded-lg bg-gradient-to-br from-indigo-100 to-indigo-50 p-3 transition-transform group-hover:scale-110">
+              <div className="rounded-lg bg-indigo-100 p-3 transition-transform group-hover:scale-110">
                 <FiFileText className="text-2xl text-indigo-600" />
               </div>
             </div>
-            <div className="absolute bottom-0 left-0 h-1 w-full bg-gradient-to-r from-indigo-500 to-purple-500 opacity-0 transition-opacity group-hover:opacity-100"></div>
+            <div className="absolute bottom-0 left-0 h-1 w-full bg-indigo-500 opacity-0 transition-opacity group-hover:opacity-100"></div>
           </article>
 
           <article 
@@ -127,11 +127,11 @@ export default function TeacherDashboard() {
                   {summary.totalStudents || 0} học sinh
                 </p>
               </div>
-              <div className="rounded-lg bg-gradient-to-br from-emerald-100 to-emerald-50 p-3 transition-transform group-hover:scale-110">
+              <div className="rounded-lg bg-emerald-100 p-3 transition-transform group-hover:scale-110">
                 <FiUsers className="text-2xl text-emerald-600" />
               </div>
             </div>
-            <div className="absolute bottom-0 left-0 h-1 w-full bg-gradient-to-r from-emerald-500 to-teal-500 opacity-0 transition-opacity group-hover:opacity-100"></div>
+            <div className="absolute bottom-0 left-0 h-1 w-full bg-emerald-500 opacity-0 transition-opacity group-hover:opacity-100"></div>
           </article>
 
           <article 
@@ -149,11 +149,11 @@ export default function TeacherDashboard() {
                   Cần phản hồi
                 </p>
               </div>
-              <div className="rounded-lg bg-gradient-to-br from-amber-100 to-amber-50 p-3 transition-transform group-hover:scale-110">
+              <div className="rounded-lg bg-amber-100 p-3 transition-transform group-hover:scale-110">
                 <FiCheckCircle className="text-2xl text-amber-600" />
               </div>
             </div>
-            <div className="absolute bottom-0 left-0 h-1 w-full bg-gradient-to-r from-amber-500 to-orange-500 opacity-0 transition-opacity group-hover:opacity-100"></div>
+            <div className="absolute bottom-0 left-0 h-1 w-full bg-amber-500 opacity-0 transition-opacity group-hover:opacity-100"></div>
           </article>
 
           <article 
@@ -175,11 +175,11 @@ export default function TeacherDashboard() {
                   Số dư hiện tại
                 </p>
               </div>
-              <div className="rounded-lg bg-gradient-to-br from-emerald-100 to-emerald-50 p-3 transition-transform group-hover:scale-110">
+              <div className="rounded-lg bg-emerald-100 p-3 transition-transform group-hover:scale-110">
                 <FiDollarSign className="text-2xl text-emerald-600" />
               </div>
             </div>
-            <div className="absolute bottom-0 left-0 h-1 w-full bg-gradient-to-r from-emerald-500 to-teal-500 opacity-0 transition-opacity group-hover:opacity-100"></div>
+            <div className="absolute bottom-0 left-0 h-1 w-full bg-emerald-500 opacity-0 transition-opacity group-hover:opacity-100"></div>
           </article>
         </section>
 
@@ -200,7 +200,7 @@ export default function TeacherDashboard() {
                 {recent.exams.map((exam, index) => (
                   <div
                     key={exam.id}
-                    className="group cursor-pointer rounded-lg border border-slate-100 bg-gradient-to-r from-slate-50 to-white p-4 transition-all duration-200 hover:border-indigo-200 hover:bg-gradient-to-r hover:from-indigo-50 hover:to-white hover:shadow-sm"
+                    className="group cursor-pointer rounded-lg border border-slate-100 bg-slate-50 p-4 transition-all duration-200 hover:border-indigo-200 hover:bg-indigo-50 hover:shadow-sm"
                     onClick={() => navigate(`/dashboard/teacher/exams/${exam.id}/edit`)}
                     style={{ animationDelay: `${index * 50}ms` }}
                   >
@@ -257,7 +257,7 @@ export default function TeacherDashboard() {
                 {recent.classes.map((cls, index) => (
                   <div
                     key={cls.id}
-                    className="group cursor-pointer rounded-lg border border-slate-100 bg-gradient-to-r from-slate-50 to-white p-4 transition-all duration-200 hover:border-emerald-200 hover:bg-gradient-to-r hover:from-emerald-50 hover:to-white hover:shadow-sm"
+                    className="group cursor-pointer rounded-lg border border-slate-100 bg-slate-50 p-4 transition-all duration-200 hover:border-emerald-200 hover:bg-emerald-50 hover:shadow-sm"
                     onClick={() =>
                       navigate(
                         `/teacher/classes/${encodeURIComponent(

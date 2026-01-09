@@ -61,7 +61,7 @@ export default function CreateClass() {
   return (
     <DashboardLayout role="teacher">
       <div className="space-y-6">
-        <header className="relative overflow-hidden rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50 via-white to-purple-50 p-6 shadow-sm">
+        <header className="relative overflow-hidden rounded-2xl border border-indigo-100 bg-indigo-50 p-6 shadow-sm">
           <div className="relative z-10 flex flex-wrap items-center gap-4">
             <button
               type="button"
@@ -72,9 +72,6 @@ export default function CreateClass() {
               Quay lại
             </button>
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-indigo-500">
-                Tạo lớp học mới
-              </p>
               <h1 className="mt-2 text-3xl font-bold text-slate-900">
                 Khởi tạo lớp cho học sinh của bạn
               </h1>
@@ -144,7 +141,7 @@ export default function CreateClass() {
             </div>
           </form>
 
-          <aside className="rounded-xl border border-indigo-200 bg-gradient-to-br from-indigo-50 to-white p-6 shadow-sm">
+          <aside className="rounded-xl border border-indigo-200 bg-indigo-50 p-6 shadow-sm">
             <h3 className="text-lg font-bold text-indigo-900">
               Hướng dẫn nhanh
             </h3>
